@@ -1,0 +1,25 @@
+name: Push components to Espressif Component Service
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  upload_components:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+        with:
+          submodules: 'recursive'
+      - name: Upload components to component service
+        uses: espressif/upload-components-ci-action@v1
+        with:
+          directories: >
+            display/lcd/esp_lcd_jd9165;
+            display/lcd/esp_lcd_jd9365_8;
+            display/lcd/esp_lcd_jd9365_10_1;
+            display/lcd/esp_lcd_hx8394;
+            display/lcd/esp_lcd_dsi;
+          namespace: "waveshare"
+          api_token: ${{ secrets.IDF_COMPONENT_API_TOKEN }}
