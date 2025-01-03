@@ -10,13 +10,13 @@ accelerate your project setup.
 
 ### 1. **Board Support Packages (BSP)**
 
-| Board                                                                                                                                                                                                                                                                                                    | supported |
-|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------|
-| [ESP32-P4-NANO](https://www.waveshare.com/esp32-p4-nano.htm)<img style="width: 150px; height: auto; display: block; margin: 0 auto;" src="https://www.waveshare.com/media/catalog/product/cache/1/image/800x800/9df78eab33525d08d6e5fb8d27136e95/e/s/esp32-p4-nano-1.jpg">                               | ✅         |
-| [ESP32-S3-Touch-AMOLED-1.8](https://www.waveshare.com/esp32-s3-touch-amoled-1.8.htm)<img style="width: 150px; height: auto; display: block; margin: 0 auto;" src="https://www.waveshare.net/photo/development-board/ESP32-S3-Touch-AMOLED-1.8/ESP32-S3-Touch-AMOLED-1.8-1.jpg">                          | 🕒        |
-| [ESP32-S3-Touch-LCD-1.69](https://www.waveshare.com/esp32-s3-touch-lcd-1.69.htm)<img style="width: 150px; height: auto; display: block; margin: 0 auto;" src="https://www.waveshare.com/media/catalog/product/cache/1/image/800x800/9df78eab33525d08d6e5fb8d27136e95/e/s/esp32-s3-touch-lcd-1.69-1.jpg"> | 🕒        |
-| [ESP32-S3-LCD-1.69](https://www.waveshare.com/esp32-s3-lcd-1.69.htm)<img style="width: 150px; height: auto; display: block; margin: 0 auto;" src="https://www.waveshare.com/media/catalog/product/cache/1/image/800x800/9df78eab33525d08d6e5fb8d27136e95/e/s/esp32-s3-lcd-1.69-1.jpg">                   | 🕒        |
-| [ESP32-S3-Touch-LCD-4 ](https://www.waveshare.com/esp32-s3-touch-lcd-4.htm)<img style="width: 150px; height: auto; display: block; margin: 0 auto;" src="https://www.waveshare.com/media/catalog/product/cache/1/image/800x800/9df78eab33525d08d6e5fb8d27136e95/e/s/esp32-s3-touch-lcd-4-1.jpg">         | 🕒        |
+| Board                                                                                                                                                                                                                                                                                                         | supported |
+|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------|
+| [ESP32-P4-NANO](https://www.waveshare.com/esp32-p4-nano.htm)<br/><img style="width: 150px; height: auto; display: block; margin: 0 auto;" src="https://www.waveshare.com/media/catalog/product/cache/1/image/800x800/9df78eab33525d08d6e5fb8d27136e95/e/s/esp32-p4-nano-1.jpg">                               | ✅         |
+| [ESP32-S3-Touch-AMOLED-1.8](https://www.waveshare.com/esp32-s3-touch-amoled-1.8.htm)<br/><img style="width: 150px; height: auto; display: block; margin: 0 auto;" src="https://www.waveshare.net/photo/development-board/ESP32-S3-Touch-AMOLED-1.8/ESP32-S3-Touch-AMOLED-1.8-1.jpg">                          | 🕒        |
+| [ESP32-S3-Touch-LCD-1.69](https://www.waveshare.com/esp32-s3-touch-lcd-1.69.htm)<br/><img style="width: 150px; height: auto; display: block; margin: 0 auto;" src="https://www.waveshare.com/media/catalog/product/cache/1/image/800x800/9df78eab33525d08d6e5fb8d27136e95/e/s/esp32-s3-touch-lcd-1.69-1.jpg"> | 🕒        |
+| [ESP32-S3-LCD-1.69](https://www.waveshare.com/esp32-s3-lcd-1.69.htm)<br/><img style="width: 150px; height: auto; display: block; margin: 0 auto;" src="https://www.waveshare.com/media/catalog/product/cache/1/image/800x800/9df78eab33525d08d6e5fb8d27136e95/e/s/esp32-s3-lcd-1.69-1.jpg">                   | 🕒        |
+| [ESP32-S3-Touch-LCD-4 ](https://www.waveshare.com/esp32-s3-touch-lcd-4.htm)<br/><img style="width: 150px; height: auto; display: block; margin: 0 auto;" src="https://www.waveshare.com/media/catalog/product/cache/1/image/800x800/9df78eab33525d08d6e5fb8d27136e95/e/s/esp32-s3-touch-lcd-4-1.jpg">         | 🕒        |
 
 ### 2. **Display Drivers**
 
@@ -45,7 +45,8 @@ Each library and support package comes with detailed documentation and examples.
 - **Initialization Guides:** Step-by-step instructions for setting up your board and peripherals.
 - **Examples:**
     - The driver library code provides the simplest low-level drivers
-    - BSP sample programs can be queried in different product wikis, and will be synchronized in the [ESP32-display-support](https://github.com/waveshareteam/ESP32-display-support)
+    - BSP sample programs can be queried in different product wikis, and will be synchronized in
+      the [ESP32-display-support](https://github.com/waveshareteam/ESP32-display-support)
 - **Code Comments:** Inline documentation for better understanding.
 
 ---
@@ -59,19 +60,25 @@ Each library and support package comes with detailed documentation and examples.
     - Supported display modules
     - Compatible touch controllers(Optional)
 - **Software:**
-    - [ESP-IDF](https://github.com/espressif/esp-idf)(Each product has a recommended version on the wiki as well as sample routines)
+    - [ESP-IDF](https://github.com/espressif/esp-idf)(Each product has a recommended version on the wiki as well as
+      sample routines)
 
 [//]: # (### Setup)
 
 [//]: # ()
+
 [//]: # (1. Clone the repository:)
 
 [//]: # ()
+
 [//]: # ()
+
 [//]: # (2. Install required dependencies:)
 
 [//]: # ()
+
 [//]: # ()
+
 [//]: # (3. Flash the example projects:)
 
 
@@ -91,7 +98,9 @@ Each library and support package comes with detailed documentation and examples.
 ---
 
 ## 🔧 Configuration
-You can view some of the configurations that have been added via menuconfig, which will allow you to verify the functionality directly
+
+You can view some of the configurations that have been added via menuconfig, which will allow you to verify the
+functionality directly
 
 ---
 
