@@ -1,0 +1,13 @@
+dependencies:
+  cmake_utilities:
+    version: 0.*
+  idf:
+    version: '>=5.3'
+description: "ESP LCD FOR Waveshare 8 inch DISPLAY JD9365"
+issues: "https://github.com/waveshareteam/Waveshare-ESP32-components/issues"
+
+license: "MIT"
+targets:
+  - esp32p4
+url: "https://github.com/waveshareteam/Waveshare-ESP32-components/tree/master/esp_lcd_jd9365_8"
+version: "1.0.0"
