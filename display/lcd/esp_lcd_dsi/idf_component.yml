@@ -1,0 +1,13 @@
+version: "1.0.0"
+targets:
+  - esp32p4
+description: "Waveshare DSI display driver, compatible with a variety of DSI displays"
+url: "https://github.com/waveshareteam/Waveshare-ESP32-components/tree/master/esp_lcd_dsi"
+issues: "https://github.com/waveshareteam/Waveshare-ESP32-components/issues"
+dependencies:
+  idf:
+    version: '>=5.3'
+  cmake_utilities: "0.*"
+  espressif/i2c_bus: "^1.0.0"
+
+license: "MIT"
