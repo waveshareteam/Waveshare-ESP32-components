@@ -1,6 +1,6 @@
 # ChangeLog
 
-## v1.0.0 -2025-01-03
+## v1.0.1 -2025-01-03
 
 * Formally release the component, formally maintain the component
 

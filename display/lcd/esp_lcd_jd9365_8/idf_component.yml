@@ -9,5 +9,5 @@ issues: "https://github.com/waveshareteam/Waveshare-ESP32-components/issues"
 license: "MIT"
 targets:
   - esp32p4
-url: "https://github.com/waveshareteam/Waveshare-ESP32-components/tree/master/esp_lcd_jd9365_8"
-version: "1.0.0"
+url: "https://github.com/waveshareteam/Waveshare-ESP32-components/tree/master/display/lcd/esp_lcd_jd9365_8"
+version: "1.0.1"
