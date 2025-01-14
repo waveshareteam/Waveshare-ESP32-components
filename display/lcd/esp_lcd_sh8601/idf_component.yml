@@ -1,0 +1,11 @@
+dependencies:
+  cmake_utilities:
+    version: 0.*
+  idf:
+    version: '>=5.3'
+description: "ESP LCD FOR Waveshare ESP32-S3-Touch-AMOLED-1.8 DISPLAY SH8601"
+issues: "https://github.com/waveshareteam/Waveshare-ESP32-components/issues"
+targets:
+  - esp32s3
+url: "https://github.com/waveshareteam/Waveshare-ESP32-components/tree/master/esp_lcd_sh8601"
+version: "1.0.0"
