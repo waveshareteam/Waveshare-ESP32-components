@@ -1,5 +1,9 @@
 # ChangeLog
 
+## v1.0.2 - 2025-01-16
+
+Fixed component target issues
+
 ## v1.0.1 - 2025-01-14
 
 ### Enhancements:
