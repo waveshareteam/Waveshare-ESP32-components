@@ -1,5 +1,9 @@
 # ChangeLog
 
+## v1.0.2 -2025-02-28
+
+* Update compatible screen drivers
+
 ## v1.0.1 -2025-01-03
 
 * Formally release the component, formally maintain the component
