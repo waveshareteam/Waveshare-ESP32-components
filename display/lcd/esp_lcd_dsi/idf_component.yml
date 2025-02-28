@@ -1,4 +1,4 @@
-version: "1.0.1"
+version: "1.0.2"
 targets:
   - esp32p4
 description: "Waveshare DSI display driver, compatible with a variety of DSI displays"
@@ -8,6 +8,6 @@ dependencies:
   idf:
     version: '>=5.3'
   cmake_utilities: "0.*"
-  espressif/i2c_bus: "^1.0.0"
+  espressif/i2c_bus: "^1.3.0"
 
 license: "MIT"

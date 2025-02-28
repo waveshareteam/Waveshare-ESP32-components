@@ -3,7 +3,7 @@ dependencies:
     version: 0.*
   idf:
     version: '>=5.3'
-  espressif/i2c_bus: "^1.0.0"
+  espressif/i2c_bus: "^1.3.0"
 description: "ESP LCD FOR Waveshare 10.1inch DISPLAY JD9365"
 issues: "https://github.com/waveshareteam/Waveshare-ESP32-components/issues"
 
@@ -11,4 +11,4 @@ license: "MIT"
 targets:
   - esp32p4
 url: "https://github.com/waveshareteam/Waveshare-ESP32-components/tree/master/display/lcd/esp_lcd_jd9365_10_1"
-version: "1.0.2"
+version: "1.0.3"
