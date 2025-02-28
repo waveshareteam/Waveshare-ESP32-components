@@ -130,7 +130,7 @@ esp_err_t esp_lcd_new_panel_jd9365(const esp_lcd_panel_io_handle_t io, const esp
         .master.clk_speed = 100000,
     };
 
-    i2c_bus_handle_t i2c0_bus = i2c_bus_create(I2C_NUM_0, &conf);
+    i2c_bus_handle_t i2c0_bus = i2c_bus_create(I2C_NUM_1, &conf);
     i2c_bus_device_handle_t i2c0_device1 = i2c_bus_device_create(i2c0_bus, 0x45, 0);
 
     uint8_t data = 0x11;
@@ -139,12 +139,12 @@ esp_err_t esp_lcd_new_panel_jd9365(const esp_lcd_panel_io_handle_t io, const esp
     i2c_bus_write_bytes(i2c0_device1, 0x95, 1, &data);
     data = 0x00;
     i2c_bus_write_bytes(i2c0_device1, 0x96, 1, &data);
-    vTaskDelay(pdMS_TO_TICKS(300));
+    vTaskDelay(pdMS_TO_TICKS(100));
     data = 0xFF;
     i2c_bus_write_bytes(i2c0_device1, 0x96, 1, &data);
 
     i2c_bus_device_delete(&i2c0_device1);
-    i2c_bus_delete(&i2c0_bus);
+    // i2c_bus_delete(&i2c0_bus);
 
     vTaskDelay(pdMS_TO_TICKS(1000));
 
