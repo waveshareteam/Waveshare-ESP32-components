@@ -26,7 +26,7 @@ typedef struct {
     const void *data;       /*<! Buffer that holds the command specific data */
     size_t data_bytes;      /*<! Size of `data` in memory, in bytes */
     unsigned int delay_ms;  /*<! Delay in milliseconds after this command */
-} jd9365_lcd_init_cmd_t;
+} jd9365_8_lcd_init_cmd_t;
 
 /**
  * @brief LCD panel vendor configuration.
@@ -35,7 +35,7 @@ typedef struct {
  *
  */
 typedef struct {
-    const jd9365_lcd_init_cmd_t *init_cmds;         /*!< Pointer to initialization commands array. Set to NULL if using default commands.
+    const jd9365_8_lcd_init_cmd_t *init_cmds;         /*!< Pointer to initialization commands array. Set to NULL if using default commands.
                                                      *   The array should be declared as `static const` and positioned outside the function.
                                                      *   Please refer to `vendor_specific_init_default` in source file.
                                                      */
@@ -60,7 +60,7 @@ typedef struct {
              *   This flag is only valid for the RGB interface.
              */
     } flags;
-} jd9365_vendor_config_t;
+} jd9365_8_vendor_config_t;
 
 /**
  * @brief Create LCD panel for model JD9365
@@ -75,14 +75,14 @@ typedef struct {
  *      - ESP_OK                on success
  *      - Otherwise             on fail
  */
-esp_err_t esp_lcd_new_panel_jd9365(const esp_lcd_panel_io_handle_t io, const esp_lcd_panel_dev_config_t *panel_dev_config,
+esp_err_t esp_lcd_new_panel_jd9365_8(const esp_lcd_panel_io_handle_t io, const esp_lcd_panel_dev_config_t *panel_dev_config,
                                    esp_lcd_panel_handle_t *ret_panel);
 
 /**
  * @brief MIPI-DSI bus configuration structure
  *
  */
-#define JD9365_PANEL_BUS_DSI_2CH_CONFIG()                \
+#define JD9365_8_PANEL_BUS_DSI_2CH_CONFIG()                \
     {                                                    \
         .bus_id = 0,                                     \
         .num_data_lanes = 2,                             \
@@ -94,7 +94,7 @@ esp_err_t esp_lcd_new_panel_jd9365(const esp_lcd_panel_io_handle_t io, const esp
  * @brief MIPI-DBI panel IO configuration structure
  *
  */
-#define JD9365_PANEL_IO_DBI_CONFIG()  \
+#define JD9365_8_PANEL_IO_DBI_CONFIG()  \
     {                                 \
         .virtual_channel = 0,         \
         .lcd_cmd_bits = 8,            \
@@ -110,7 +110,7 @@ esp_err_t esp_lcd_new_panel_jd9365(const esp_lcd_panel_io_handle_t io, const esp
  * @param[in] px_format Pixel format of the panel
  *
  */
-#define JD9365_800_1280_PANEL_60HZ_DPI_CONFIG(px_format) \
+#define JD9365_8_800_1280_PANEL_60HZ_DPI_CONFIG(px_format) \
     {                                                    \
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
         .dpi_clock_freq_mhz = 80,                        \

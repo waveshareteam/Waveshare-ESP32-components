@@ -47,7 +47,7 @@
 #define TEST_MIPI_DSI_PHY_PWR_LDO_CHAN (3)
 #define TEST_MIPI_DSI_PHY_PWR_LDO_VOLTAGE_MV (2500)
 
-static char *TAG = "jd9365_test";
+static char *TAG = "jd9365_8_test";
 static esp_ldo_channel_handle_t ldo_mipi_phy = NULL;
 static esp_lcd_panel_handle_t panel_handle = NULL;
 static esp_lcd_dsi_bus_handle_t mipi_dsi_bus = NULL;
@@ -86,16 +86,16 @@ static void test_init_lcd(void)
 #endif
 
     ESP_LOGI(TAG, "Initialize MIPI DSI bus");
-    esp_lcd_dsi_bus_config_t bus_config = JD9365_PANEL_BUS_DSI_2CH_CONFIG();
+    esp_lcd_dsi_bus_config_t bus_config = JD9365_8_PANEL_BUS_DSI_2CH_CONFIG();
     TEST_ESP_OK(esp_lcd_new_dsi_bus(&bus_config, &mipi_dsi_bus));
 
     ESP_LOGI(TAG, "Install panel IO");
-    esp_lcd_dbi_io_config_t dbi_config = JD9365_PANEL_IO_DBI_CONFIG();
+    esp_lcd_dbi_io_config_t dbi_config = JD9365_8_PANEL_IO_DBI_CONFIG();
     TEST_ESP_OK(esp_lcd_new_panel_io_dbi(mipi_dsi_bus, &dbi_config, &mipi_dbi_io));
 
-    ESP_LOGI(TAG, "Install LCD driver of jd9365");
-    esp_lcd_dpi_panel_config_t dpi_config = JD9365_800_1280_PANEL_60HZ_DPI_CONFIG(TEST_MIPI_DPI_PX_FORMAT);
-    jd9365_vendor_config_t vendor_config = {
+    ESP_LOGI(TAG, "Install LCD driver of jd9365_8");
+    esp_lcd_dpi_panel_config_t dpi_config = JD9365_8_800_1280_PANEL_60HZ_DPI_CONFIG(TEST_MIPI_DPI_PX_FORMAT);
+    jd9365_8_vendor_config_t vendor_config = {
         .flags = {
             .use_mipi_interface = 1,
         },
@@ -111,7 +111,7 @@ static void test_init_lcd(void)
         .bits_per_pixel = TEST_LCD_BIT_PER_PIXEL,
         .vendor_config = &vendor_config,
     };
-    TEST_ESP_OK(esp_lcd_new_panel_jd9365(mipi_dbi_io, &panel_config, &panel_handle));
+    TEST_ESP_OK(esp_lcd_new_panel_jd9365_8(mipi_dbi_io, &panel_config, &panel_handle));
     TEST_ESP_OK(esp_lcd_panel_reset(panel_handle));
     TEST_ESP_OK(esp_lcd_panel_init(panel_handle));
     TEST_ESP_OK(esp_lcd_panel_disp_on_off(panel_handle, true));
@@ -184,7 +184,7 @@ static void test_draw_color_bar(esp_lcd_panel_handle_t panel_handle, uint16_t h_
     free(color);
 }
 
-TEST_CASE("test jd9365 to draw pattern with MIPI interface", "[jd9365][draw_pattern]")
+TEST_CASE("test jd9365_8 to draw pattern with MIPI interface", "[jd9365_8][draw_pattern]")
 {
     ESP_LOGI(TAG, "Initialize LCD device");
     test_init_lcd();
@@ -200,7 +200,7 @@ TEST_CASE("test jd9365 to draw pattern with MIPI interface", "[jd9365][draw_patt
     test_deinit_lcd();
 }
 
-TEST_CASE("test jd9365 to draw color bar with MIPI interface", "[jd9365][draw_color_bar]")
+TEST_CASE("test jd9365_8 to draw color bar with MIPI interface", "[jd9365_8][draw_color_bar]")
 {
     ESP_LOGI(TAG, "Initialize LCD device");
     test_init_lcd();
@@ -213,7 +213,7 @@ TEST_CASE("test jd9365 to draw color bar with MIPI interface", "[jd9365][draw_co
     test_deinit_lcd();
 }
 
-TEST_CASE("test jd9365 to rotate with MIPI interface", "[jd9365][rotate]")
+TEST_CASE("test jd9365_8 to rotate with MIPI interface", "[jd9365_8][rotate]")
 {
     esp_err_t ret = ESP_OK;
 
