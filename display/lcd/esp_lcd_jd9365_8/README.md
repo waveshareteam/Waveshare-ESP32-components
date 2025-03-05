@@ -39,18 +39,18 @@ Alternatively, you can create `idf_component.yml`. More is in [Espressif's docum
 
     ESP_LOGI(TAG, "Initialize MIPI DSI bus");
     esp_lcd_dsi_bus_handle_t mipi_dsi_bus = NULL;
-    esp_lcd_dsi_bus_config_t bus_config = JD9365_PANEL_BUS_DSI_2CH_CONFIG();
+    esp_lcd_dsi_bus_config_t bus_config = JD9365_8_PANEL_BUS_DSI_2CH_CONFIG();
     ESP_ERROR_CHECK(esp_lcd_new_dsi_bus(&bus_config, &mipi_dsi_bus));
 
     ESP_LOGI(TAG, "Install panel IO");
     esp_lcd_panel_io_handle_t mipi_dbi_io = NULL;
-    esp_lcd_dbi_io_config_t dbi_config = JD9365_PANEL_IO_DBI_CONFIG();
+    esp_lcd_dbi_io_config_t dbi_config = JD9365_8_PANEL_IO_DBI_CONFIG();
     ESP_ERROR_CHECK(esp_lcd_new_panel_io_dbi(mipi_dsi_bus, &dbi_config, &mipi_dbi_io));
 
     ESP_LOGI(TAG, "Install JD9365S panel driver");
     esp_lcd_panel_handle_t panel_handle = NULL;
-    const esp_lcd_dpi_panel_config_t dpi_config = JD9365_800_1280_PANEL_60HZ_DPI_CONFIG(EXAMPLE_MIPI_DPI_PX_FORMAT);
-    jd9365_vendor_config_t vendor_config = {
+    const esp_lcd_dpi_panel_config_t dpi_config = JD9365_8_800_1280_PANEL_60HZ_DPI_CONFIG(EXAMPLE_MIPI_DPI_PX_FORMAT);
+    jd9365_8_vendor_config_t vendor_config = {
         .flags = {
             .use_mipi_interface = 1,
         },
@@ -66,7 +66,7 @@ Alternatively, you can create `idf_component.yml`. More is in [Espressif's docum
         .bits_per_pixel = EXAMPLE_LCD_BIT_PER_PIXEL,    // Implemented by LCD command `3Ah` (16/18/24)
         .vendor_config = &vendor_config,
     };
-    ESP_ERROR_CHECK(esp_lcd_new_panel_jd9365(mipi_dbi_io, &panel_config, &panel_handle));
+    ESP_ERROR_CHECK(esp_lcd_new_panel_jd9365_8(mipi_dbi_io, &panel_config, &panel_handle));
     ESP_ERROR_CHECK(esp_lcd_panel_reset(panel_handle));
     ESP_ERROR_CHECK(esp_lcd_panel_init(panel_handle));
     ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel_handle, true));
