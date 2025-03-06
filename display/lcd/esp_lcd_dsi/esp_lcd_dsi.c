@@ -103,7 +103,7 @@ esp_err_t esp_lcd_new_panel_dsi(const esp_lcd_panel_io_handle_t io, const esp_lc
     i2c_bus_write_bytes(i2c0_device1, 0xc2, 1, &data);
     i2c_bus_write_bytes(i2c0_device1, 0xac, 1, &data);
 
-    data = 0x55;
+    data = 0x00;
     i2c_bus_write_bytes(i2c0_device1, 0xab, 1, &data);
 
     data = 0x01;

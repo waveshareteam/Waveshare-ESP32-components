@@ -89,7 +89,7 @@ static void test_init_lcd(void)
     TEST_ESP_OK(esp_lcd_new_panel_io_dbi(mipi_dsi_bus, &dbi_config, &mipi_dbi_io));
 
     ESP_LOGI(TAG, "Install LCD driver of dsi");
-    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_CONFIG(TEST_MIPI_DPI_PX_FORMAT);
+    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_2_8_INCH_CONFIG(TEST_MIPI_DPI_PX_FORMAT);
     dsi_vendor_config_t vendor_config = {
         .mipi_config = {
             .dsi_bus = mipi_dsi_bus,
