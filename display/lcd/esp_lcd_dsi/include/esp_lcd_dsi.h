@@ -95,22 +95,269 @@ extern "C"
  * @param[in] px_format Pixel format of the panel
  *
  */
-#define DSI_PANEL_DPI_CONFIG(px_format) \
+#define DSI_PANEL_DPI_2_8_INCH_CONFIG(px_format) \
     {                                                    \
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
-        .dpi_clock_freq_mhz = 50,                        \
+        .dpi_clock_freq_mhz = 48,                        \
         .virtual_channel = 0,                            \
         .pixel_format = px_format,                       \
         .num_fbs = 1,                                    \
         .video_timing = {                                \
-            .h_size = 480,                              \
-            .v_size = 640,                              \
-            .hsync_back_porch = 150,                      \
-            .hsync_pulse_width = 150,                     \
-            .hsync_front_porch = 50,                    \
-            .vsync_back_porch = 50,                       \
-            .vsync_pulse_width = 150,                      \
-            .vsync_front_porch = 150,                     \
+            .h_size = 480,                               \
+            .v_size = 640,                               \
+            .hsync_back_porch = 150,                     \
+            .hsync_pulse_width = 150,                    \
+            .hsync_front_porch = 50,                     \
+            .vsync_back_porch = 50,                      \
+            .vsync_pulse_width = 150,                    \
+            .vsync_front_porch = 150,                    \
+        },                                               \
+        .flags.use_dma2d = true,                         \
+    }
+#define DSI_PANEL_DPI_3_4_INCH_C_CONFIG(px_format) \
+    {                                                    \
+        .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
+        .dpi_clock_freq_mhz = 48,                        \
+        .virtual_channel = 0,                            \
+        .pixel_format = px_format,                       \
+        .num_fbs = 1,                                    \
+        .video_timing = {                                \
+            .h_size = 800,                               \
+            .v_size = 800,                               \
+            .hsync_back_porch = 40,                      \
+            .hsync_pulse_width = 6,                      \
+            .hsync_front_porch = 120,                    \
+            .vsync_back_porch = 12,                      \
+            .vsync_pulse_width = 4,                      \
+            .vsync_front_porch = 16,                     \
+        },                                               \
+        .flags.use_dma2d = true,                         \
+    }
+#define DSI_PANEL_DPI_4_INCH_C_CONFIG(px_format) \
+    {                                                    \
+        .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
+        .dpi_clock_freq_mhz = 48,                        \
+        .virtual_channel = 0,                            \
+        .pixel_format = px_format,                       \
+        .num_fbs = 1,                                    \
+        .video_timing = {                                \
+            .h_size = 720,                               \
+            .v_size = 720,                               \
+            .hsync_back_porch = 32,                      \
+            .hsync_pulse_width = 200,                    \
+            .hsync_front_porch = 120,                    \
+            .vsync_back_porch = 4,                       \
+            .vsync_pulse_width = 16,                     \
+            .vsync_front_porch = 8,                      \
+        },                                               \
+        .flags.use_dma2d = true,                         \
+    }
+#define DSI_PANEL_DPI_4_INCH_CONFIG(px_format) \
+    {                                                    \
+        .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
+        .dpi_clock_freq_mhz = 48.6,                      \
+        .virtual_channel = 0,                            \
+        .pixel_format = px_format,                       \
+        .num_fbs = 1,                                    \
+        .video_timing = {                                \
+            .h_size = 480,                               \
+            .v_size = 800,                               \
+            .hsync_back_porch = 150,                     \
+            .hsync_pulse_width = 100,                    \
+            .hsync_front_porch = 150,                    \
+            .vsync_back_porch = 20,                      \
+            .vsync_pulse_width = 100,                    \
+            .vsync_front_porch = 20,                     \
+        },                                               \
+        .flags.use_dma2d = true,                         \
+    }
+#define DSI_PANEL_DPI_5_INCH_D_CONFIG(px_format) \
+    {                                                    \
+        .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
+        .dpi_clock_freq_mhz = 80,                        \
+        .virtual_channel = 0,                            \
+        .pixel_format = px_format,                       \
+        .num_fbs = 1,                                    \
+        .video_timing = {                                \
+            .h_size = 720,                               \
+            .v_size = 1280,                              \
+            .hsync_back_porch = 100,                     \
+            .hsync_pulse_width = 100,                    \
+            .hsync_front_porch = 80,                     \
+            .vsync_back_porch = 20,                      \
+            .vsync_pulse_width = 20,                     \
+            .vsync_front_porch = 20,                     \
+        },                                               \
+        .flags.use_dma2d = true,                         \
+    }
+#define DSI_PANEL_DPI_6_25_INCH_CONFIG(px_format) \
+    {                                                    \
+        .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
+        .dpi_clock_freq_mhz = 48,                        \
+        .virtual_channel = 0,                            \
+        .pixel_format = px_format,                       \
+        .num_fbs = 1,                                    \
+        .video_timing = {                                \
+            .h_size = 720,                               \
+            .v_size = 1560,                              \
+            .hsync_back_porch = 50,                      \
+            .hsync_pulse_width = 50,                     \
+            .hsync_front_porch = 50,                     \
+            .vsync_back_porch = 20,                      \
+            .vsync_pulse_width = 20,                     \
+            .vsync_front_porch = 20,                     \
+        },                                               \
+        .flags.use_dma2d = true,                         \
+    }
+#define DSI_PANEL_DPI_5_INCH_C_CONFIG(px_format) \
+    {                                                    \
+        .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
+        .dpi_clock_freq_mhz = 48,                        \
+        .virtual_channel = 0,                            \
+        .pixel_format = px_format,                       \
+        .num_fbs = 1,                                    \
+        .video_timing = {                                \
+            .h_size = 1024,                              \
+            .v_size = 600,                               \
+            .hsync_back_porch = 100,                     \
+            .hsync_pulse_width = 100,                    \
+            .hsync_front_porch = 100,                    \
+            .vsync_back_porch = 10,                      \
+            .vsync_pulse_width = 10,                     \
+            .vsync_front_porch = 10,                     \
+        },                                               \
+        .flags.use_dma2d = true,                         \
+    }
+#define DSI_PANEL_DPI_7_INCH_C_CONFIG(px_format) \
+    {                                                    \
+        .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
+        .dpi_clock_freq_mhz = 48,                        \
+        .virtual_channel = 0,                            \
+        .pixel_format = px_format,                       \
+        .num_fbs = 1,                                    \
+        .video_timing = {                                \
+            .h_size = 1024,                              \
+            .v_size = 600,                               \
+            .hsync_back_porch = 100,                     \
+            .hsync_pulse_width = 100,                    \
+            .hsync_front_porch = 100,                    \
+            .vsync_back_porch = 10,                      \
+            .vsync_pulse_width = 10,                     \
+            .vsync_front_porch = 10,                     \
+        },                                               \
+        .flags.use_dma2d = true,                         \
+    }
+#define DSI_PANEL_DPI_7_9_INCH_CONFIG(px_format) \
+    {                                                    \
+        .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
+        .dpi_clock_freq_mhz = 48,                        \
+        .virtual_channel = 0,                            \
+        .pixel_format = px_format,                       \
+        .num_fbs = 1,                                    \
+        .video_timing = {                                \
+            .h_size = 400,                               \
+            .v_size = 1280,                              \
+            .hsync_back_porch = 40,                      \
+            .hsync_pulse_width = 30,                     \
+            .hsync_front_porch = 40,                     \
+            .vsync_back_porch = 20,                      \
+            .vsync_pulse_width = 10,                     \
+            .vsync_front_porch = 20,                     \
+        },                                               \
+        .flags.use_dma2d = true,                         \
+    }
+#define DSI_PANEL_DPI_7_INCH_E_CONFIG(px_format) \
+    {                                                    \
+        .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
+        .dpi_clock_freq_mhz = 80,                        \
+        .virtual_channel = 0,                            \
+        .pixel_format = px_format,                       \
+        .num_fbs = 1,                                    \
+        .video_timing = {                                \
+            .h_size = 1280,                              \
+            .v_size = 800,                               \
+            .hsync_back_porch = 156,                     \
+            .hsync_pulse_width = 40,                     \
+            .hsync_front_porch = 20,                     \
+            .vsync_back_porch = 48,                      \
+            .vsync_pulse_width = 40,                     \
+            .vsync_front_porch = 40,                     \
+        },                                               \
+        .flags.use_dma2d = true,                         \
+    }
+#define DSI_PANEL_DPI_8_INCH_C_CONFIG(px_format) \
+    {                                                    \
+        .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
+        .dpi_clock_freq_mhz = 80,                        \
+        .virtual_channel = 0,                            \
+        .pixel_format = px_format,                       \
+        .num_fbs = 1,                                    \
+        .video_timing = {                                \
+            .h_size = 1280,                              \
+            .v_size = 800,                               \
+            .hsync_back_porch = 156,                     \
+            .hsync_pulse_width = 40,                     \
+            .hsync_front_porch = 20,                     \
+            .vsync_back_porch = 48,                      \
+            .vsync_pulse_width = 40,                     \
+            .vsync_front_porch = 40,                     \
+        },                                               \
+        .flags.use_dma2d = true,                         \
+    }
+#define DSI_PANEL_DPI_10_1_INCH_C_CONFIG(px_format) \
+    {                                                    \
+        .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
+        .dpi_clock_freq_mhz = 80,                        \
+        .virtual_channel = 0,                            \
+        .pixel_format = px_format,                       \
+        .num_fbs = 1,                                    \
+        .video_timing = {                                \
+            .h_size = 1280,                              \
+            .v_size = 800,                               \
+            .hsync_back_porch = 156,                     \
+            .hsync_pulse_width = 40,                     \
+            .hsync_front_porch = 20,                     \
+            .vsync_back_porch = 48,                      \
+            .vsync_pulse_width = 40,                     \
+            .vsync_front_porch = 40,                     \
+        },                                               \
+        .flags.use_dma2d = true,                         \
+    }
+#define DSI_PANEL_DPI_8_8_INCH_CONFIG(px_format) \
+    {                                                    \
+        .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
+        .dpi_clock_freq_mhz = 48,                        \
+        .virtual_channel = 0,                            \
+        .pixel_format = px_format,                       \
+        .num_fbs = 1,                                    \
+        .video_timing = {                                \
+            .h_size = 480,                               \
+            .v_size = 1920,                              \
+            .hsync_back_porch = 50,                      \
+            .hsync_pulse_width = 50,                     \
+            .hsync_front_porch = 50,                     \
+            .vsync_back_porch = 20,                      \
+            .vsync_pulse_width = 20,                     \
+            .vsync_front_porch = 20,                     \
+        },                                               \
+        .flags.use_dma2d = true,                         \
+    }
+#define DSI_PANEL_DPI_11_9_INCH_CONFIG(px_format) \
+    {                                                    \
+        .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
+        .dpi_clock_freq_mhz = 48,                        \
+        .virtual_channel = 0,                            \
+        .pixel_format = px_format,                       \
+        .num_fbs = 1,                                    \
+        .video_timing = {                                \
+            .h_size = 320,                               \
+            .v_size = 1480,                              \
+            .hsync_back_porch = 60,                      \
+            .hsync_pulse_width = 60,                     \
+            .hsync_front_porch = 60,                     \
+            .vsync_back_porch = 60,                      \
+            .vsync_pulse_width = 60,                     \
+            .vsync_front_porch = 60,                     \
         },                                               \
         .flags.use_dma2d = true,                         \
     }

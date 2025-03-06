@@ -20,39 +20,60 @@
 /* LCD display color space */
 #define BSP_LCD_COLOR_SPACE         (ESP_LCD_COLOR_SPACE_RGB)
 
-#if CONFIG_BSP_LCD_TYPE_1024_600
-/* LCD display definition 1024x600 */
+#if CONFIG_BSP_LCD_TYPE_800_1280_10_1_INCH
+#define BSP_LCD_H_RES              (800)
+#define BSP_LCD_V_RES              (1280)
+#elif CONFIG_BSP_LCD_TYPE_800_1280_10_1_INCH_A
+#define BSP_LCD_H_RES              (800)
+#define BSP_LCD_V_RES              (1280)
+#elif CONFIG_BSP_LCD_TYPE_800_1280_8_INCH_A
+#define BSP_LCD_H_RES              (800)
+#define BSP_LCD_V_RES              (1280)
+#elif CONFIG_BSP_LCD_TYPE_720_1280_7_INCH_A
+#define BSP_LCD_H_RES              (720)
+#define BSP_LCD_V_RES              (1280)
+#elif CONFIG_BSP_LCD_TYPE_480_640_2_8_INCH
+#define BSP_LCD_H_RES              (480)
+#define BSP_LCD_V_RES              (640)
+#elif CONFIG_BSP_LCD_TYPE_800_800_3_4_INCH_C
+#define BSP_LCD_H_RES              (800)
+#define BSP_LCD_V_RES              (800)
+#elif CONFIG_BSP_LCD_TYPE_720_720_4_INCH_C
+#define BSP_LCD_H_RES              (720)
+#define BSP_LCD_V_RES              (720)
+#elif CONFIG_BSP_LCD_TYPE_480_800_4_INCH
+#define BSP_LCD_H_RES              (480)
+#define BSP_LCD_V_RES              (800)
+#elif CONFIG_BSP_LCD_TYPE_720_1280_5_INCH_D
+#define BSP_LCD_H_RES              (720)
+#define BSP_LCD_V_RES              (1280)
+#elif CONFIG_BSP_LCD_TYPE_720_1560_6_25_INCH
+#define BSP_LCD_H_RES              (720)
+#define BSP_LCD_V_RES              (1560)
+#elif CONFIG_BSP_LCD_TYPE_1024_600_5_INCH_C
 #define BSP_LCD_H_RES              (1024)
 #define BSP_LCD_V_RES              (600)
-
-#define BSP_LCD_MIPI_DSI_LCD_HSYNC    (1344)
-#define BSP_LCD_MIPI_DSI_LCD_HBP      (160)
-#define BSP_LCD_MIPI_DSI_LCD_HFP      (160)
-#define BSP_LCD_MIPI_DSI_LCD_VSYNC    (635)
-#define BSP_LCD_MIPI_DSI_LCD_VBP      (23)
-#define BSP_LCD_MIPI_DSI_LCD_VFP      (12)
-#elif CONFIG_BSP_LCD_TYPE_1280_800
-/* LCD display definition 1280x800 */
-#define BSP_LCD_H_RES              (800)
+#elif CONFIG_BSP_LCD_TYPE_1024_600_7_INCH_C
+#define BSP_LCD_H_RES              (1024)
+#define BSP_LCD_V_RES              (600)
+#elif CONFIG_BSP_LCD_TYPE_400_1280_7_9_INCH
+#define BSP_LCD_H_RES              (400)
 #define BSP_LCD_V_RES              (1280)
-
-#define BSP_LCD_MIPI_DSI_LCD_HSYNC    (40)
-#define BSP_LCD_MIPI_DSI_LCD_HBP      (140)
-#define BSP_LCD_MIPI_DSI_LCD_HFP      (40)
-#define BSP_LCD_MIPI_DSI_LCD_VSYNC    (4)
-#define BSP_LCD_MIPI_DSI_LCD_VBP      (16)
-#define BSP_LCD_MIPI_DSI_LCD_VFP      (16)
-#elif CONFIG_BSP_LCD_TYPE_1280_800_WAVESHARE_10_1
-#define BSP_LCD_H_RES              (800)
-#define BSP_LCD_V_RES              (1280)
-
-#define BSP_LCD_MIPI_DSI_LCD_HSYNC    (20)
-#define BSP_LCD_MIPI_DSI_LCD_HBP      (20)
-#define BSP_LCD_MIPI_DSI_LCD_HFP      (40)
-#define BSP_LCD_MIPI_DSI_LCD_VSYNC    (4)
-#define BSP_LCD_MIPI_DSI_LCD_VBP      (10)
-#define BSP_LCD_MIPI_DSI_LCD_VFP      (30)
-
+#elif CONFIG_BSP_LCD_TYPE_1280_800_7_INCH_E
+#define BSP_LCD_H_RES              (1280)
+#define BSP_LCD_V_RES              (800)
+#elif CONFIG_BSP_LCD_TYPE_1280_800_8_INCH_C
+#define BSP_LCD_H_RES              (1280)
+#define BSP_LCD_V_RES              (800)
+#elif CONFIG_BSP_LCD_TYPE_1280_800_10_1_INCH_C
+#define BSP_LCD_H_RES              (1280)
+#define BSP_LCD_V_RES              (800)
+#elif CONFIG_BSP_LCD_TYPE_480_1920_8_8_INCH
+#define BSP_LCD_H_RES              (480)
+#define BSP_LCD_V_RES              (1920)
+#elif CONFIG_BSP_LCD_TYPE_320_1480_11_9_INCH
+#define BSP_LCD_H_RES              (320)
+#define BSP_LCD_V_RES              (1480)
 #endif
 
 #define BSP_LCD_MIPI_DSI_LANE_NUM          (2)    // 2 data lanes
