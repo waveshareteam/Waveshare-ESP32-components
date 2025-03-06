@@ -649,12 +649,12 @@ esp_err_t bsp_touch_new(const bsp_touch_config_t *config, esp_lcd_touch_handle_t
 
     /* Initialize touch */
     const esp_lcd_touch_config_t tp_cfg = {
-#if CONFIG_BSP_LCD_TYPE_480_640_2_8_INCH || CONFIG_BSP_LCD_TYPE_480_800_4_INCH
+#if CONFIG_BSP_LCD_TYPE_480_640_2_8_INCH || CONFIG_BSP_LCD_TYPE_480_800_4_INCH || CONFIG_BSP_LCD_TYPE_1024_600_5_INCH_C
         .x_max = BSP_LCD_V_RES,
         .y_max = BSP_LCD_H_RES,
 #else
-        .x_max = BSP_LCD_V_RES,
-        .y_max = BSP_LCD_H_RES,
+        .x_max = BSP_LCD_H_RES,
+        .y_max = BSP_LCD_V_RES,
 #endif
         .rst_gpio_num = BSP_LCD_TOUCH_RST, // Shared with LCD reset
         .int_gpio_num = BSP_LCD_TOUCH_INT,
@@ -669,8 +669,8 @@ esp_err_t bsp_touch_new(const bsp_touch_config_t *config, esp_lcd_touch_handle_t
             .mirror_y = 1,
 #elif CONFIG_BSP_LCD_TYPE_800_1280_8_INCH_A
             .swap_xy = 0,
-            .mirror_x = 1,
-            .mirror_y = 1,
+            .mirror_x = 0,
+            .mirror_y = 0,
 #elif CONFIG_BSP_LCD_TYPE_720_1280_7_INCH_A
             .swap_xy = 0,
             .mirror_x = 0,
@@ -691,10 +691,14 @@ esp_err_t bsp_touch_new(const bsp_touch_config_t *config, esp_lcd_touch_handle_t
             .swap_xy = 1,
             .mirror_x = 1,
             .mirror_y = 0,
-#else
+#elif CONFIG_BSP_LCD_TYPE_1024_600_5_INCH_C
             .swap_xy = 1,
-            .mirror_x = 0,
+            .mirror_x = 1,
             .mirror_y = 1,
+#else
+            .swap_xy = 0,
+            .mirror_x = 0,
+            .mirror_y = 0,
 #endif
         },
     };
