@@ -337,7 +337,7 @@ esp_err_t bsp_display_brightness_set(int brightness_percent)
 #if CONFIG_BSP_LCD_TYPE_800_1280_10_1_INCH
     uint8_t data_addr = 0x86;
     uint8_t data_to_send[2] = {data_addr, data};
-#elif CONFIG_BSP_LCD_TYPE_800_1280_10_1_INCH_A || CONFIG_BSP_LCD_TYPE_800_1280_8_INCH_A || CONFIG_BSP_LCD_TYPE_720_1280_7_INCH_A
+#elif CONFIG_BSP_LCD_TYPE_800_1280_10_1_INCH_A || CONFIG_BSP_LCD_TY9PE_800_1280_8_INCH_A || CONFIG_BSP_LCD_TYPE_720_1280_7_INCH_A
     uint8_t data_addr = 0x96;
     uint8_t data_to_send[2] = {data_addr, data};
 #else
@@ -506,9 +506,9 @@ esp_err_t bsp_display_new_with_handles(const bsp_display_config_t *config, bsp_l
     ESP_LOGI(TAG, "Install Waveshare 7-DSI-TOUCH-A LCD control panel");
 
 #if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
-    esp_lcd_dpi_panel_config_t dpi_config = ILI9881C_800_1280_PANEL_60HZ_DPI_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB888);
+    esp_lcd_dpi_panel_config_t dpi_config = ILI9881C_720_1280_PANEL_60HZ_DPI_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB888);
 #else
-    esp_lcd_dpi_panel_config_t dpi_config = ILI9881C_800_1280_PANEL_60HZ_DPI_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
+    esp_lcd_dpi_panel_config_t dpi_config = ILI9881C_720_1280_PANEL_60HZ_DPI_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
 #endif
     dpi_config.num_fbs = CONFIG_BSP_LCD_DPI_BUFFER_NUMS;
 
@@ -529,9 +529,10 @@ esp_err_t bsp_display_new_with_handles(const bsp_display_config_t *config, bsp_l
         .reset_gpio_num = BSP_LCD_RST,
         .vendor_config = &vendor_config,
     };
-    ESP_GOTO_ON_ERROR(esp_lcd_new_panel_ili9881c(io, &lcd_dev_config, &disp_panel), err, TAG, "New LCD panel Waveshare failed");
+    ESP_GOTO_ON_ERROR(esp_lcd_new_panel_ili9881c(io, &lcd_dev_config, &disp_panel), err, TAG, "New LCD panel ILI9881C failed");
     ESP_GOTO_ON_ERROR(esp_lcd_panel_reset(disp_panel), err, TAG, "LCD panel reset failed");
     ESP_GOTO_ON_ERROR(esp_lcd_panel_init(disp_panel), err, TAG, "LCD panel init failed");
+    ESP_GOTO_ON_ERROR(esp_lcd_panel_disp_on_off(disp_panel, true), err, TAG, "LCD panel ON failed");
 #else
     ESP_LOGI(TAG, "Install Waveshare DSI LCD control panel");
 #if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
@@ -649,7 +650,7 @@ esp_err_t bsp_touch_new(const bsp_touch_config_t *config, esp_lcd_touch_handle_t
 
     /* Initialize touch */
     const esp_lcd_touch_config_t tp_cfg = {
-#if CONFIG_BSP_LCD_TYPE_480_640_2_8_INCH || CONFIG_BSP_LCD_TYPE_480_800_4_INCH || CONFIG_BSP_LCD_TYPE_1024_600_5_INCH_C
+#if CONFIG_BSP_LCD_TYPE_480_640_2_8_INCH || CONFIG_BSP_LCD_TYPE_480_800_4_INCH
         .x_max = BSP_LCD_V_RES,
         .y_max = BSP_LCD_H_RES,
 #else
@@ -671,30 +672,14 @@ esp_err_t bsp_touch_new(const bsp_touch_config_t *config, esp_lcd_touch_handle_t
             .swap_xy = 0,
             .mirror_x = 0,
             .mirror_y = 0,
-#elif CONFIG_BSP_LCD_TYPE_720_1280_7_INCH_A
-            .swap_xy = 0,
-            .mirror_x = 0,
-            .mirror_y = 0,
 #elif CONFIG_BSP_LCD_TYPE_480_640_2_8_INCH
             .swap_xy = 1,
             .mirror_x = 0,
             .mirror_y = 1,
-#elif CONFIG_BSP_LCD_TYPE_800_800_3_4_INCH_C
-            .swap_xy = 0,
-            .mirror_x = 0,
-            .mirror_y = 0,
-#elif CONFIG_BSP_LCD_TYPE_720_720_4_INCH_C
-            .swap_xy = 0,
-            .mirror_x = 0,
-            .mirror_y = 0,
 #elif CONFIG_BSP_LCD_TYPE_480_800_4_INCH
             .swap_xy = 1,
             .mirror_x = 1,
             .mirror_y = 0,
-#elif CONFIG_BSP_LCD_TYPE_1024_600_5_INCH_C
-            .swap_xy = 1,
-            .mirror_x = 1,
-            .mirror_y = 1,
 #else
             .swap_xy = 0,
             .mirror_x = 0,

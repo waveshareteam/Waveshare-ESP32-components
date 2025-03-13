@@ -23,62 +23,78 @@
 #if CONFIG_BSP_LCD_TYPE_800_1280_10_1_INCH
 #define BSP_LCD_H_RES              (800)
 #define BSP_LCD_V_RES              (1280)
+#define BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS (1500)
 #elif CONFIG_BSP_LCD_TYPE_800_1280_10_1_INCH_A
 #define BSP_LCD_H_RES              (800)
 #define BSP_LCD_V_RES              (1280)
+#define BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS (1500)
 #elif CONFIG_BSP_LCD_TYPE_800_1280_8_INCH_A
 #define BSP_LCD_H_RES              (800)
 #define BSP_LCD_V_RES              (1280)
+#define BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS (1500)
 #elif CONFIG_BSP_LCD_TYPE_720_1280_7_INCH_A
 #define BSP_LCD_H_RES              (720)
 #define BSP_LCD_V_RES              (1280)
+#define BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS (1000)
 #elif CONFIG_BSP_LCD_TYPE_480_640_2_8_INCH
 #define BSP_LCD_H_RES              (480)
 #define BSP_LCD_V_RES              (640)
+#define BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS (1500)
 #elif CONFIG_BSP_LCD_TYPE_800_800_3_4_INCH_C
 #define BSP_LCD_H_RES              (800)
 #define BSP_LCD_V_RES              (800)
+#define BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS (1500)
 #elif CONFIG_BSP_LCD_TYPE_720_720_4_INCH_C
 #define BSP_LCD_H_RES              (720)
 #define BSP_LCD_V_RES              (720)
+#define BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS (1500)
 #elif CONFIG_BSP_LCD_TYPE_480_800_4_INCH
 #define BSP_LCD_H_RES              (480)
 #define BSP_LCD_V_RES              (800)
+#define BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS (1500)
 #elif CONFIG_BSP_LCD_TYPE_720_1280_5_INCH_D
 #define BSP_LCD_H_RES              (720)
 #define BSP_LCD_V_RES              (1280)
+#define BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS (1500)
 #elif CONFIG_BSP_LCD_TYPE_720_1560_6_25_INCH
 #define BSP_LCD_H_RES              (720)
 #define BSP_LCD_V_RES              (1560)
+#define BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS (1500)
 #elif CONFIG_BSP_LCD_TYPE_1024_600_5_INCH_C
 #define BSP_LCD_H_RES              (1024)
 #define BSP_LCD_V_RES              (600)
+#define BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS (1500)
 #elif CONFIG_BSP_LCD_TYPE_1024_600_7_INCH_C
 #define BSP_LCD_H_RES              (1024)
 #define BSP_LCD_V_RES              (600)
+#define BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS (1500)
 #elif CONFIG_BSP_LCD_TYPE_400_1280_7_9_INCH
 #define BSP_LCD_H_RES              (400)
 #define BSP_LCD_V_RES              (1280)
+#define BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS (1200)
 #elif CONFIG_BSP_LCD_TYPE_1280_800_7_INCH_E
 #define BSP_LCD_H_RES              (1280)
 #define BSP_LCD_V_RES              (800)
+#define BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS (1250)
 #elif CONFIG_BSP_LCD_TYPE_1280_800_8_INCH_C
 #define BSP_LCD_H_RES              (1280)
 #define BSP_LCD_V_RES              (800)
+#define BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS (1250)
 #elif CONFIG_BSP_LCD_TYPE_1280_800_10_1_INCH_C
 #define BSP_LCD_H_RES              (1280)
 #define BSP_LCD_V_RES              (800)
+#define BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS (1250)
 #elif CONFIG_BSP_LCD_TYPE_480_1920_8_8_INCH
 #define BSP_LCD_H_RES              (480)
 #define BSP_LCD_V_RES              (1920)
+#define BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS (1500)
 #elif CONFIG_BSP_LCD_TYPE_320_1480_11_9_INCH
 #define BSP_LCD_H_RES              (320)
 #define BSP_LCD_V_RES              (1480)
+#define BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS (1500)
 #endif
 
 #define BSP_LCD_MIPI_DSI_LANE_NUM          (2)    // 2 data lanes
-#define BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS (CONFIG_BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS) // 1Gbps
-
 #define BSP_MIPI_DSI_PHY_PWR_LDO_CHAN       (3)  // LDO_VO3 is connected to VDD_MIPI_DPHY
 #define BSP_MIPI_DSI_PHY_PWR_LDO_VOLTAGE_MV (2500)
 
