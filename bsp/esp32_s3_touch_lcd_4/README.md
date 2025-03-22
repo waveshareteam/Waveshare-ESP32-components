@@ -1,4 +1,4 @@
-# BSP: Waveshare ESP32-P4-NANO
+# BSP: Waveshare ESP32-S3-Touch-LCD-4
 
 [![Component Registry](https://components.espressif.com/components/waveshare/esp32_p4_nano/badge.svg)](https://components.espressif.com/components/waveshare/esp32_p4_nano)
 
