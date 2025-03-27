@@ -2,8 +2,8 @@ dependencies:
   esp_lcd_st7701: "*"
   esp_lcd_touch_gt911: "*"
   espressif/esp_lvgl_port:
-    version: "2.4.1"
     public: true
+    version: ^2
   idf: '>=5.3'
   lvgl/lvgl: '>=8,<10'
   esp_lcd_panel_io_additions: "^1"
@@ -15,4 +15,4 @@ tags:
 targets:
 - esp32s3
 url: https://www.waveshare.com/esp32-s3-touch-lcd-4.htm
-version: 1.0.4
+version: 1.1.0
