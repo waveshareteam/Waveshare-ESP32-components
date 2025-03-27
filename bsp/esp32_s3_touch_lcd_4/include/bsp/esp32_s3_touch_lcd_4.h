@@ -4,6 +4,7 @@
 #include "driver/gpio.h"
 #include "driver/i2c_master.h"
 #include "driver/sdmmc_host.h"
+#include "esp_io_expander_tca9554.h"
 #include "bsp/config.h"
 #include "bsp/display.h"
 
@@ -189,6 +190,18 @@ esp_err_t bsp_sdcard_mount(void);
  *      - other error codes from wear levelling library, SPI flash driver, or FATFS drivers
  */
 esp_err_t bsp_sdcard_unmount(void);
+
+/**
+ * @brief Init IO expander chip TCA9554
+ *
+ * @note If the device was already initialized, users can also use it to get handle.
+ * @note This function will be called in `bsp_display_start()` when using LCD sub-board 2 with the resolution of 480x480.
+ * @note This function will be called in `bsp_audio_init()`.
+ *
+ * @return Pointer to device handle or NULL when error occurred
+ */
+esp_io_expander_handle_t bsp_io_expander_init(void);
+
 
 /**************************************************************************************************
  *

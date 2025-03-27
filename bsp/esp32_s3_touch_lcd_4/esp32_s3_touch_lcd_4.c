@@ -12,7 +12,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include "esp_io_expander_tca9554.h"
 
 #include "esp_lcd_st7701.h"
 #include "esp_lcd_touch_gt911.h"
@@ -373,6 +372,7 @@ esp_err_t bsp_touch_new(const bsp_touch_config_t *config, esp_lcd_touch_handle_t
  **************************************************************************************************/
 esp_io_expander_handle_t bsp_io_expander_init(void)
 {
+    BSP_ERROR_CHECK_RETURN_ERR(bsp_i2c_init());
     if (!io_expander) {
         BSP_ERROR_CHECK_RETURN_NULL(esp_io_expander_new_i2c_tca9554(i2c_handle, BSP_IO_EXPANDER_I2C_ADDRESS, &io_expander));
     }
