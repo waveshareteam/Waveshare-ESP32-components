@@ -1,4 +1,4 @@
-version: "1.0.2"
+version: "1.0.3"
 targets:
   - esp32p4
 description: "Waveshare 7-DSI-TOUCH-A driver"
