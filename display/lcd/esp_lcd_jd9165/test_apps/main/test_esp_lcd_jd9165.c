@@ -290,23 +290,10 @@ void app_main(void)
     printf(" | |_| | |_| |\\__, | | (_) |__) |\r\n");
     printf(" \\___/|____/   /_/|_|\\___/____/ \r\n");
 
-    gpio_config_t rst_gpio_config = {
-        .mode = GPIO_MODE_OUTPUT,
-        .pin_bit_mask = 1ULL << 46};
-    TEST_ESP_OK(gpio_config(&rst_gpio_config));
-    TEST_ESP_OK(gpio_set_level(46, 0));
-    vTaskDelay(pdMS_TO_TICKS(500));
-    TEST_ESP_OK(gpio_set_level(46, 1));
-    vTaskDelay(pdMS_TO_TICKS(500));
-    TEST_ESP_OK(gpio_set_level(46, 0));
-    vTaskDelay(pdMS_TO_TICKS(500));
-
     // unity_run_menu();
     ESP_LOGI(TAG, "Initialize LCD device");
     test_init_lcd();
 
-    //    ESP_LOGI(TAG, "Show color bar pattern drawn by hardware");
-    //    TEST_ESP_OK(esp_lcd_dpi_panel_set_pattern(panel_handle, MIPI_DSI_PATTERN_BAR_VERTICAL));
     ESP_LOGI(TAG, "Show color bar pattern drawn by hardware");
     TEST_ESP_OK(esp_lcd_dpi_panel_set_pattern(panel_handle, MIPI_DSI_PATTERN_BAR_VERTICAL));
 }
