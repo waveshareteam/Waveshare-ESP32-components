@@ -27,7 +27,7 @@
 
 #include "esp_lcd_ili9881c.h"
 
-#define TEST_LCD_H_RES                  (800)
+#define TEST_LCD_H_RES                  (720)
 #define TEST_LCD_V_RES                  (1280)
 #define TEST_LCD_BIT_PER_PIXEL          (24)
 #define TEST_PIN_NUM_LCD_RST            (-1)
@@ -97,7 +97,7 @@ static void test_init_lcd(void)
     TEST_ESP_OK(esp_lcd_new_panel_io_dbi(mipi_dsi_bus, &dbi_config, &mipi_dbi_io));
 
     ESP_LOGI(TAG, "Install LCD driver of ili9881c");
-    esp_lcd_dpi_panel_config_t dpi_config = ILI9881C_800_1280_PANEL_60HZ_DPI_CONFIG(TEST_MIPI_DPI_PX_FORMAT);
+    esp_lcd_dpi_panel_config_t dpi_config = ILI9881C_720_1280_PANEL_60HZ_DPI_CONFIG(TEST_MIPI_DPI_PX_FORMAT);
     ili9881c_vendor_config_t vendor_config = {
         .mipi_config = {
             .dsi_bus = mipi_dsi_bus,

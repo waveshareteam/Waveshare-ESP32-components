@@ -289,12 +289,11 @@ void app_main(void)
     printf("  _  | | | | | (_) | | '_ \\___ \\ \r\n");
     printf(" | |_| | |_| |\\__, | | (_) |__) |\r\n");
     printf(" \\___/|____/   /_/|_|\\___/____/ \r\n");
+
     // unity_run_menu();
     ESP_LOGI(TAG, "Initialize LCD device");
     test_init_lcd();
 
-//    ESP_LOGI(TAG, "Show color bar pattern drawn by hardware");
-//    TEST_ESP_OK(esp_lcd_dpi_panel_set_pattern(panel_handle, MIPI_DSI_PATTERN_BAR_VERTICAL));
     ESP_LOGI(TAG, "Show color bar pattern drawn by hardware");
     TEST_ESP_OK(esp_lcd_dpi_panel_set_pattern(panel_handle, MIPI_DSI_PATTERN_BAR_VERTICAL));
 }
