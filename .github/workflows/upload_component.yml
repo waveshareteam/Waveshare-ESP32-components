@@ -25,5 +25,6 @@ jobs:
             display/lcd/esp_lcd_ili9881c;
             bsp/esp32_p4_nano;
             bsp/esp32_s3_touch_lcd_4;
+            bsp/esp32_s3_touch_amoled_1_8;
           namespace: "waveshare"
           api_token: ${{ secrets.IDF_COMPONENT_API_TOKEN }}
