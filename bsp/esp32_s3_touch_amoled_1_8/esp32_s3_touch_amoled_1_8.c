@@ -23,18 +23,19 @@
 
 static const char *TAG = "ESP32-S3-Touch-AMOLED-1.8";
 
-static i2c_master_bus_handle_t i2c_handle = NULL;  // I2C Handle
+static i2c_master_bus_handle_t i2c_handle = NULL; // I2C Handle
 static bool i2c_initialized = false;
 static esp_io_expander_handle_t io_expander = NULL; // IO expander tca9554 handle
 static lv_display_t *disp;
 static lv_indev_t *disp_indev = NULL;
-sdmmc_card_t *bsp_sdcard = NULL;    // Global uSD card handler
+sdmmc_card_t *bsp_sdcard = NULL; // Global uSD card handler
 static esp_lcd_touch_handle_t tp = NULL;
-static esp_lcd_panel_handle_t panel_handle = NULL;           // LCD panel handle
+static esp_lcd_panel_handle_t panel_handle = NULL; // LCD panel handle
+static esp_lcd_panel_io_handle_t io_handle = NULL;
 
 static i2s_chan_handle_t i2s_tx_chan = NULL;
 static i2s_chan_handle_t i2s_rx_chan = NULL;
-static const audio_codec_data_if_t *i2s_data_if = NULL;  /* Codec data interface */
+static const audio_codec_data_if_t *i2s_data_if = NULL; /* Codec data interface */
 
 #define BSP_I2S_GPIO_CFG       \
     {                          \
@@ -50,13 +51,24 @@ static const audio_codec_data_if_t *i2s_data_if = NULL;  /* Codec data interface
         },                     \
     }
 
+static const sh8601_lcd_init_cmd_t lcd_init_cmds[] = {
+    {0x11, (uint8_t[]){0x00}, 0, 120},
+    {0x44, (uint8_t[]){0x01, 0xD1}, 2, 0},
+    {0x35, (uint8_t[]){0x00}, 1, 0},
+    {0x53, (uint8_t[]){0x20}, 1, 10},
+    {0x2A, (uint8_t[]){0x00, 0x00, 0x01, 0x6F}, 4, 0},
+    {0x2B, (uint8_t[]){0x00, 0x00, 0x01, 0xBF}, 4, 0},
+    {0x51, (uint8_t[]){0x00}, 1, 10},
+    {0x29, (uint8_t[]){0x00}, 0, 10},
+    {0x51, (uint8_t[]){0xFF}, 1, 0},
+};
+
 #define BSP_I2S_DUPLEX_MONO_CFG(_sample_rate)                                                         \
     {                                                                                                 \
         .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(_sample_rate),                                          \
         .slot_cfg = I2S_STD_PHILIP_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO), \
         .gpio_cfg = BSP_I2S_GPIO_CFG,                                                                 \
     }
-
 
 /**************************************************************************************************
  *
@@ -66,7 +78,8 @@ static const audio_codec_data_if_t *i2s_data_if = NULL;  /* Codec data interface
 esp_err_t bsp_i2c_init(void)
 {
     /* I2C was initialized before */
-    if (i2c_initialized) {
+    if (i2c_initialized)
+    {
         return ESP_OK;
     }
 
@@ -115,9 +128,12 @@ esp_err_t bsp_spiffs_mount(void)
 
     size_t total = 0, used = 0;
     ret_val = esp_spiffs_info(conf.partition_label, &total, &used);
-    if (ret_val != ESP_OK) {
+    if (ret_val != ESP_OK)
+    {
         ESP_LOGE(TAG, "Failed to get SPIFFS partition information (%s)", esp_err_to_name(ret_val));
-    } else {
+    }
+    else
+    {
         ESP_LOGI(TAG, "Partition size: total: %d, used: %d", total, used);
     }
 
@@ -138,8 +154,7 @@ esp_err_t bsp_sdcard_mount(void)
         .format_if_mount_failed = false,
 #endif
         .max_files = 5,
-        .allocation_unit_size = 16 * 1024
-    };
+        .allocation_unit_size = 16 * 1024};
 
     const sdmmc_host_t host = SDMMC_HOST_DEFAULT();
     const sdmmc_slot_config_t slot_config = {
@@ -171,15 +186,40 @@ esp_err_t bsp_sdcard_unmount(void)
     return esp_vfs_fat_sdcard_unmount(BSP_SD_MOUNT_POINT, bsp_sdcard);
 }
 
-#define LCD_CMD_BITS         (8)
-#define LCD_PARAM_BITS       (8)
-#define LCD_LEDC_CH          (CONFIG_BSP_DISPLAY_BRIGHTNESS_LEDC_CH)
-#define LVGL_TICK_PERIOD_MS  (CONFIG_BSP_DISPLAY_LVGL_TICK)
-#define LVGL_MAX_SLEEP_MS    (CONFIG_BSP_DISPLAY_LVGL_MAX_SLEEP)
+#define LCD_CMD_BITS (8)
+#define LCD_PARAM_BITS (8)
+#define LCD_LEDC_CH (CONFIG_BSP_DISPLAY_BRIGHTNESS_LEDC_CH)
+#define LVGL_TICK_PERIOD_MS (CONFIG_BSP_DISPLAY_LVGL_TICK)
+#define LVGL_MAX_SLEEP_MS (CONFIG_BSP_DISPLAY_LVGL_MAX_SLEEP)
 
-// TODO: brightness cmds sent
 esp_err_t bsp_display_brightness_init(void)
 {
+    bsp_display_brightness_set(100);
+    return ESP_OK;
+}
+
+esp_err_t bsp_display_brightness_set(int brightness_percent)
+{
+    if (panel_handle == NULL)
+    {
+        ESP_LOGE(TAG, "Panel handle is not initialized");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (brightness_percent < 0 || brightness_percent > 100)
+    {
+        ESP_LOGE(TAG, "Invalid brightness percentage. Should be between 0 and 100.");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    uint8_t brightness = (uint8_t)(brightness_percent * 255 / 100);
+
+    uint32_t lcd_cmd = 0x51;
+    lcd_cmd &= 0xff;
+    lcd_cmd <<= 8;
+    lcd_cmd |= 0x02 << 24;
+    uint8_t param = brightness;
+    esp_lcd_panel_io_tx_param(io_handle, lcd_cmd, &param, 1);
 
     return ESP_OK;
 }
@@ -187,19 +227,18 @@ esp_err_t bsp_display_brightness_init(void)
 esp_err_t bsp_display_backlight_off(void)
 {
     ESP_LOGI(TAG, "Backlight off");
-    return ESP_OK;
+    return bsp_display_brightness_set(0);
 }
 
 esp_err_t bsp_display_backlight_on(void)
 {
     ESP_LOGI(TAG, "Backlight on");
-    return ESP_OK;
+    return bsp_display_brightness_set(100);
 }
 
 esp_err_t bsp_display_new(const bsp_display_config_t *config, esp_lcd_panel_handle_t *ret_panel, esp_lcd_panel_io_handle_t *ret_io)
 {
     esp_err_t ret = ESP_OK;
-    esp_lcd_panel_io_handle_t io_handle = NULL;
 
     ESP_LOGI(TAG, "Initialize SPI bus");
     const spi_bus_config_t buscfg = SH8601_PANEL_BUS_QSPI_CONFIG(BSP_LCD_PCLK,
@@ -208,19 +247,22 @@ esp_err_t bsp_display_new(const bsp_display_config_t *config, esp_lcd_panel_hand
                                                                  BSP_LCD_DATA2,
                                                                  BSP_LCD_DATA3,
                                                                  BSP_LCD_H_RES * BSP_LCD_V_RES * BSP_LCD_BITS_PER_PIXEL / 8);
-    const esp_lcd_panel_io_spi_config_t io_config = SH8601_PANEL_IO_QSPI_CONFIG(BSP_LCD_CS,NULL,NULL);
     ESP_ERROR_CHECK(spi_bus_initialize(BSP_LCD_SPI_NUM, &buscfg, SPI_DMA_CH_AUTO));
 
+    const esp_lcd_panel_io_spi_config_t io_config = SH8601_PANEL_IO_QSPI_CONFIG(BSP_LCD_CS, NULL, NULL);
+
     sh8601_vendor_config_t vendor_config = {
+        .init_cmds = lcd_init_cmds,
+        .init_cmds_size = sizeof(lcd_init_cmds) / sizeof(lcd_init_cmds[0]),
         .flags = {
             .use_qspi_interface = 1,
         },
     };
-    ESP_ERROR_CHECK(esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)LCD_HOST, &io_config, &io_handle));
+    ESP_ERROR_CHECK(esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)BSP_LCD_SPI_NUM, &io_config, &io_handle));
     const esp_lcd_panel_dev_config_t panel_config = {
         .reset_gpio_num = BSP_LCD_RST,
         .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB,
-        .bits_per_pixel = BSP_LCD_BIT_PER_PIXEL,
+        .bits_per_pixel = BSP_LCD_BITS_PER_PIXEL,
         .vendor_config = &vendor_config,
     };
     ESP_ERROR_CHECK(esp_lcd_new_panel_sh8601(io_handle, &panel_config, &panel_handle));
@@ -228,15 +270,16 @@ esp_err_t bsp_display_new(const bsp_display_config_t *config, esp_lcd_panel_hand
     esp_lcd_panel_init(panel_handle);
     esp_lcd_panel_disp_on_off(panel_handle, true);
 
-    if (ret_panel) {
+    if (ret_panel)
+    {
         *ret_panel = panel_handle;
     }
-    if (ret_io) {
+    if (ret_io)
+    {
         *ret_io = io_handle;
     }
     return ret;
 }
-
 
 esp_err_t bsp_touch_new(const bsp_touch_config_t *config, esp_lcd_touch_handle_t *ret_touch)
 {
@@ -274,19 +317,16 @@ esp_err_t bsp_touch_new(const bsp_touch_config_t *config, esp_lcd_touch_handle_t
 esp_io_expander_handle_t bsp_io_expander_init(void)
 {
     BSP_ERROR_CHECK_RETURN_ERR(bsp_i2c_init());
-    if (!io_expander) {
+    if (!io_expander)
+    {
         BSP_ERROR_CHECK_RETURN_NULL(esp_io_expander_new_i2c_tca9554(i2c_handle, BSP_IO_EXPANDER_I2C_ADDRESS, &io_expander));
     }
     return io_expander;
 }
 
-
-
 static lv_display_t *bsp_display_lcd_init()
 {
-    esp_lcd_panel_io_handle_t io_handle = NULL;
-
-    bsp_display_config_t disp_config = { 0 };
+    bsp_display_config_t disp_config = {0};
 
     BSP_ERROR_CHECK_RETURN_NULL(bsp_display_new(&disp_config, &panel_handle, &io_handle));
 
@@ -326,10 +366,9 @@ static lv_display_t *bsp_display_lcd_init()
             .direct_mode = 1,
 #endif
 #if LVGL_VERSION_MAJOR >= 9
-            .swap_bytes = false,
+            .swap_bytes = true,
 #endif
-        }
-    };
+        }};
     const lvgl_port_display_rgb_cfg_t rgb_cfg = {
         .flags = {
 #if CONFIG_BSP_LCD_RGB_BOUNCE_BUFFER_MODE
@@ -342,8 +381,7 @@ static lv_display_t *bsp_display_lcd_init()
 #else
             .avoid_tearing = false,
 #endif
-        }
-    };
+        }};
 
 #if CONFIG_BSP_LCD_RGB_BOUNCE_BUFFER_MODE
     ESP_LOGW(TAG, "CONFIG_BSP_LCD_RGB_BOUNCE_BUFFER_MODE");
@@ -351,7 +389,6 @@ static lv_display_t *bsp_display_lcd_init()
 
     return lvgl_port_add_disp_rgb(&disp_cfg, &rgb_cfg);
 }
-
 
 static lv_indev_t *bsp_display_indev_init(lv_display_t *disp)
 {
@@ -367,7 +404,6 @@ static lv_indev_t *bsp_display_indev_init(lv_display_t *disp)
     return lvgl_port_add_touch(&touch_cfg);
 }
 
-
 /**********************************************************************************************************
  *
  * Display Function
@@ -376,17 +412,26 @@ static lv_indev_t *bsp_display_indev_init(lv_display_t *disp)
 lv_display_t *bsp_display_start(void)
 {
     bsp_display_cfg_t cfg = {
-        .lvgl_port_cfg = ESP_LVGL_PORT_INIT_CONFIG()
-    };
-
+        .lvgl_port_cfg = ESP_LVGL_PORT_INIT_CONFIG(),
+        .buffer_size = BSP_LCD_DRAW_BUFF_SIZE,
+        .double_buffer = BSP_LCD_DRAW_BUFF_DOUBLE,
+        .flags = {
+            .buff_dma = false,
+            .buff_spiram = true,
+        }};
     return bsp_display_start_with_config(&cfg);
 }
 
 lv_display_t *bsp_display_start_with_config(const bsp_display_cfg_t *cfg)
 {
-    BSP_ERROR_CHECK_RETURN_NULL(lvgl_port_init(&cfg->lvgl_port_cfg)); /* lvgl task, tick etc*/
+    lv_display_t *disp;
 
-    BSP_NULL_CHECK(disp = bsp_display_lcd_init(), NULL);
+    assert(cfg != NULL);
+    BSP_ERROR_CHECK_RETURN_NULL(lvgl_port_init(&cfg->lvgl_port_cfg));
+
+    BSP_ERROR_CHECK_RETURN_NULL(bsp_display_brightness_init());
+
+    BSP_NULL_CHECK(disp = bsp_display_lcd_init(cfg), NULL);
 
     BSP_NULL_CHECK(disp_indev = bsp_display_indev_init(disp), NULL);
 
@@ -398,7 +443,7 @@ lv_indev_t *bsp_display_get_input_dev(void)
     return disp_indev;
 }
 
-void bsp_display_rotate(lv_display_t *disp, lv_display_rotation_t rotation)
+void bsp_display_rotate(lv_display_t *disp, lv_disp_rotation_t rotation)
 {
     lv_disp_set_rotation(disp, rotation);
 }
