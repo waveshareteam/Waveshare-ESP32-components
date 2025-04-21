@@ -285,6 +285,25 @@ extern "C"
         },                                               \
         .flags.use_dma2d = true,                         \
     }
+#define DSI_PANEL_DPI_7_INCH_H_CONFIG(px_format) \
+    {                                                    \
+        .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
+        .dpi_clock_freq_mhz = 80,                        \
+        .virtual_channel = 0,                            \
+        .pixel_format = px_format,                       \
+        .num_fbs = 1,                                    \
+        .video_timing = {                                \
+            .h_size = 1280,                              \
+            .v_size = 800,                               \
+            .hsync_back_porch = 64,                     \
+            .hsync_pulse_width = 64,                     \
+            .hsync_front_porch = 64,                     \
+            .vsync_back_porch = 64,                      \
+            .vsync_pulse_width = 64,                     \
+            .vsync_front_porch = 64,                     \
+        },                                               \
+        .flags.use_dma2d = true,                         \
+    }
 #define DSI_PANEL_DPI_8_INCH_C_CONFIG(px_format) \
     {                                                    \
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
