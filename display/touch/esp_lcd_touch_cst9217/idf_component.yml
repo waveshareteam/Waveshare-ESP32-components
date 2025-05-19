@@ -1,10 +1,8 @@
 dependencies:
   esp_lcd_touch:
     public: true
-    version: ^1.1.0
+    version: "^1.1.0"
   idf: '>=4.4.2'
-description: ESP LCD Touch CST9217 - touch controller CST9217
-repository_info:
-  path: components/lcd_touch/esp_lcd_touch_cst9217
-url: https://github.com/waveshareteam/Waveshare-ESP32-components/tree/master/display/touch/esp_lcd_touch_cst9217
-version: 0.0.1
+description: "ESP LCD Touch CST9217 - touch controller CST9217"
+url: "https://github.com/waveshareteam/Waveshare-ESP32-components/tree/master/display/touch/esp_lcd_touch_cst9217"
+version: "0.0.1"
