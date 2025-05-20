@@ -242,7 +242,7 @@ static esp_err_t cst9217_read_reg(esp_lcd_touch_handle_t tp, uint16_t reg, uint8
         }
 
         vTaskDelay(pdMS_TO_TICKS(2));
-g vb
+
         ret = esp_lcd_panel_io_rx_param(tp->io, -1, data, len);
         if (ret == ESP_OK) {
             return ESP_OK;
