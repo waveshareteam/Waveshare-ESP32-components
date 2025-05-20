@@ -3,6 +3,6 @@ dependencies:
     public: true
     version: "^1.1.0"
   idf: '>=4.4.2'
-description: "ESP LCD Touch CST9217 - touch controller CST9217"
+description: "ESP LCD Touch CST9217 -The touch controller CST9217 is adapted by waveshare"
 url: "https://github.com/waveshareteam/Waveshare-ESP32-components/tree/master/display/touch/esp_lcd_touch_cst9217"
-version: "0.0.1"
+version: "1.0.0"
