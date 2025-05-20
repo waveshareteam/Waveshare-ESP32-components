@@ -22,10 +22,10 @@ static const char *TAG = "CST9217";
 
 /* CST9217 registers */
 #define ESP_LCD_TOUCH_CST9217_DATA_REG 0xD000
-#define ESP_LCD_TOUCH_CST9217_CMD_REG 0xD100
-#define ESP_LCD_TOUCH_CST9217_CHIP_ID_REG 0xD1F8
 #define ESP_LCD_TOUCH_CST9217_PROJECT_ID_REG 0xD204
-#define ESP_LCD_TOUCH_CST9217_FW_VERSION_REG 0xD2F4
+#define ESP_LCD_TOUCH_CST9217_CMD_MODE_REG   0xD101
+#define ESP_LCD_TOUCH_CST9217_CHECKCODE_REG  0xD1FC
+#define ESP_LCD_TOUCH_CST9217_RESOLUTION_REG 0xD1F8
 
 /* CST9217 parameters */
 #define CST9217_ACK_VALUE 0xAB
@@ -184,13 +184,11 @@ static esp_err_t esp_lcd_touch_cst9217_del(esp_lcd_touch_handle_t tp)
 
 static esp_err_t cst9217_reset(esp_lcd_touch_handle_t tp)
 {
-    if (tp->config.rst_gpio_num != GPIO_NUM_NC)
-    {
-        ESP_RETURN_ON_ERROR(gpio_set_level(tp->config.rst_gpio_num, 1), TAG, "Reset high failed");
-        vTaskDelay(pdMS_TO_TICKS(50));
+    if (tp->config.rst_gpio_num != GPIO_NUM_NC) {
         ESP_RETURN_ON_ERROR(gpio_set_level(tp->config.rst_gpio_num, 0), TAG, "Reset low failed");
-        vTaskDelay(pdMS_TO_TICKS(50));
+        vTaskDelay(pdMS_TO_TICKS(10));
         ESP_RETURN_ON_ERROR(gpio_set_level(tp->config.rst_gpio_num, 1), TAG, "Reset high failed");
+        vTaskDelay(pdMS_TO_TICKS(50));
     }
     return ESP_OK;
 }
@@ -198,18 +196,33 @@ static esp_err_t cst9217_reset(esp_lcd_touch_handle_t tp)
 static esp_err_t cst9217_read_config(esp_lcd_touch_handle_t tp)
 {
     uint8_t data[4] = {0};
+    esp_err_t ret;
 
-    /* Read resolution */
-    ESP_RETURN_ON_ERROR(cst9217_read_reg(tp, ESP_LCD_TOUCH_CST9217_CHIP_ID_REG, data, 4), TAG, "Read resolution failed");
+    uint8_t cmd_mode[2] = {0xD1, 0x01};
+    ESP_RETURN_ON_ERROR(
+        cst9217_write_reg(tp, ESP_LCD_TOUCH_CST9217_CMD_MODE_REG, cmd_mode, sizeof(cmd_mode)),
+        TAG, "Enter command mode failed");
+    vTaskDelay(pdMS_TO_TICKS(10));
+
+    ESP_RETURN_ON_ERROR(
+        cst9217_read_reg(tp, ESP_LCD_TOUCH_CST9217_CHECKCODE_REG, data, 4),
+        TAG, "Read checkcode failed");
+    ESP_LOGI(TAG, "Checkcode: 0x%02X%02X%02X%02X",
+           data[0], data[1], data[2], data[3]);
+
+    ESP_RETURN_ON_ERROR(
+        cst9217_read_reg(tp, ESP_LCD_TOUCH_CST9217_RESOLUTION_REG, data, 4),
+        TAG, "Read resolution failed");
     uint16_t res_x = (data[1] << 8) | data[0];
     uint16_t res_y = (data[3] << 8) | data[2];
     ESP_LOGI(TAG, "Resolution X: %d, Y: %d", res_x, res_y);
 
-    ESP_RETURN_ON_ERROR(cst9217_read_reg(tp, ESP_LCD_TOUCH_CST9217_PROJECT_ID_REG, data, 4), TAG, "Read project ID failed");
-    uint16_t chipType = data[3];
-    chipType <<= 8;
-    chipType |= data[2];
-    ESP_LOGI(TAG, "Chirp Type: 0x%04X", chipType);
+    ESP_RETURN_ON_ERROR(
+        cst9217_read_reg(tp, ESP_LCD_TOUCH_CST9217_PROJECT_ID_REG, data, 4),
+        TAG, "Read project ID failed");
+    uint16_t chipType = (data[3] << 8) | data[2];
+    uint32_t projectID = (data[1] << 8) | data[0];
+    ESP_LOGI(TAG, "Chip Type: 0x%04X, ProjectID: 0x%04lX", chipType, projectID);
 
     return ESP_OK;
 }
@@ -217,49 +230,59 @@ static esp_err_t cst9217_read_config(esp_lcd_touch_handle_t tp)
 static esp_err_t cst9217_read_reg(esp_lcd_touch_handle_t tp, uint16_t reg, uint8_t *data, size_t len)
 {
     uint8_t reg_buf[2] = {reg >> 8, reg & 0xFF};
+    const int max_retries = 5;
     esp_err_t ret;
-    const int max_retries = 3;
-    int retry = 0;
 
-    for (retry = 0; retry < max_retries; retry++) {
+    for (int retry = 0; retry < max_retries; retry++) {
         ret = esp_lcd_panel_io_tx_param(tp->io, reg_buf[0], &reg_buf[1], 1);
         if (ret != ESP_OK) {
-            ESP_LOGW(TAG, "TX failed, retry %d", retry);
-            vTaskDelay(pdMS_TO_TICKS(2));
+            ESP_LOGD(TAG, "TX failed, retry %d", retry);
+            vTaskDelay(pdMS_TO_TICKS(3));
             continue;
         }
-        vTaskDelay(pdMS_TO_TICKS(1));
 
+        vTaskDelay(pdMS_TO_TICKS(2));
+g vb
         ret = esp_lcd_panel_io_rx_param(tp->io, -1, data, len);
         if (ret == ESP_OK) {
             return ESP_OK;
         }
-        ESP_LOGW(TAG, "RX failed, retry %d", retry);
-        vTaskDelay(pdMS_TO_TICKS(2));
+        ESP_LOGD(TAG, "RX failed, retry %d", retry);
+        vTaskDelay(pdMS_TO_TICKS(3));
     }
-    ESP_LOGE(TAG, "Read reg 0x%04X failed after %d retries", reg, max_retries);
+
+    if (tp->config.rst_gpio_num != GPIO_NUM_NC) {
+        ESP_LOGW(TAG, "Trigger hardware reset");
+        gpio_set_level(tp->config.rst_gpio_num, 0);
+        vTaskDelay(pdMS_TO_TICKS(10));
+        gpio_set_level(tp->config.rst_gpio_num, 1);
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
     return ESP_FAIL;
 }
 
 static esp_err_t cst9217_write_reg(esp_lcd_touch_handle_t tp, uint16_t reg, uint8_t *data, size_t len)
 {
     uint8_t reg_buf[2] = {reg >> 8, reg & 0xFF};
+    const int max_retries = 5;
     esp_err_t ret;
-    const int max_retries = 3;
 
     for (int retry = 0; retry < max_retries; retry++) {
         ret = esp_lcd_panel_io_tx_param(tp->io, reg_buf[0], &reg_buf[1], 1);
         if (ret != ESP_OK) {
-            ESP_LOGW(TAG, "Reg addr TX failed, retry %d", retry);
+            ESP_LOGD(TAG, "Addr TX failed, retry %d", retry);
+            vTaskDelay(pdMS_TO_TICKS(3));
             continue;
         }
+
+        vTaskDelay(pdMS_TO_TICKS(2));
 
         ret = esp_lcd_panel_io_tx_param(tp->io, data[0], &data[1], len-1);
         if (ret == ESP_OK) {
             return ESP_OK;
         }
-        ESP_LOGW(TAG, "Data TX failed, retry %d", retry);
-        vTaskDelay(pdMS_TO_TICKS(2));
+        ESP_LOGD(TAG, "Data TX failed, retry %d", retry);
+        vTaskDelay(pdMS_TO_TICKS(3));
     }
     return ESP_FAIL;
 }
