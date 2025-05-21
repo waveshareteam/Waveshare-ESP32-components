@@ -72,7 +72,7 @@ extern "C"
         .bus_id = 0,                                 \
         .num_data_lanes = 2,                         \
         .phy_clk_src = MIPI_DSI_PHY_CLK_SRC_DEFAULT, \
-        .lane_bit_rate_mbps = 1500,                  \
+        .lane_bit_rate_mbps = 1250,                  \
     }
 
 /**
@@ -294,7 +294,7 @@ extern "C"
         .num_fbs = 1,                                    \
         .video_timing = {                                \
             .h_size = 1280,                              \
-            .v_size = 800,                               \
+            .v_size = 720,                               \
             .hsync_back_porch = 64,                     \
             .hsync_pulse_width = 64,                     \
             .hsync_front_porch = 64,                     \
