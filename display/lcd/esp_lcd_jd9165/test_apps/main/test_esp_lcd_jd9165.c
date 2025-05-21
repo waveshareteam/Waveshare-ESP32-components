@@ -67,14 +67,14 @@ IRAM_ATTR static bool test_notify_refresh_ready(esp_lcd_panel_handle_t panel, es
 
 static void test_init_lcd(void)
 {
-#if TEST_PIN_NUM_BK_LIGHT >= 0
-    ESP_LOGI(TAG, "Turn on LCD backlight");
-    gpio_config_t bk_gpio_config = {
-        .mode = GPIO_MODE_OUTPUT,
-        .pin_bit_mask = 1ULL << TEST_PIN_NUM_BK_LIGHT};
-    TEST_ESP_OK(gpio_config(&bk_gpio_config));
-    TEST_ESP_OK(gpio_set_level(TEST_PIN_NUM_BK_LIGHT, TEST_LCD_BK_LIGHT_ON_LEVEL));
-#endif
+// #if TEST_PIN_NUM_BK_LIGHT >= 0
+//     ESP_LOGI(TAG, "Turn on LCD backlight");
+//     gpio_config_t bk_gpio_config = {
+//         .mode = GPIO_MODE_OUTPUT,
+//         .pin_bit_mask = 1ULL << TEST_PIN_NUM_BK_LIGHT};
+//     TEST_ESP_OK(gpio_config(&bk_gpio_config));
+//     TEST_ESP_OK(gpio_set_level(TEST_PIN_NUM_BK_LIGHT, TEST_LCD_BK_LIGHT_ON_LEVEL));
+// #endif
 
     // Turn on the power for MIPI DSI PHY, so it can go from "No Power" state to "Shutdown" state
 #ifdef TEST_MIPI_DSI_PHY_PWR_LDO_CHAN
@@ -112,7 +112,9 @@ static void test_init_lcd(void)
         .vendor_config = &vendor_config,
     };
     TEST_ESP_OK(esp_lcd_new_panel_jd9165(mipi_dbi_io, &panel_config, &panel_handle));
+    TEST_ESP_OK(esp_lcd_panel_reset(panel_handle));
     TEST_ESP_OK(esp_lcd_panel_init(panel_handle));
+
 
     refresh_finish = xSemaphoreCreateBinary();
     TEST_ASSERT_NOT_NULL(refresh_finish);
