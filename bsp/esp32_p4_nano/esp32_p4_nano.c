@@ -337,7 +337,7 @@ esp_err_t bsp_display_brightness_set(int brightness_percent)
 #if CONFIG_BSP_LCD_TYPE_800_1280_10_1_INCH
     uint8_t data_addr = 0x86;
     uint8_t data_to_send[2] = {data_addr, data};
-#elif CONFIG_BSP_LCD_TYPE_800_1280_10_1_INCH_A || CONFIG_BSP_LCD_TY9PE_800_1280_8_INCH_A || CONFIG_BSP_LCD_TYPE_720_1280_7_INCH_A
+#elif CONFIG_BSP_LCD_TYPE_800_1280_10_1_INCH_A || CONFIG_BSP_LCD_TYPE_800_1280_8_INCH_A || CONFIG_BSP_LCD_TYPE_720_1280_7_INCH_A
     uint8_t data_addr = 0x96;
     uint8_t data_to_send[2] = {data_addr, data};
 #else
