@@ -2,7 +2,7 @@
 
 [![Component Registry](https://components.espressif.com/components/waveshare/esp32_p4_wifi6_touch_lcd_xc/badge.svg)](https://components.espressif.com/components/waveshare/esp32_p4_wifi6_touch_lcd_xc)
 
-ESP32-P4-NANO is a small size and highly integrated development board designed by waveshare electronics based on ESP32-P4 chip
+ESP32-P4-WIFI6-Touch-LCD-XC is waveshare electronics designed a 3.4-inch, 4-inch circular screen, highly integrated development board
 | HW version | BSP Version |
 | :--------: | :---------: |
 |    [V1.0](http://www.waveshare.com/wiki/ESP32-P4-WIFI6-Touch-LCD-XC)    |      ^1     |
