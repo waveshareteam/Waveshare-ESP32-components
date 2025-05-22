@@ -21,9 +21,9 @@
 #include "esp_lcd_mipi_dsi.h"
 #include "esp_lcd_dsi.h"
 
-#define TEST_LCD_H_RES (480)
-#define TEST_LCD_V_RES (640)
-#define TEST_LCD_BIT_PER_PIXEL (24)
+#define TEST_LCD_H_RES (1280)
+#define TEST_LCD_V_RES (720)
+#define TEST_LCD_BIT_PER_PIXEL (16)
 #define TEST_PIN_NUM_LCD_RST (-1)
 #define TEST_PIN_NUM_BK_LIGHT (-1) // set to -1 if not used
 #define TEST_LCD_BK_LIGHT_ON_LEVEL (1)
@@ -89,7 +89,7 @@ static void test_init_lcd(void)
     TEST_ESP_OK(esp_lcd_new_panel_io_dbi(mipi_dsi_bus, &dbi_config, &mipi_dbi_io));
 
     ESP_LOGI(TAG, "Install LCD driver of dsi");
-    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_2_8_INCH_CONFIG(TEST_MIPI_DPI_PX_FORMAT);
+    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_7_INCH_H_CONFIG(TEST_MIPI_DPI_PX_FORMAT);
     dsi_vendor_config_t vendor_config = {
         .mipi_config = {
             .dsi_bus = mipi_dsi_bus,

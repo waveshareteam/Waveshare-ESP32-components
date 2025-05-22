@@ -27,27 +27,27 @@
 
 #include "esp_lcd_ili9881c.h"
 
-#define TEST_LCD_H_RES                  (720)
-#define TEST_LCD_V_RES                  (1280)
-#define TEST_LCD_BIT_PER_PIXEL          (24)
-#define TEST_PIN_NUM_LCD_RST            (-1)
-#define TEST_PIN_NUM_BK_LIGHT           (-1)    // set to -1 if not used
-#define TEST_LCD_BK_LIGHT_ON_LEVEL      (1)
-#define TEST_LCD_BK_LIGHT_OFF_LEVEL     !TEST_LCD_BK_LIGHT_ON_LEVEL
-#define TEST_MIPI_DSI_LANE_NUM          (2)
+#define TEST_LCD_H_RES (720)
+#define TEST_LCD_V_RES (1280)
+#define TEST_LCD_BIT_PER_PIXEL (24)
+#define TEST_PIN_NUM_LCD_RST (-1)
+#define TEST_PIN_NUM_BK_LIGHT (-1) // set to -1 if not used
+#define TEST_LCD_BK_LIGHT_ON_LEVEL (1)
+#define TEST_LCD_BK_LIGHT_OFF_LEVEL !TEST_LCD_BK_LIGHT_ON_LEVEL
+#define TEST_MIPI_DSI_LANE_NUM (2)
 
 #if TEST_LCD_BIT_PER_PIXEL == 24
-#define TEST_MIPI_DPI_PX_FORMAT     (LCD_COLOR_PIXEL_FORMAT_RGB888)
+#define TEST_MIPI_DPI_PX_FORMAT (LCD_COLOR_PIXEL_FORMAT_RGB888)
 #elif TEST_LCD_BIT_PER_PIXEL == 18
-#define TEST_MIPI_DPI_PX_FORMAT     (LCD_COLOR_PIXEL_FORMAT_RGB666)
+#define TEST_MIPI_DPI_PX_FORMAT (LCD_COLOR_PIXEL_FORMAT_RGB666)
 #elif TEST_LCD_BIT_PER_PIXEL == 16
-#define TEST_MIPI_DPI_PX_FORMAT     (LCD_COLOR_PIXEL_FORMAT_RGB565)
+#define TEST_MIPI_DPI_PX_FORMAT (LCD_COLOR_PIXEL_FORMAT_RGB565)
 #endif
 
-#define TEST_DELAY_TIME_MS          (3000)
+#define TEST_DELAY_TIME_MS (3000)
 
-#define TEST_MIPI_DSI_PHY_PWR_LDO_CHAN          (3)
-#define TEST_MIPI_DSI_PHY_PWR_LDO_VOLTAGE_MV    (2500)
+#define TEST_MIPI_DSI_PHY_PWR_LDO_CHAN (3)
+#define TEST_MIPI_DSI_PHY_PWR_LDO_VOLTAGE_MV (2500)
 
 static char *TAG = "ili9881c_test";
 static esp_ldo_channel_handle_t ldo_mipi_phy = NULL;
@@ -72,8 +72,7 @@ static void test_init_lcd(void)
     ESP_LOGI(TAG, "Turn on LCD backlight");
     gpio_config_t bk_gpio_config = {
         .mode = GPIO_MODE_OUTPUT,
-        .pin_bit_mask = 1ULL << TEST_PIN_NUM_BK_LIGHT
-    };
+        .pin_bit_mask = 1ULL << TEST_PIN_NUM_BK_LIGHT};
     TEST_ESP_OK(gpio_config(&bk_gpio_config));
     TEST_ESP_OK(gpio_set_level(TEST_PIN_NUM_BK_LIGHT, TEST_LCD_BK_LIGHT_ON_LEVEL));
 #endif
@@ -133,7 +132,8 @@ static void test_deinit_lcd(void)
     mipi_dbi_io = NULL;
     mipi_dsi_bus = NULL;
 
-    if (ldo_mipi_phy) {
+    if (ldo_mipi_phy)
+    {
         TEST_ESP_OK(esp_ldo_release_channel(ldo_mipi_phy));
         ldo_mipi_phy = NULL;
     }
@@ -152,9 +152,12 @@ static void test_draw_color_bar(esp_lcd_panel_handle_t panel_handle, uint16_t h_
     uint16_t row_line = v_res / byte_per_pixel / 8;
     uint8_t *color = (uint8_t *)heap_caps_calloc(1, row_line * h_res * byte_per_pixel, MALLOC_CAP_DMA);
 
-    for (int j = 0; j < byte_per_pixel * 8; j++) {
-        for (int i = 0; i < row_line * h_res; i++) {
-            for (int k = 0; k < byte_per_pixel; k++) {
+    for (int j = 0; j < byte_per_pixel * 8; j++)
+    {
+        for (int i = 0; i < row_line * h_res; i++)
+        {
+            for (int k = 0; k < byte_per_pixel; k++)
+            {
                 color[i * byte_per_pixel + k] = (BIT(j) >> (k * 8)) & 0xff;
             }
         }
@@ -164,9 +167,12 @@ static void test_draw_color_bar(esp_lcd_panel_handle_t panel_handle, uint16_t h_
 
     uint16_t color_line = row_line * byte_per_pixel * 8;
     uint16_t res_line = v_res - color_line;
-    if (res_line) {
-        for (int i = 0; i < res_line * h_res; i++) {
-            for (int k = 0; k < byte_per_pixel; k++) {
+    if (res_line)
+    {
+        for (int i = 0; i < res_line * h_res; i++)
+        {
+            for (int k = 0; k < byte_per_pixel; k++)
+            {
                 color[i * byte_per_pixel + k] = 0xff;
             }
         }
@@ -212,7 +218,8 @@ TEST_CASE("test ili9881c to mirror with MIPI interface", "[ili9881c][mirror]")
     test_init_lcd();
 
     ESP_LOGI(TAG, "Mirror the screen");
-    for (size_t i = 0; i < 4; i++) {
+    for (size_t i = 0; i < 4; i++)
+    {
         TEST_ASSERT_NOT_EQUAL(esp_lcd_panel_mirror(panel_handle, i & 2, i & 1), ESP_FAIL);
 
         ESP_LOGI(TAG, "Mirror: %d", i);
@@ -226,7 +233,7 @@ TEST_CASE("test ili9881c to mirror with MIPI interface", "[ili9881c][mirror]")
 #endif
 
 // Some resources are lazy allocated in the LCD driver, the threadhold is left for that case
-#define TEST_MEMORY_LEAK_THRESHOLD  (300)
+#define TEST_MEMORY_LEAK_THRESHOLD (300)
 
 static size_t before_free_8bit;
 static size_t before_free_32bit;
@@ -259,7 +266,7 @@ void app_main(void)
     printf(" | || |    | | (_) |/ _ \\ / _ \\| |\r\n");
     printf(" | || |___ | |\\__, | (_) | (_) | |\r\n");
     printf("|___|_____|___| /_/ \\___/ \\___/|_| \r\n");
-    // unity_run_menu();
+    //    unity_run_menu();
 
     ESP_LOGI(TAG, "Initialize LCD device");
     test_init_lcd();

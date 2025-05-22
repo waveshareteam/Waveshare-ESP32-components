@@ -22,18 +22,18 @@
 #include "esp_lcd_sh8601.h"
 
 #define TEST_LCD_HOST               SPI2_HOST
-#define TEST_LCD_H_RES              (368)
-#define TEST_LCD_V_RES              (448)
+#define TEST_LCD_H_RES              (410)
+#define TEST_LCD_V_RES              (502)
 #define TEST_LCD_BIT_PER_PIXEL      (16)
 
-#define TEST_PIN_NUM_LCD_CS         (GPIO_NUM_9)
-#define TEST_PIN_NUM_LCD_PCLK       (GPIO_NUM_10)
-#define TEST_PIN_NUM_LCD_DATA0      (GPIO_NUM_11)
-#define TEST_PIN_NUM_LCD_DATA1      (GPIO_NUM_12)
-#define TEST_PIN_NUM_LCD_DATA2      (GPIO_NUM_13)
-#define TEST_PIN_NUM_LCD_DATA3      (GPIO_NUM_14)
-#define TEST_PIN_NUM_LCD_RST        (GPIO_NUM_21)
-#define TEST_PIN_NUM_LCD_DC         (GPIO_NUM_8)
+#define TEST_PIN_NUM_LCD_CS         (GPIO_NUM_12)
+#define TEST_PIN_NUM_LCD_PCLK       (GPIO_NUM_11)
+#define TEST_PIN_NUM_LCD_DATA0      (GPIO_NUM_4)
+#define TEST_PIN_NUM_LCD_DATA1      (GPIO_NUM_5)
+#define TEST_PIN_NUM_LCD_DATA2      (GPIO_NUM_6)
+#define TEST_PIN_NUM_LCD_DATA3      (GPIO_NUM_7)
+#define TEST_PIN_NUM_LCD_RST        (GPIO_NUM_8)
+#define TEST_PIN_NUM_LCD_DC         (GPIO_NUM_NC)
 
 #define TEST_DELAY_TIME_MS          (3000)
 
@@ -41,13 +41,17 @@ static char *TAG = "sh8601_test";
 static SemaphoreHandle_t refresh_finish = NULL;
 
 static const sh8601_lcd_init_cmd_t lcd_init_cmds[] = {
-    {0x11, (uint8_t []){0x00}, 0, 120},
-    {0x44, (uint8_t []){0x01, 0xD1}, 2, 0},
-    {0x35, (uint8_t []){0x00}, 1, 0},
-    {0x53, (uint8_t []){0x20}, 1, 10},
-    {0x51, (uint8_t []){0x00}, 1, 10},
-    {0x29, (uint8_t []){0x00}, 0, 10},
-    {0x51, (uint8_t []){0xFF}, 1, 0},
+    {0x11, (uint8_t[]){0x00}, 0, 120},
+    {0xC4, (uint8_t[]){0x80}, 1, 0},
+    {0x44, (uint8_t[]){0x01, 0xD1}, 2, 0},
+    {0x35, (uint8_t[]){0x00}, 1, 0},
+    {0x53, (uint8_t[]){0x20}, 1, 10},
+    {0x63, (uint8_t[]){0xFF}, 1, 10},
+    {0x51, (uint8_t[]){0x00}, 1, 10},
+    {0x2A, (uint8_t[]){0x00, 0x16, 0x01, 0xAF}, 4, 0},
+    {0x2B, (uint8_t[]){0x00, 0x00, 0x01, 0xF5}, 4, 0},
+    {0x29, (uint8_t[]){0x00}, 0, 10},
+    {0x51, (uint8_t[]){0xFF}, 1, 0},
 };
 
 IRAM_ATTR static bool test_notify_refresh_ready(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx)
@@ -194,5 +198,11 @@ void app_main(void)
     printf("\\ \\  / /_/ / _ \\| '_ \\| | | | |\r\n");
     printf("_\\ \\/ __  / (_) | (_) | |_| | |\r\n");
     printf("\\__/\\/ /_/ \\___/ \\___/ \\___/|_|\r\n");
-    unity_run_menu();
+    // unity_run_menu();
+
+    ESP_LOGI(TAG, "Initialize LCD device");
+    test_init_lcd();
+
+    ESP_LOGI(TAG, "Show color bar pattern drawn by hardware");
+    TEST_ESP_OK(esp_lcd_dpi_panel_set_pattern(panel_handle, MIPI_DSI_PATTERN_BAR_VERTICAL));
 }
