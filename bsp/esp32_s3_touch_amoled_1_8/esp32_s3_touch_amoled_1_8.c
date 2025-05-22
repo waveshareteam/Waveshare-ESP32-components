@@ -186,6 +186,145 @@ esp_err_t bsp_sdcard_unmount(void)
     return esp_vfs_fat_sdcard_unmount(BSP_SD_MOUNT_POINT, bsp_sdcard);
 }
 
+
+esp_err_t bsp_audio_init(const i2s_std_config_t *i2s_config)
+{
+    if (i2s_tx_chan && i2s_rx_chan) {
+        /* Audio was initialized before */
+        return ESP_OK;
+    }
+
+    /* Setup I2S peripheral */
+    i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(CONFIG_BSP_I2S_NUM, I2S_ROLE_MASTER);
+    chan_cfg.auto_clear = true; // Auto clear the legacy data in the DMA buffer
+    ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &i2s_tx_chan, &i2s_rx_chan));
+
+    /* Setup I2S channels */
+    const i2s_std_config_t std_cfg_default = BSP_I2S_DUPLEX_MONO_CFG(22050);
+    const i2s_std_config_t *p_i2s_cfg = &std_cfg_default;
+    if (i2s_config != NULL) {
+        p_i2s_cfg = i2s_config;
+    }
+
+    if (i2s_tx_chan != NULL) {
+        ESP_ERROR_CHECK(i2s_channel_init_std_mode(i2s_tx_chan, p_i2s_cfg));
+        ESP_ERROR_CHECK(i2s_channel_enable(i2s_tx_chan));
+    }
+
+    if (i2s_rx_chan != NULL) {
+        ESP_ERROR_CHECK(i2s_channel_init_std_mode(i2s_rx_chan, p_i2s_cfg));
+        ESP_ERROR_CHECK(i2s_channel_enable(i2s_rx_chan));
+    }
+
+    audio_codec_i2s_cfg_t i2s_cfg = {
+        .port = CONFIG_BSP_I2S_NUM,
+        .tx_handle = i2s_tx_chan,
+        .rx_handle = i2s_rx_chan,
+    };
+    i2s_data_if = audio_codec_new_i2s_data(&i2s_cfg);
+
+    return ESP_OK;
+}
+
+esp_codec_dev_handle_t bsp_audio_codec_speaker_init(void)
+{
+    if (i2s_data_if == NULL) {
+        /* Initilize I2C */
+        ESP_ERROR_CHECK(bsp_i2c_init());
+        /* Configure I2S peripheral and Power Amplifier */
+        ESP_ERROR_CHECK(bsp_audio_init(NULL));
+    }
+    assert(i2s_data_if);
+
+    const audio_codec_gpio_if_t *gpio_if = audio_codec_new_gpio();
+
+    audio_codec_i2c_cfg_t i2c_cfg = {
+        .port = BSP_I2C_NUM,
+        .addr = ES8311_CODEC_DEFAULT_ADDR,
+        .bus_handle = i2c_handle,
+    };
+    const audio_codec_ctrl_if_t *i2c_ctrl_if = audio_codec_new_i2c_ctrl(&i2c_cfg);
+    assert(i2c_ctrl_if);
+
+    esp_codec_dev_hw_gain_t gain = {
+        .pa_voltage = 5.0,
+        .codec_dac_voltage = 3.3,
+    };
+
+    es8311_codec_cfg_t es8311_cfg = {
+        .ctrl_if = i2c_ctrl_if,
+        .gpio_if = gpio_if,
+        .codec_mode = ESP_CODEC_DEV_TYPE_OUT,
+        .pa_pin = BSP_POWER_AMP_IO,
+        .pa_reverted = false,
+        .master_mode = false,
+        .use_mclk = true,
+        .digital_mic = false,
+        .invert_mclk = false,
+        .invert_sclk = false,
+        .hw_gain = gain,
+    };
+    const audio_codec_if_t *es8311_dev = es8311_codec_new(&es8311_cfg);
+    assert(es8311_dev);
+
+    esp_codec_dev_cfg_t codec_dev_cfg = {
+        .dev_type = ESP_CODEC_DEV_TYPE_IN_OUT,
+        .codec_if = es8311_dev,
+        .data_if = i2s_data_if,
+    };
+    return esp_codec_dev_new(&codec_dev_cfg);
+}
+
+esp_codec_dev_handle_t bsp_audio_codec_microphone_init(void)
+{
+    if (i2s_data_if == NULL) {
+        /* Initilize I2C */
+        ESP_ERROR_CHECK(bsp_i2c_init());
+        /* Configure I2S peripheral and Power Amplifier */
+        ESP_ERROR_CHECK(bsp_audio_init(NULL));
+    }
+    assert(i2s_data_if);
+
+    const audio_codec_gpio_if_t *gpio_if = audio_codec_new_gpio();
+
+    audio_codec_i2c_cfg_t i2c_cfg = {
+        .port = BSP_I2C_NUM,
+        .addr = ES8311_CODEC_DEFAULT_ADDR,
+        .bus_handle = i2c_handle,
+    };
+    const audio_codec_ctrl_if_t *i2c_ctrl_if = audio_codec_new_i2c_ctrl(&i2c_cfg);
+    assert(i2c_ctrl_if);
+
+    esp_codec_dev_hw_gain_t gain = {
+        .pa_voltage = 5.0,
+        .codec_dac_voltage = 3.3,
+    };
+
+    es8311_codec_cfg_t es8311_cfg = {
+        .ctrl_if = i2c_ctrl_if,
+        .gpio_if = gpio_if,
+        .codec_mode = ESP_CODEC_DEV_WORK_MODE_BOTH,
+        .pa_pin = BSP_POWER_AMP_IO,
+        .pa_reverted = false,
+        .master_mode = false,
+        .use_mclk = true,
+        .digital_mic = false,
+        .invert_mclk = false,
+        .invert_sclk = false,
+        .hw_gain = gain,
+    };
+
+    const audio_codec_if_t *es8311_dev = es8311_codec_new(&es8311_cfg);
+    assert(es8311_dev);
+
+    esp_codec_dev_cfg_t codec_es8311_dev_cfg = {
+        .dev_type = ESP_CODEC_DEV_TYPE_IN,
+        .codec_if = es8311_dev,
+        .data_if = i2s_data_if,
+    };
+    return esp_codec_dev_new(&codec_es8311_dev_cfg);
+}
+
 #define LCD_CMD_BITS (8)
 #define LCD_PARAM_BITS (8)
 #define LCD_LEDC_CH (CONFIG_BSP_DISPLAY_BRIGHTNESS_LEDC_CH)
