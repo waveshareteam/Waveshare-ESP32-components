@@ -4,12 +4,12 @@
 #include "driver/gpio.h"
 #include "driver/i2c_master.h"
 #include "driver/sdmmc_host.h"
-#include "esp_io_expander_tca9554.h"
 #include "driver/i2s_std.h"
 #include "bsp/config.h"
 #include "bsp/display.h"
 #include "esp_codec_dev.h"
 
+#include "esp_io_expander_tca9554.h"
 
 #include "lvgl.h"
 #include "esp_lvgl_port.h"
@@ -54,7 +54,7 @@
 #define BSP_LCD_BACKLIGHT     (GPIO_NUM_NC)
 #define BSP_LCD_RST           (GPIO_NUM_39)
 #define BSP_LCD_TOUCH_RST     (GPIO_NUM_40)
-#define BSP_LCD_TOUCH_INT     (GPIO_NUM_11)
+#define BSP_LCD_TOUCH_INT     (GPIO_NUM_NC)
 
 /* uSD card */
 #define BSP_SD_D0            (GPIO_NUM_3)
