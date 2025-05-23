@@ -106,7 +106,7 @@ err:
 static esp_err_t esp_lcd_touch_cst9217_read_data(esp_lcd_touch_handle_t tp)
 {
     uint8_t data[CST9217_DATA_LENGTH] = {0};
-    esp_err_t ret;
+    esp_err_t ret = ESP_OK;
 
     ESP_GOTO_ON_ERROR(
         cst9217_read_reg(tp, ESP_LCD_TOUCH_CST9217_DATA_REG, data, sizeof(data)),
@@ -137,7 +137,7 @@ static esp_err_t esp_lcd_touch_cst9217_read_data(esp_lcd_touch_handle_t tp)
     }
     portEXIT_CRITICAL(&tp->data.lock);
 
-    return ESP_OK;
+    return ret;
 
 err:
     if (tp->config.rst_gpio_num != GPIO_NUM_NC) {
@@ -196,7 +196,7 @@ static esp_err_t cst9217_reset(esp_lcd_touch_handle_t tp)
 static esp_err_t cst9217_read_config(esp_lcd_touch_handle_t tp)
 {
     uint8_t data[4] = {0};
-    esp_err_t ret;
+    esp_err_t ret = ESP_OK;
 
     uint8_t cmd_mode[2] = {0xD1, 0x01};
     ESP_RETURN_ON_ERROR(
@@ -224,7 +224,7 @@ static esp_err_t cst9217_read_config(esp_lcd_touch_handle_t tp)
     uint32_t projectID = (data[1] << 8) | data[0];
     ESP_LOGI(TAG, "Chip Type: 0x%04X, ProjectID: 0x%04lX", chipType, projectID);
 
-    return ESP_OK;
+    return ret;
 }
 
 static esp_err_t cst9217_read_reg(esp_lcd_touch_handle_t tp, uint16_t reg, uint8_t *data, size_t len)
