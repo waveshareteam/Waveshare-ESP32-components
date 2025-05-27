@@ -91,6 +91,20 @@ i2c_master_bus_handle_t bsp_i2c_get_handle(void)
     return i2c_handle;
 }
 
+static esp_err_t bsp_enable_ldo_vo4(void)
+{
+    static esp_ldo_channel_handle_t vo4_chan = NULL;
+    esp_ldo_channel_config_t ldo_cfg = {
+        .chan_id = 4,
+        .voltage_mv = 3300,
+    };
+
+    ESP_RETURN_ON_ERROR(esp_ldo_acquire_channel(&ldo_cfg, &vo4_chan), TAG, "Acquire LDO VO4 channel failed");
+    ESP_LOGI(TAG, "LDO VO4 set to 3300mV");
+
+    return ESP_OK;
+}
+
 esp_err_t bsp_sdcard_mount(void)
 {
     const esp_vfs_fat_sdmmc_mount_config_t mount_config = {
@@ -107,16 +121,8 @@ esp_err_t bsp_sdcard_mount(void)
     host.slot = SDMMC_HOST_SLOT_0;
     host.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
 
-    sd_pwr_ctrl_ldo_config_t ldo_config = {
-        .ldo_chan_id = 4,
-    };
-    sd_pwr_ctrl_handle_t pwr_ctrl_handle = NULL;
-    esp_err_t ret = sd_pwr_ctrl_new_on_chip_ldo(&ldo_config, &pwr_ctrl_handle);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to create a new on-chip LDO power control driver");
-        return ret;
-    }
-    host.pwr_ctrl_handle = pwr_ctrl_handle;
+
+    ESP_RETURN_ON_ERROR(bsp_enable_ldo_vo4(), TAG, "DSI PHY power failed");
 
     const sdmmc_slot_config_t slot_config = {
         /* SD card is connected to Slot 0 pins. Slot 0 uses IO MUX, so not specifying the pins here */
@@ -126,7 +132,7 @@ esp_err_t bsp_sdcard_mount(void)
         .flags = 0,
     };
 
-    pwr_ctrl_handle->set_io_voltage((void *)pwr_ctrl_handle->ctx, 3300);
+
 
     return esp_vfs_fat_sdmmc_mount(BSP_SD_MOUNT_POINT, &host, &slot_config, &mount_config, &bsp_sdcard);
 }
@@ -397,6 +403,7 @@ esp_err_t bsp_display_new_with_handles(const bsp_display_config_t *config, bsp_l
 
     ESP_RETURN_ON_ERROR(bsp_display_brightness_init(), TAG, "Brightness init failed");
     ESP_RETURN_ON_ERROR(bsp_enable_dsi_phy_power(), TAG, "DSI PHY power failed");
+    ESP_RETURN_ON_ERROR(bsp_enable_ldo_vo4(), TAG, "DSI PHY power failed");
 
     /* create MIPI DSI bus first, it will initialize the DSI PHY as well */
     esp_lcd_dsi_bus_handle_t mipi_dsi_bus;
