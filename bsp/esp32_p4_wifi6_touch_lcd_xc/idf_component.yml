@@ -6,7 +6,7 @@ dependencies:
   espressif/esp_lvgl_port:
     public: true
     version: ^2
-  idf: '>=5.3'
+  idf: '>=5.4'
   lvgl/lvgl: '>=8,<10'
   esp_lcd_jd9365: '*'
 description: Based on ESP32-P4 chip, waveshare electronics designed a 3.4-inch, 4-inch circular screen, highly integrated development board
