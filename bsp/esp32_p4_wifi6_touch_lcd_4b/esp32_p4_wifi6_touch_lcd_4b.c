@@ -11,15 +11,15 @@
 #include "esp_vfs_fat.h"
 #include "usb/usb_host.h"
 #include "sd_pwr_ctrl_by_on_chip_ldo.h"
-#include "esp_lcd_jd9365.h"
-#include "bsp/esp32_p4_wifi6_touch_lcd_xc.h"
+#include "esp_lcd_st7703.h"
+#include "bsp/esp32_p4_wifi6_touch_lcd_4b.h"
 #include "bsp/display.h"
 #include "bsp/touch.h"
 #include "esp_lcd_touch_gt911.h"
 #include "bsp_err_check.h"
 #include "esp_codec_dev_defaults.h"
 
-static const char *TAG = "ESP32_P4_XC";
+static const char *TAG = "ESP32_P4_4B";
 
 #if (BSP_CONFIG_NO_GRAPHIC_LIB == 0)
 static lv_indev_t *disp_indev = NULL;
@@ -35,445 +35,6 @@ static i2s_chan_handle_t i2s_tx_chan = NULL;
 static i2s_chan_handle_t i2s_rx_chan = NULL;
 static const audio_codec_data_if_t *i2s_data_if = NULL;  /* Codec data interface */
 #define BSP_ES7210_CODEC_ADDR  ES7210_CODEC_DEFAULT_ADDR
-
-static const jd9365_lcd_init_cmd_t lcd_init_cmds[] = {
-#if CONFIG_BSP_LCD_TYPE_800_800_3_4_INCH
-    {0xE0, (uint8_t[]){0x00}, 1, 0},
-
-    {0xE1, (uint8_t[]){0x93}, 1, 0},
-    {0xE2, (uint8_t[]){0x65}, 1, 0},
-    {0xE3, (uint8_t[]){0xF8}, 1, 0},
-    {0x80, (uint8_t[]){0x01}, 1, 0},
-
-    {0xE0, (uint8_t[]){0x01}, 1, 0},
-
-    {0x00, (uint8_t[]){0x00}, 1, 0},
-    {0x01, (uint8_t[]){0x41}, 1, 0},
-    {0x03, (uint8_t[]){0x10}, 1, 0},
-    {0x04, (uint8_t[]){0x44}, 1, 0},
-
-    {0x17, (uint8_t[]){0x00}, 1, 0},
-    {0x18, (uint8_t[]){0xD0}, 1, 0},
-    {0x19, (uint8_t[]){0x00}, 1, 0},
-    {0x1A, (uint8_t[]){0x00}, 1, 0},
-    {0x1B, (uint8_t[]){0xD0}, 1, 0},
-    {0x1C, (uint8_t[]){0x00}, 1, 0},
-
-    {0x24, (uint8_t[]){0xFE}, 1, 0},
-    {0x35, (uint8_t[]){0x26}, 1, 0},
-
-    {0x37, (uint8_t[]){0x09}, 1, 0},
-
-    {0x38, (uint8_t[]){0x04}, 1, 0},
-    {0x39, (uint8_t[]){0x08}, 1, 0},
-    {0x3A, (uint8_t[]){0x0A}, 1, 0},
-    {0x3C, (uint8_t[]){0x78}, 1, 0},
-    {0x3D, (uint8_t[]){0xFF}, 1, 0},
-    {0x3E, (uint8_t[]){0xFF}, 1, 0},
-    {0x3F, (uint8_t[]){0xFF}, 1, 0},
-
-    {0x40, (uint8_t[]){0x00}, 1, 0},
-    {0x41, (uint8_t[]){0x64}, 1, 0},
-    {0x42, (uint8_t[]){0xC7}, 1, 0},
-    {0x43, (uint8_t[]){0x18}, 1, 0},
-    {0x44, (uint8_t[]){0x0B}, 1, 0},
-    {0x45, (uint8_t[]){0x14}, 1, 0},
-
-    {0x55, (uint8_t[]){0x02}, 1, 0},
-    {0x57, (uint8_t[]){0x49}, 1, 0},
-    {0x59, (uint8_t[]){0x0A}, 1, 0},
-    {0x5A, (uint8_t[]){0x1B}, 1, 0},
-    {0x5B, (uint8_t[]){0x19}, 1, 0},
-
-    {0x5D, (uint8_t[]){0x7F}, 1, 0},
-    {0x5E, (uint8_t[]){0x56}, 1, 0},
-    {0x5F, (uint8_t[]){0x43}, 1, 0},
-    {0x60, (uint8_t[]){0x37}, 1, 0},
-    {0x61, (uint8_t[]){0x33}, 1, 0},
-    {0x62, (uint8_t[]){0x25}, 1, 0},
-    {0x63, (uint8_t[]){0x2A}, 1, 0},
-    {0x64, (uint8_t[]){0x16}, 1, 0},
-    {0x65, (uint8_t[]){0x30}, 1, 0},
-    {0x66, (uint8_t[]){0x2F}, 1, 0},
-    {0x67, (uint8_t[]){0x32}, 1, 0},
-    {0x68, (uint8_t[]){0x53}, 1, 0},
-    {0x69, (uint8_t[]){0x43}, 1, 0},
-    {0x6A, (uint8_t[]){0x4C}, 1, 0},
-    {0x6B, (uint8_t[]){0x40}, 1, 0},
-    {0x6C, (uint8_t[]){0x3D}, 1, 0},
-    {0x6D, (uint8_t[]){0x31}, 1, 0},
-    {0x6E, (uint8_t[]){0x20}, 1, 0},
-    {0x6F, (uint8_t[]){0x0F}, 1, 0},
-
-    {0x70, (uint8_t[]){0x7F}, 1, 0},
-    {0x71, (uint8_t[]){0x56}, 1, 0},
-    {0x72, (uint8_t[]){0x43}, 1, 0},
-    {0x73, (uint8_t[]){0x37}, 1, 0},
-    {0x74, (uint8_t[]){0x33}, 1, 0},
-    {0x75, (uint8_t[]){0x25}, 1, 0},
-    {0x76, (uint8_t[]){0x2A}, 1, 0},
-    {0x77, (uint8_t[]){0x16}, 1, 0},
-    {0x78, (uint8_t[]){0x30}, 1, 0},
-    {0x79, (uint8_t[]){0x2F}, 1, 0},
-    {0x7A, (uint8_t[]){0x32}, 1, 0},
-    {0x7B, (uint8_t[]){0x53}, 1, 0},
-    {0x7C, (uint8_t[]){0x43}, 1, 0},
-    {0x7D, (uint8_t[]){0x4C}, 1, 0},
-    {0x7E, (uint8_t[]){0x40}, 1, 0},
-    {0x7F, (uint8_t[]){0x3D}, 1, 0},
-    {0x80, (uint8_t[]){0x31}, 1, 0},
-    {0x81, (uint8_t[]){0x20}, 1, 0},
-    {0x82, (uint8_t[]){0x0F}, 1, 0},
-
-    {0xE0, (uint8_t[]){0x02}, 1, 0},
-    {0x00, (uint8_t[]){0x5F}, 1, 0},
-    {0x01, (uint8_t[]){0x5F}, 1, 0},
-    {0x02, (uint8_t[]){0x5E}, 1, 0},
-    {0x03, (uint8_t[]){0x5E}, 1, 0},
-    {0x04, (uint8_t[]){0x50}, 1, 0},
-    {0x05, (uint8_t[]){0x48}, 1, 0},
-    {0x06, (uint8_t[]){0x48}, 1, 0},
-    {0x07, (uint8_t[]){0x4A}, 1, 0},
-    {0x08, (uint8_t[]){0x4A}, 1, 0},
-    {0x09, (uint8_t[]){0x44}, 1, 0},
-    {0x0A, (uint8_t[]){0x44}, 1, 0},
-    {0x0B, (uint8_t[]){0x46}, 1, 0},
-    {0x0C, (uint8_t[]){0x46}, 1, 0},
-    {0x0D, (uint8_t[]){0x5F}, 1, 0},
-    {0x0E, (uint8_t[]){0x5F}, 1, 0},
-    {0x0F, (uint8_t[]){0x57}, 1, 0},
-    {0x10, (uint8_t[]){0x57}, 1, 0},
-    {0x11, (uint8_t[]){0x77}, 1, 0},
-    {0x12, (uint8_t[]){0x77}, 1, 0},
-    {0x13, (uint8_t[]){0x40}, 1, 0},
-    {0x14, (uint8_t[]){0x42}, 1, 0},
-    {0x15, (uint8_t[]){0x5F}, 1, 0},
-
-    {0x16, (uint8_t[]){0x5F}, 1, 0},
-    {0x17, (uint8_t[]){0x5F}, 1, 0},
-    {0x18, (uint8_t[]){0x5E}, 1, 0},
-    {0x19, (uint8_t[]){0x5E}, 1, 0},
-    {0x1A, (uint8_t[]){0x50}, 1, 0},
-    {0x1B, (uint8_t[]){0x49}, 1, 0},
-    {0x1C, (uint8_t[]){0x49}, 1, 0},
-    {0x1D, (uint8_t[]){0x4B}, 1, 0},
-    {0x1E, (uint8_t[]){0x4B}, 1, 0},
-    {0x1F, (uint8_t[]){0x45}, 1, 0},
-    {0x20, (uint8_t[]){0x45}, 1, 0},
-    {0x21, (uint8_t[]){0x47}, 1, 0},
-    {0x22, (uint8_t[]){0x47}, 1, 0},
-    {0x23, (uint8_t[]){0x5F}, 1, 0},
-    {0x24, (uint8_t[]){0x5F}, 1, 0},
-    {0x25, (uint8_t[]){0x57}, 1, 0},
-    {0x26, (uint8_t[]){0x57}, 1, 0},
-    {0x27, (uint8_t[]){0x77}, 1, 0},
-    {0x28, (uint8_t[]){0x77}, 1, 0},
-    {0x29, (uint8_t[]){0x41}, 1, 0},
-    {0x2A, (uint8_t[]){0x43}, 1, 0},
-    {0x2B, (uint8_t[]){0x5F}, 1, 0},
-
-    {0x2C, (uint8_t[]){0x1E}, 1, 0},
-    {0x2D, (uint8_t[]){0x1E}, 1, 0},
-    {0x2E, (uint8_t[]){0x1F}, 1, 0},
-    {0x2F, (uint8_t[]){0x1F}, 1, 0},
-    {0x30, (uint8_t[]){0x10}, 1, 0},
-    {0x31, (uint8_t[]){0x07}, 1, 0},
-    {0x32, (uint8_t[]){0x07}, 1, 0},
-    {0x33, (uint8_t[]){0x05}, 1, 0},
-    {0x34, (uint8_t[]){0x05}, 1, 0},
-    {0x35, (uint8_t[]){0x0B}, 1, 0},
-    {0x36, (uint8_t[]){0x0B}, 1, 0},
-    {0x37, (uint8_t[]){0x09}, 1, 0},
-    {0x38, (uint8_t[]){0x09}, 1, 0},
-    {0x39, (uint8_t[]){0x1F}, 1, 0},
-    {0x3A, (uint8_t[]){0x1F}, 1, 0},
-    {0x3B, (uint8_t[]){0x17}, 1, 0},
-    {0x3C, (uint8_t[]){0x17}, 1, 0},
-    {0x3D, (uint8_t[]){0x17}, 1, 0},
-    {0x3E, (uint8_t[]){0x17}, 1, 0},
-    {0x3F, (uint8_t[]){0x03}, 1, 0},
-    {0x40, (uint8_t[]){0x01}, 1, 0},
-    {0x41, (uint8_t[]){0x1F}, 1, 0},
-
-    {0x42, (uint8_t[]){0x1E}, 1, 0},
-    {0x43, (uint8_t[]){0x1E}, 1, 0},
-    {0x44, (uint8_t[]){0x1F}, 1, 0},
-    {0x45, (uint8_t[]){0x1F}, 1, 0},
-    {0x46, (uint8_t[]){0x10}, 1, 0},
-    {0x47, (uint8_t[]){0x06}, 1, 0},
-    {0x48, (uint8_t[]){0x06}, 1, 0},
-    {0x49, (uint8_t[]){0x04}, 1, 0},
-    {0x4A, (uint8_t[]){0x04}, 1, 0},
-    {0x4B, (uint8_t[]){0x0A}, 1, 0},
-    {0x4C, (uint8_t[]){0x0A}, 1, 0},
-    {0x4D, (uint8_t[]){0x08}, 1, 0},
-    {0x4E, (uint8_t[]){0x08}, 1, 0},
-    {0x4F, (uint8_t[]){0x1F}, 1, 0},
-    {0x50, (uint8_t[]){0x1F}, 1, 0},
-    {0x51, (uint8_t[]){0x17}, 1, 0},
-    {0x52, (uint8_t[]){0x17}, 1, 0},
-    {0x53, (uint8_t[]){0x17}, 1, 0},
-    {0x54, (uint8_t[]){0x17}, 1, 0},
-    {0x55, (uint8_t[]){0x02}, 1, 0},
-    {0x56, (uint8_t[]){0x00}, 1, 0},
-    {0x57, (uint8_t[]){0x1F}, 1, 0},
-
-    {0xE0, (uint8_t[]){0x02}, 1, 0},
-    {0x58, (uint8_t[]){0x40}, 1, 0},
-    {0x59, (uint8_t[]){0x00}, 1, 0},
-    {0x5A, (uint8_t[]){0x00}, 1, 0},
-    {0x5B, (uint8_t[]){0x30}, 1, 0},
-    {0x5C, (uint8_t[]){0x01}, 1, 0},
-    {0x5D, (uint8_t[]){0x30}, 1, 0},
-    {0x5E, (uint8_t[]){0x01}, 1, 0},
-    {0x5F, (uint8_t[]){0x02}, 1, 0},
-    {0x60, (uint8_t[]){0x30}, 1, 0},
-    {0x61, (uint8_t[]){0x03}, 1, 0},
-    {0x62, (uint8_t[]){0x04}, 1, 0},
-    {0x63, (uint8_t[]){0x04}, 1, 0},
-    {0x64, (uint8_t[]){0xA6}, 1, 0},
-    {0x65, (uint8_t[]){0x43}, 1, 0},
-    {0x66, (uint8_t[]){0x30}, 1, 0},
-    {0x67, (uint8_t[]){0x73}, 1, 0},
-    {0x68, (uint8_t[]){0x05}, 1, 0},
-    {0x69, (uint8_t[]){0x04}, 1, 0},
-    {0x6A, (uint8_t[]){0x7F}, 1, 0},
-    {0x6B, (uint8_t[]){0x08}, 1, 0},
-    {0x6C, (uint8_t[]){0x00}, 1, 0},
-    {0x6D, (uint8_t[]){0x04}, 1, 0},
-    {0x6E, (uint8_t[]){0x04}, 1, 0},
-    {0x6F, (uint8_t[]){0x88}, 1, 0},
-
-    {0x75, (uint8_t[]){0xD9}, 1, 0},
-    {0x76, (uint8_t[]){0x00}, 1, 0},
-    {0x77, (uint8_t[]){0x33}, 1, 0},
-    {0x78, (uint8_t[]){0x43}, 1, 0},
-
-    {0xE0, (uint8_t[]){0x00}, 1, 0},
-
-    {0x11, (uint8_t[]){0x00}, 1, 120},
-
-    {0x29, (uint8_t[]){0x00}, 1, 20},
-    {0x35, (uint8_t[]){0x00}, 1, 0},
-#else
-    {0xE0, (uint8_t[]){0x00}, 1, 0},
-
-    {0xE1, (uint8_t[]){0x93}, 1, 0},
-    {0xE2, (uint8_t[]){0x65}, 1, 0},
-    {0xE3, (uint8_t[]){0xF8}, 1, 0},
-    {0x80, (uint8_t[]){0x01}, 1, 0},
-
-    {0xE0, (uint8_t[]){0x01}, 1, 0},
-
-    {0x00, (uint8_t[]){0x00}, 1, 0},
-    {0x01, (uint8_t[]){0x41}, 1, 0},
-    {0x03, (uint8_t[]){0x10}, 1, 0},
-    {0x04, (uint8_t[]){0x44}, 1, 0},
-
-    {0x17, (uint8_t[]){0x00}, 1, 0},
-    {0x18, (uint8_t[]){0xD0}, 1, 0},
-    {0x19, (uint8_t[]){0x00}, 1, 0},
-    {0x1A, (uint8_t[]){0x00}, 1, 0},
-    {0x1B, (uint8_t[]){0xD0}, 1, 0},
-    {0x1C, (uint8_t[]){0x00}, 1, 0},
-
-    {0x24, (uint8_t[]){0xFE}, 1, 0},
-    {0x35, (uint8_t[]){0x26}, 1, 0},
-
-    {0x37, (uint8_t[]){0x09}, 1, 0},
-
-    {0x38, (uint8_t[]){0x04}, 1, 0},
-    {0x39, (uint8_t[]){0x08}, 1, 0},
-    {0x3A, (uint8_t[]){0x0A}, 1, 0},
-    {0x3C, (uint8_t[]){0x78}, 1, 0},
-    {0x3D, (uint8_t[]){0xFF}, 1, 0},
-    {0x3E, (uint8_t[]){0xFF}, 1, 0},
-    {0x3F, (uint8_t[]){0xFF}, 1, 0},
-
-    {0x40, (uint8_t[]){0x04}, 1, 0},
-    {0x41, (uint8_t[]){0x64}, 1, 0},
-    {0x42, (uint8_t[]){0xC7}, 1, 0},
-    {0x43, (uint8_t[]){0x18}, 1, 0},
-    {0x44, (uint8_t[]){0x0B}, 1, 0},
-    {0x45, (uint8_t[]){0x14}, 1, 0},
-
-    {0x55, (uint8_t[]){0x02}, 1, 0},
-    {0x57, (uint8_t[]){0x49}, 1, 0},
-    {0x59, (uint8_t[]){0x0A}, 1, 0},
-    {0x5A, (uint8_t[]){0x1B}, 1, 0},
-    {0x5B, (uint8_t[]){0x19}, 1, 0},
-
-    {0x5D, (uint8_t[]){0x7F}, 1, 0},
-    {0x5E, (uint8_t[]){0x56}, 1, 0},
-    {0x5F, (uint8_t[]){0x43}, 1, 0},
-    {0x60, (uint8_t[]){0x37}, 1, 0},
-    {0x61, (uint8_t[]){0x33}, 1, 0},
-    {0x62, (uint8_t[]){0x25}, 1, 0},
-    {0x63, (uint8_t[]){0x2A}, 1, 0},
-    {0x64, (uint8_t[]){0x16}, 1, 0},
-    {0x65, (uint8_t[]){0x30}, 1, 0},
-    {0x66, (uint8_t[]){0x2F}, 1, 0},
-    {0x67, (uint8_t[]){0x32}, 1, 0},
-    {0x68, (uint8_t[]){0x53}, 1, 0},
-    {0x69, (uint8_t[]){0x43}, 1, 0},
-    {0x6A, (uint8_t[]){0x4C}, 1, 0},
-    {0x6B, (uint8_t[]){0x40}, 1, 0},
-    {0x6C, (uint8_t[]){0x3D}, 1, 0},
-    {0x6D, (uint8_t[]){0x31}, 1, 0},
-    {0x6E, (uint8_t[]){0x20}, 1, 0},
-    {0x6F, (uint8_t[]){0x0F}, 1, 0},
-
-    {0x70, (uint8_t[]){0x7F}, 1, 0},
-    {0x71, (uint8_t[]){0x56}, 1, 0},
-    {0x72, (uint8_t[]){0x43}, 1, 0},
-    {0x73, (uint8_t[]){0x37}, 1, 0},
-    {0x74, (uint8_t[]){0x33}, 1, 0},
-    {0x75, (uint8_t[]){0x25}, 1, 0},
-    {0x76, (uint8_t[]){0x2A}, 1, 0},
-    {0x77, (uint8_t[]){0x16}, 1, 0},
-    {0x78, (uint8_t[]){0x30}, 1, 0},
-    {0x79, (uint8_t[]){0x2F}, 1, 0},
-    {0x7A, (uint8_t[]){0x32}, 1, 0},
-    {0x7B, (uint8_t[]){0x53}, 1, 0},
-    {0x7C, (uint8_t[]){0x43}, 1, 0},
-    {0x7D, (uint8_t[]){0x4C}, 1, 0},
-    {0x7E, (uint8_t[]){0x40}, 1, 0},
-    {0x7F, (uint8_t[]){0x3D}, 1, 0},
-    {0x80, (uint8_t[]){0x31}, 1, 0},
-    {0x81, (uint8_t[]){0x20}, 1, 0},
-    {0x82, (uint8_t[]){0x0F}, 1, 0},
-
-    {0xE0, (uint8_t[]){0x02}, 1, 0},
-    {0x00, (uint8_t[]){0x5F}, 1, 0},
-    {0x01, (uint8_t[]){0x5F}, 1, 0},
-    {0x02, (uint8_t[]){0x5E}, 1, 0},
-    {0x03, (uint8_t[]){0x5E}, 1, 0},
-    {0x04, (uint8_t[]){0x50}, 1, 0},
-    {0x05, (uint8_t[]){0x48}, 1, 0},
-    {0x06, (uint8_t[]){0x48}, 1, 0},
-    {0x07, (uint8_t[]){0x4A}, 1, 0},
-    {0x08, (uint8_t[]){0x4A}, 1, 0},
-    {0x09, (uint8_t[]){0x44}, 1, 0},
-    {0x0A, (uint8_t[]){0x44}, 1, 0},
-    {0x0B, (uint8_t[]){0x46}, 1, 0},
-    {0x0C, (uint8_t[]){0x46}, 1, 0},
-    {0x0D, (uint8_t[]){0x5F}, 1, 0},
-    {0x0E, (uint8_t[]){0x5F}, 1, 0},
-    {0x0F, (uint8_t[]){0x57}, 1, 0},
-    {0x10, (uint8_t[]){0x57}, 1, 0},
-    {0x11, (uint8_t[]){0x77}, 1, 0},
-    {0x12, (uint8_t[]){0x77}, 1, 0},
-    {0x13, (uint8_t[]){0x40}, 1, 0},
-    {0x14, (uint8_t[]){0x42}, 1, 0},
-    {0x15, (uint8_t[]){0x5F}, 1, 0},
-
-    {0x16, (uint8_t[]){0x5F}, 1, 0},
-    {0x17, (uint8_t[]){0x5F}, 1, 0},
-    {0x18, (uint8_t[]){0x5E}, 1, 0},
-    {0x19, (uint8_t[]){0x5E}, 1, 0},
-    {0x1A, (uint8_t[]){0x50}, 1, 0},
-    {0x1B, (uint8_t[]){0x49}, 1, 0},
-    {0x1C, (uint8_t[]){0x49}, 1, 0},
-    {0x1D, (uint8_t[]){0x4B}, 1, 0},
-    {0x1E, (uint8_t[]){0x4B}, 1, 0},
-    {0x1F, (uint8_t[]){0x45}, 1, 0},
-    {0x20, (uint8_t[]){0x45}, 1, 0},
-    {0x21, (uint8_t[]){0x47}, 1, 0},
-    {0x22, (uint8_t[]){0x47}, 1, 0},
-    {0x23, (uint8_t[]){0x5F}, 1, 0},
-    {0x24, (uint8_t[]){0x5F}, 1, 0},
-    {0x25, (uint8_t[]){0x57}, 1, 0},
-    {0x26, (uint8_t[]){0x57}, 1, 0},
-    {0x27, (uint8_t[]){0x77}, 1, 0},
-    {0x28, (uint8_t[]){0x77}, 1, 0},
-    {0x29, (uint8_t[]){0x41}, 1, 0},
-    {0x2A, (uint8_t[]){0x43}, 1, 0},
-    {0x2B, (uint8_t[]){0x5F}, 1, 0},
-
-    {0x2C, (uint8_t[]){0x1E}, 1, 0},
-    {0x2D, (uint8_t[]){0x1E}, 1, 0},
-    {0x2E, (uint8_t[]){0x1F}, 1, 0},
-    {0x2F, (uint8_t[]){0x1F}, 1, 0},
-    {0x30, (uint8_t[]){0x10}, 1, 0},
-    {0x31, (uint8_t[]){0x07}, 1, 0},
-    {0x32, (uint8_t[]){0x07}, 1, 0},
-    {0x33, (uint8_t[]){0x05}, 1, 0},
-    {0x34, (uint8_t[]){0x05}, 1, 0},
-    {0x35, (uint8_t[]){0x0B}, 1, 0},
-    {0x36, (uint8_t[]){0x0B}, 1, 0},
-    {0x37, (uint8_t[]){0x09}, 1, 0},
-    {0x38, (uint8_t[]){0x09}, 1, 0},
-    {0x39, (uint8_t[]){0x1F}, 1, 0},
-    {0x3A, (uint8_t[]){0x1F}, 1, 0},
-    {0x3B, (uint8_t[]){0x17}, 1, 0},
-    {0x3C, (uint8_t[]){0x17}, 1, 0},
-    {0x3D, (uint8_t[]){0x17}, 1, 0},
-    {0x3E, (uint8_t[]){0x17}, 1, 0},
-    {0x3F, (uint8_t[]){0x03}, 1, 0},
-    {0x40, (uint8_t[]){0x01}, 1, 0},
-    {0x41, (uint8_t[]){0x1F}, 1, 0},
-
-    {0x42, (uint8_t[]){0x1E}, 1, 0},
-    {0x43, (uint8_t[]){0x1E}, 1, 0},
-    {0x44, (uint8_t[]){0x1F}, 1, 0},
-    {0x45, (uint8_t[]){0x1F}, 1, 0},
-    {0x46, (uint8_t[]){0x10}, 1, 0},
-    {0x47, (uint8_t[]){0x06}, 1, 0},
-    {0x48, (uint8_t[]){0x06}, 1, 0},
-    {0x49, (uint8_t[]){0x04}, 1, 0},
-    {0x4A, (uint8_t[]){0x04}, 1, 0},
-    {0x4B, (uint8_t[]){0x0A}, 1, 0},
-    {0x4C, (uint8_t[]){0x0A}, 1, 0},
-    {0x4D, (uint8_t[]){0x08}, 1, 0},
-    {0x4E, (uint8_t[]){0x08}, 1, 0},
-    {0x4F, (uint8_t[]){0x1F}, 1, 0},
-    {0x50, (uint8_t[]){0x1F}, 1, 0},
-    {0x51, (uint8_t[]){0x17}, 1, 0},
-    {0x52, (uint8_t[]){0x17}, 1, 0},
-    {0x53, (uint8_t[]){0x17}, 1, 0},
-    {0x54, (uint8_t[]){0x17}, 1, 0},
-    {0x55, (uint8_t[]){0x02}, 1, 0},
-    {0x56, (uint8_t[]){0x00}, 1, 0},
-    {0x57, (uint8_t[]){0x1F}, 1, 0},
-
-    {0xE0, (uint8_t[]){0x02}, 1, 0},
-    {0x58, (uint8_t[]){0x40}, 1, 0},
-    {0x59, (uint8_t[]){0x00}, 1, 0},
-    {0x5A, (uint8_t[]){0x00}, 1, 0},
-    {0x5B, (uint8_t[]){0x30}, 1, 0},
-    {0x5C, (uint8_t[]){0x01}, 1, 0},
-    {0x5D, (uint8_t[]){0x30}, 1, 0},
-    {0x5E, (uint8_t[]){0x01}, 1, 0},
-    {0x5F, (uint8_t[]){0x02}, 1, 0},
-    {0x60, (uint8_t[]){0x30}, 1, 0},
-    {0x61, (uint8_t[]){0x03}, 1, 0},
-    {0x62, (uint8_t[]){0x04}, 1, 0},
-    {0x63, (uint8_t[]){0x04}, 1, 0},
-    {0x64, (uint8_t[]){0xA6}, 1, 0},
-    {0x65, (uint8_t[]){0x43}, 1, 0},
-    {0x66, (uint8_t[]){0x30}, 1, 0},
-    {0x67, (uint8_t[]){0x73}, 1, 0},
-    {0x68, (uint8_t[]){0x05}, 1, 0},
-    {0x69, (uint8_t[]){0x04}, 1, 0},
-    {0x6A, (uint8_t[]){0x7F}, 1, 0},
-    {0x6B, (uint8_t[]){0x08}, 1, 0},
-    {0x6C, (uint8_t[]){0x00}, 1, 0},
-    {0x6D, (uint8_t[]){0x04}, 1, 0},
-    {0x6E, (uint8_t[]){0x04}, 1, 0},
-    {0x6F, (uint8_t[]){0x88}, 1, 0},
-
-    {0x75, (uint8_t[]){0xD9}, 1, 0},
-    {0x76, (uint8_t[]){0x00}, 1, 0},
-    {0x77, (uint8_t[]){0x33}, 1, 0},
-    {0x78, (uint8_t[]){0x43}, 1, 0},
-
-    {0xE0, (uint8_t[]){0x00}, 1, 0},
-    {0x11, (uint8_t[]){0x00}, 1, 120},
-
-    {0x29, (uint8_t[]){0x00}, 1, 20},
-    {0x35, (uint8_t[]){0x00}, 1, 0},
-#endif
-};
 
 /* Can be used for `i2s_std_gpio_config_t` and/or `i2s_std_config_t` initialization */
 #define BSP_I2S_GPIO_CFG       \
@@ -564,6 +125,8 @@ esp_err_t bsp_sdcard_mount(void)
         .width = 4,
         .flags = 0,
     };
+
+    pwr_ctrl_handle->set_io_voltage((void *)pwr_ctrl_handle->ctx, 3300);
 
     return esp_vfs_fat_sdmmc_mount(BSP_SD_MOUNT_POINT, &host, &slot_config, &mount_config, &bsp_sdcard);
 }
@@ -779,7 +342,7 @@ esp_err_t bsp_display_brightness_set(int brightness_percent)
         brightness_percent = 0;
     }
 
-    int actual_percent = 21 + (brightness_percent * (100 - 21)) / 100;
+    int actual_percent = 47 + (brightness_percent * (100 - 47)) / 100;
 
     ESP_LOGI(TAG, "Setting LCD backlight: %d%%", brightness_percent);
 
@@ -856,39 +419,21 @@ esp_err_t bsp_display_new_with_handles(const bsp_display_config_t *config, bsp_l
     ESP_GOTO_ON_ERROR(esp_lcd_new_panel_io_dbi(mipi_dsi_bus, &dbi_config, &io), err, TAG, "New panel IO failed");
 
     esp_lcd_panel_handle_t disp_panel = NULL;
-    ESP_LOGI(TAG, "Install Waveshare ESP32-P4-WIFI6-Touch-LCD-XC LCD control panel");
-
-    esp_lcd_dpi_panel_config_t dpi_config = {
-        .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,
-        .dpi_clock_freq_mhz = 80,
-        .virtual_channel = 0,
+    ESP_LOGI(TAG, "Install Waveshare ESP32-P4-WIFI6-Touch-LCD-4B LCD control panel");
 #if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
-        .pixel_format = LCD_COLOR_PIXEL_FORMAT_RGB888,
+    esp_lcd_dpi_panel_config_t dpi_config = ST7703_720_720_PANEL_60HZ_DPI_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB888);
 #else
-        .pixel_format = LCD_COLOR_PIXEL_FORMAT_RGB565,
+    esp_lcd_dpi_panel_config_t dpi_config = ST7703_720_720_PANEL_60HZ_DPI_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
 #endif
-        .num_fbs = 1,
-        .video_timing = {
-            .h_size = BSP_LCD_H_RES,
-            .v_size = BSP_LCD_V_RES,
-            .hsync_back_porch = 20,
-            .hsync_pulse_width = 20,
-            .hsync_front_porch = 40,
-            .vsync_back_porch = 12,
-            .vsync_pulse_width = 4,
-            .vsync_front_porch = 24,
-        },
-        .flags.use_dma2d = true,
-    };
     dpi_config.num_fbs = CONFIG_BSP_LCD_DPI_BUFFER_NUMS;
 
-    jd9365_vendor_config_t vendor_config = {
-        .init_cmds = lcd_init_cmds,
-        .init_cmds_size = sizeof(lcd_init_cmds) / sizeof(lcd_init_cmds[0]),
+    st7703_vendor_config_t vendor_config = {
+        .flags = {
+            .use_mipi_interface = 1,
+        },
         .mipi_config = {
             .dsi_bus = mipi_dsi_bus,
             .dpi_config = &dpi_config,
-            .lane_num = 2,
         },
     };
     esp_lcd_panel_dev_config_t lcd_dev_config = {
@@ -901,7 +446,7 @@ esp_err_t bsp_display_new_with_handles(const bsp_display_config_t *config, bsp_l
         .reset_gpio_num = BSP_LCD_RST,
         .vendor_config = &vendor_config,
     };
-    ESP_GOTO_ON_ERROR(esp_lcd_new_panel_jd9365(io, &lcd_dev_config, &disp_panel), err, TAG, "New LCD panel Waveshare failed");
+    ESP_GOTO_ON_ERROR(esp_lcd_new_panel_st7703(io, &lcd_dev_config, &disp_panel), err, TAG, "New LCD panel Waveshare failed");
     ESP_GOTO_ON_ERROR(esp_lcd_panel_reset(disp_panel), err, TAG, "LCD panel reset failed");
     ESP_GOTO_ON_ERROR(esp_lcd_panel_init(disp_panel), err, TAG, "LCD panel init failed");
 
