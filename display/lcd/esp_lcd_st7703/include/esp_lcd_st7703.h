@@ -122,12 +122,12 @@ esp_err_t esp_lcd_new_panel_st7703(const esp_lcd_panel_io_handle_t io, const esp
         .video_timing = {                                \
             .h_size = 720,                               \
             .v_size = 720,                               \
-            .hsync_back_porch = 120,                     \
-            .hsync_pulse_width = 60,                     \
-            .hsync_front_porch = 106,                    \
-            .vsync_back_porch = 20,                      \
+            .hsync_back_porch = 80,                     \
+            .hsync_pulse_width = 20,                     \
+            .hsync_front_porch = 80,                    \
+            .vsync_back_porch = 12,                      \
             .vsync_pulse_width = 4,                      \
-            .vsync_front_porch = 20,                     \
+            .vsync_front_porch = 30,                     \
         },                                               \
         .flags.use_dma2d = true,                         \
     }
