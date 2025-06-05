@@ -50,9 +50,6 @@ Alternatively, you can create `idf_component.yml`. More is in [Espressif's docum
     esp_lcd_panel_handle_t panel_handle = NULL;
     const esp_lcd_dpi_panel_config_t dpi_config = ST7703_720_720_PANEL_60HZ_DPI_CONFIG(EXAMPLE_MIPI_DPI_PX_FORMAT);
     st7703_vendor_config_t vendor_config = {
-        .flags = {
-            .use_mipi_interface = 1,
-        },
         .mipi_config = {
             .dsi_bus = mipi_dsi_bus,
             .dpi_config = &dpi_config,
