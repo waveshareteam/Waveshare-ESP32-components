@@ -1,4 +1,4 @@
-version: "1.0.0"
+version: "1.0.1"
 license: "MIT"
 targets:
   - esp32p4
@@ -8,4 +8,5 @@ issues: "https://github.com/waveshareteam/Waveshare-ESP32-components/issues"
 dependencies:
   idf:
     version: '>=5.3'
+  espressif/i2c_bus: "^1.3.0"
   cmake_utilities: "0.*"
