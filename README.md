@@ -17,7 +17,7 @@ accelerate your project setup.
 | [ESP32-S3-Touch-AMOLED-1.75](https://www.waveshare.com/esp32-s3-touch-amoled-1.75.htm)<br/><img style="width: 150px; height: auto; display: block; margin: 0 auto;" src="https://www.waveshare.com/media/catalog/product/cache/1/image/800x800/9df78eab33525d08d6e5fb8d27136e95/e/s/esp32-s3-touch-amoled-1.75-1.jpg"> | ✅        |
 | [ESP32-S3-Touch-LCD-1.69](https://www.waveshare.com/esp32-s3-touch-lcd-1.69.htm)<br/><img style="width: 150px; height: auto; display: block; margin: 0 auto;" src="https://www.waveshare.com/media/catalog/product/cache/1/image/800x800/9df78eab33525d08d6e5fb8d27136e95/e/s/esp32-s3-touch-lcd-1.69-1.jpg">          | 🕒        |
 | [ESP32-S3-LCD-1.69](https://www.waveshare.com/esp32-s3-lcd-1.69.htm)<br/><img style="width: 150px; height: auto; display: block; margin: 0 auto;" src="https://www.waveshare.com/media/catalog/product/cache/1/image/800x800/9df78eab33525d08d6e5fb8d27136e95/e/s/esp32-s3-lcd-1.69-1.jpg">                            | 🕒        |
-| [ESP32-S3-Touch-LCD-4 ](https://www.waveshare.com/esp32-s3-touch-lcd-4.htm)<br/><img style="width: 150px; height: auto; display: block; margin: 0 auto;" src="https://www.waveshare.com/media/catalog/product/cache/1/image/800x800/9df78eab33525d08d6e5fb8d27136e95/e/s/esp32-s3-touch-lcd-4-1.jpg">                  | 🕒        |
+| [ESP32-S3-Touch-LCD-4 ](https://www.waveshare.com/esp32-s3-touch-lcd-4.htm)<br/><img style="width: 150px; height: auto; display: block; margin: 0 auto;" src="https://www.waveshare.com/media/catalog/product/cache/1/image/800x800/9df78eab33525d08d6e5fb8d27136e95/e/s/esp32-s3-touch-lcd-4-1.jpg">                  | ✅        |
 ### 2. **Display Drivers**
 
 #### Recommended display screen
