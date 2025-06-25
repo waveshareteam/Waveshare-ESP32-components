@@ -404,6 +404,14 @@ esp_err_t bsp_display_new(const bsp_display_config_t *config, esp_lcd_panel_hand
         .vendor_config = &vendor_config,
     };
     ESP_ERROR_CHECK(esp_lcd_new_panel_sh8601(io_handle, &panel_config, &panel_handle));
+
+    esp_io_expander_handle_t expander = bsp_io_expander_init();
+    esp_io_expander_set_dir(expander, IO_EXPANDER_PIN_NUM_0 | IO_EXPANDER_PIN_NUM_1 |IO_EXPANDER_PIN_NUM_2, IO_EXPANDER_OUTPUT);
+    esp_io_expander_set_level(expander, IO_EXPANDER_PIN_NUM_0 | IO_EXPANDER_PIN_NUM_1|IO_EXPANDER_PIN_NUM_2, 1);
+    vTaskDelay(pdMS_TO_TICKS(100));
+    esp_io_expander_set_level(expander, IO_EXPANDER_PIN_NUM_0 | IO_EXPANDER_PIN_NUM_1|IO_EXPANDER_PIN_NUM_2, 0);
+    vTaskDelay(pdMS_TO_TICKS(100));
+    esp_io_expander_set_level(expander, IO_EXPANDER_PIN_NUM_0 | IO_EXPANDER_PIN_NUM_1|IO_EXPANDER_PIN_NUM_2, 1);
     esp_lcd_panel_reset(panel_handle);
     esp_lcd_panel_init(panel_handle);
     esp_lcd_panel_disp_on_off(panel_handle, true);
