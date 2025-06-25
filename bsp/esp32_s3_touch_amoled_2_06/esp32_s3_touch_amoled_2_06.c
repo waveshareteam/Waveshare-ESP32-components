@@ -25,7 +25,6 @@ static const char *TAG = "ESP32-S3-Touch-AMOLED-2.06";
 
 static i2c_master_bus_handle_t i2c_handle = NULL; // I2C Handle
 static bool i2c_initialized = false;
-static esp_io_expander_handle_t io_expander = NULL; // IO expander tca9554 handle
 static lv_indev_t *disp_indev = NULL;
 sdmmc_card_t *bsp_sdcard = NULL; // Global uSD card handler
 static esp_lcd_touch_handle_t tp = NULL;
@@ -482,21 +481,6 @@ esp_err_t bsp_touch_new(const bsp_touch_config_t *config, esp_lcd_touch_handle_t
     tp_io_config.scl_speed_hz = CONFIG_BSP_I2C_CLK_SPEED_HZ;
     ESP_RETURN_ON_ERROR(esp_lcd_new_panel_io_i2c(i2c_handle, &tp_io_config, &tp_io_handle), TAG, "");
     return esp_lcd_touch_new_i2c_ft5x06(tp_io_handle, &tp_cfg, ret_touch);
-}
-
-/**************************************************************************************************
- *
- * IO Expander Function
- *
- **************************************************************************************************/
-esp_io_expander_handle_t bsp_io_expander_init(void)
-{
-    BSP_ERROR_CHECK_RETURN_ERR(bsp_i2c_init());
-    if (!io_expander)
-    {
-        BSP_ERROR_CHECK_RETURN_NULL(esp_io_expander_new_i2c_tca9554(i2c_handle, BSP_IO_EXPANDER_I2C_ADDRESS, &io_expander));
-    }
-    return io_expander;
 }
 
 static lv_display_t *bsp_display_lcd_init()
