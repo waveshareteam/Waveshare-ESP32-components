@@ -16,4 +16,4 @@ tags:
 targets:
 - esp32s3
 url: https://www.waveshare.com/esp32-s3-touch-amoled-1.8.htm
-version: 1.0.1
+version: 1.0.2
