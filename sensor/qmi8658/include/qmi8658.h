@@ -6,6 +6,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define QMI8658_LIBRARY_VERSION "1.0.0"
 
 #define QMI8658_ADDRESS_LOW  0x6A
@@ -169,3 +173,7 @@ esp_err_t qmi8658_write_register(qmi8658_dev_t *dev, uint8_t reg, uint8_t value)
 esp_err_t qmi8658_read_register(qmi8658_dev_t *dev, uint8_t reg, uint8_t *buffer, uint8_t length);
 
 #endif // QMI8658_H
+
+#ifdef __cplusplus
+}
+#endif
