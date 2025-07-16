@@ -30,7 +30,7 @@ sdmmc_card_t *bsp_sdcard = NULL; // Global uSD card handler
 static esp_lcd_touch_handle_t tp = NULL;
 static esp_lcd_panel_handle_t panel_handle = NULL; // LCD panel handle
 static esp_lcd_panel_io_handle_t io_handle = NULL;
-
+uint8_t brightness;
 static i2s_chan_handle_t i2s_tx_chan = NULL;
 static i2s_chan_handle_t i2s_rx_chan = NULL;
 static const audio_codec_data_if_t *i2s_data_if = NULL; /* Codec data interface */
@@ -352,7 +352,7 @@ esp_err_t bsp_display_brightness_set(int brightness_percent)
         return ESP_ERR_INVALID_ARG;
     }
 
-    uint8_t brightness = (uint8_t)(brightness_percent * 255 / 100);
+    brightness = (uint8_t)(brightness_percent * 255 / 100);
 
     uint32_t lcd_cmd = 0x51;
     lcd_cmd &= 0xff;
@@ -362,6 +362,17 @@ esp_err_t bsp_display_brightness_set(int brightness_percent)
     esp_lcd_panel_io_tx_param(io_handle, lcd_cmd, &param, 1);
 
     return ESP_OK;
+}
+
+int bsp_display_brightness_get(void)
+{
+    if (panel_handle == NULL)
+    {
+        ESP_LOGE(TAG, "Panel handle is not initialized");
+        return -1;
+    }
+
+    return brightness * 100 / 255;
 }
 
 esp_err_t bsp_display_backlight_off(void)
