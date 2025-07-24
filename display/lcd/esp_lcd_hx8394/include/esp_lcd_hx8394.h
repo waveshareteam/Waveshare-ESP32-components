@@ -66,7 +66,7 @@ esp_err_t esp_lcd_new_panel_hx8394(const esp_lcd_panel_io_handle_t io, const esp
         .bus_id = 0,                                      \
         .num_data_lanes = 2,                              \
         .phy_clk_src = MIPI_DSI_PHY_CLK_SRC_DEFAULT,      \
-        .lane_bit_rate_mbps = 1000,                        \
+        .lane_bit_rate_mbps = 700,                        \
     }
 
 /**
@@ -90,7 +90,7 @@ esp_err_t esp_lcd_new_panel_hx8394(const esp_lcd_panel_io_handle_t io, const esp
 #define HX8394_720_1280_PANEL_30HZ_DPI_CONFIG(px_format)            \
     {                                                            \
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,             \
-        .dpi_clock_freq_mhz = 75,                                \
+        .dpi_clock_freq_mhz = 58,                                \
         .virtual_channel = 0,                                    \
         .pixel_format = px_format,                               \
         .num_fbs = 1,                                            \
@@ -102,7 +102,7 @@ esp_err_t esp_lcd_new_panel_hx8394(const esp_lcd_panel_io_handle_t io, const esp
             .hsync_front_porch = 40,                             \
             .vsync_back_porch = 10,                              \
             .vsync_pulse_width = 4,                              \
-            .vsync_front_porch = 30,                             \
+            .vsync_front_porch = 24,                             \
         },                                                       \
         .flags.use_dma2d = true,                                 \
     }
