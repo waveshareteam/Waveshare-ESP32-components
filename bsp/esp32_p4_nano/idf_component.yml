@@ -12,6 +12,7 @@ dependencies:
   waveshare/esp_lcd_jd9365_8: '*'
   waveshare/esp_lcd_ili9881c: '*'
   waveshare/esp_lcd_dsi: '*'
+  waveshare/esp_lcd_hx8394: "^1.0.2"
 description: a small size and highly integrated development board designed by waveshare
   electronics based on ESP32-P4 chip
 repository: git://github.com/WaveshareCloud/Waveshare-ESP32-components.git
@@ -23,4 +24,4 @@ tags:
 targets:
 - esp32p4
 url: https://www.waveshare.com/esp32-p4-nano.htm
-version: 1.1.5
+version: 1.1.6

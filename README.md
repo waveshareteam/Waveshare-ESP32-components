@@ -31,6 +31,7 @@ accelerate your project setup.
 | [101M-8001280-IPS-CT-K](https://www.waveshare.com/101m-8001280-ips-ct-k.htm) <br/><img style="width: 150px; height: auto; display: block; margin: 0 auto;" src="https://www.waveshare.com/media/catalog/product/cache/1/image/800x800/9df78eab33525d08d6e5fb8d27136e95/1/0/101m-8001280-ips-ct-k-1.jpg"> | [waveshare/esp_lcd_jd9365_10_1](display/lcd/esp_lcd_jd9365_10_1) | ✅      |
 | [8-DSI-TOUCH-A](https://www.waveshare.com/8-dsi-touch-a.htm) <br/><img style="width: 150px; height: auto; display: block; margin: 0 auto;" src="https://www.waveshare.com/media/catalog/product/cache/1/image/800x800/9df78eab33525d08d6e5fb8d27136e95/8/-/8-dsi-touch-a-1.jpg">                         | [waveshare/esp_lcd_jd9365_8](display/lcd/esp_lcd_ili9881c)       | ✅      |
 | [7-DSI-TOUCH-A](https://www.waveshare.com/7-dsi-touch-a.htm) <br/><img style="width: 150px; height: auto; display: block; margin: 0 auto;" src="https://www.waveshare.com/media/catalog/product/cache/1/image/800x800/9df78eab33525d08d6e5fb8d27136e95/7/-/7-dsi-touch-a-1.jpg"> | [waveshare/esp_lcd_ili9881c](display/lcd/esp_lcd_ili9881c)    | ✅      |
+| [5-DSI-TOUCH-A](https://www.waveshare.com/5-dsi-touch-a.htm) <br/><img style="width: 150px; height: auto; display: block; margin: 0 auto;" src="https://www.waveshare.com/media/catalog/product/cache/1/image/800x800/9df78eab33525d08d6e5fb8d27136e95/5/-/5-dsi-touch-a-1_1.jpg">                       | [waveshare/esp_lcd_hx8394](display/lcd/esp_lcd_hx8394)         | ✅      |
 
 #### Common Raspberry adapter screen
 
