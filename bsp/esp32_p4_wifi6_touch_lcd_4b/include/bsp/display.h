@@ -22,7 +22,7 @@
 
 #define BSP_LCD_H_RES              (720)
 #define BSP_LCD_V_RES              (720)
-#define BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS (1000)
+#define BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS (480)
 
 #define BSP_LCD_MIPI_DSI_LANE_NUM          (2)    // 2 data lanes
 #define BSP_MIPI_DSI_PHY_PWR_LDO_CHAN       (3)  // LDO_VO3 is connected to VDD_MIPI_DPHY
