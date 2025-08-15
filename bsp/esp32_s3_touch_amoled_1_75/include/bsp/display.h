@@ -79,7 +79,7 @@ esp_err_t bsp_display_brightness_init(void);
  *      - ESP_ERR_INVALID_ARG   Parameter error
  */
 esp_err_t bsp_display_brightness_set(int brightness_percent);
-
+int bsp_display_brightness_get(void);
 /**
  * @brief Turn on display backlight
  *

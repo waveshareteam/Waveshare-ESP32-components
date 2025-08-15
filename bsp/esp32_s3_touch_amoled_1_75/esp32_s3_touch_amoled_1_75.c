@@ -33,12 +33,12 @@ sdmmc_card_t *bsp_sdcard = NULL; // Global uSD card handler
 static esp_lcd_touch_handle_t tp = NULL;
 static esp_lcd_panel_handle_t panel_handle = NULL; // LCD panel handle
 static esp_lcd_panel_io_handle_t io_handle = NULL;
-
+uint8_t brightness;
 static i2s_chan_handle_t i2s_tx_chan = NULL;
 static i2s_chan_handle_t i2s_rx_chan = NULL;
 static const audio_codec_data_if_t *i2s_data_if = NULL; /* Codec data interface */
 
-#define BSP_ES7210_CODEC_ADDR  ES7210_CODEC_DEFAULT_ADDR
+#define BSP_ES7210_CODEC_ADDR ES7210_CODEC_DEFAULT_ADDR
 #define BSP_I2S_GPIO_CFG       \
     {                          \
         .mclk = BSP_I2S_MCLK,  \
@@ -356,7 +356,7 @@ esp_err_t bsp_display_brightness_set(int brightness_percent)
         return ESP_ERR_INVALID_ARG;
     }
 
-    uint8_t brightness = (uint8_t)(brightness_percent * 255 / 100);
+    brightness = (uint8_t)(brightness_percent * 255 / 100);
 
     uint32_t lcd_cmd = 0x51;
     lcd_cmd &= 0xff;
@@ -366,6 +366,17 @@ esp_err_t bsp_display_brightness_set(int brightness_percent)
     esp_lcd_panel_io_tx_param(io_handle, lcd_cmd, &param, 1);
 
     return ESP_OK;
+}
+
+int bsp_display_brightness_get(void)
+{
+    if (panel_handle == NULL)
+    {
+        ESP_LOGE(TAG, "Panel handle is not initialized");
+        return -1;
+    }
+
+    return brightness * 100 / 255;
 }
 
 esp_err_t bsp_display_backlight_off(void)
@@ -379,7 +390,40 @@ esp_err_t bsp_display_backlight_on(void)
     ESP_LOGI(TAG, "Backlight on");
     return bsp_display_brightness_set(100);
 }
+#if LVGL_VERSION_MAJOR >= 9
+static void rounder_event_cb(lv_event_t *e)
+{
+    lv_area_t *area = (lv_area_t *)lv_event_get_param(e);
+    uint16_t x1 = area->x1;
+    uint16_t x2 = area->x2;
 
+    uint16_t y1 = area->y1;
+    uint16_t y2 = area->y2;
+
+    // round the start of coordinate down to the nearest 2M number
+    area->x1 = (x1 >> 1) << 1;
+    area->y1 = (y1 >> 1) << 1;
+    // round the end of coordinate up to the nearest 2N+1 number
+    area->x2 = ((x2 >> 1) << 1) + 1;
+    area->y2 = ((y2 >> 1) << 1) + 1;
+}
+#else
+static void bsp_lvgl_rounder_cb(lv_disp_drv_t *disp_drv, lv_area_t *area)
+{
+    uint16_t x1 = area->x1;
+    uint16_t x2 = area->x2;
+
+    uint16_t y1 = area->y1;
+    uint16_t y2 = area->y2;
+
+    // round the start of coordinate down to the nearest 2M number
+    area->x1 = (x1 >> 1) << 1;
+    area->y1 = (y1 >> 1) << 1;
+    // round the end of coordinate up to the nearest 2N+1 number
+    area->x2 = ((x2 >> 1) << 1) + 1;
+    area->y2 = ((y2 >> 1) << 1) + 1;
+}
+#endif
 esp_err_t bsp_display_new(const bsp_display_config_t *config, esp_lcd_panel_handle_t *ret_panel, esp_lcd_panel_io_handle_t *ret_io)
 {
     esp_err_t ret = ESP_OK;
@@ -531,7 +575,22 @@ static lv_display_t *bsp_display_lcd_init()
     ESP_LOGW(TAG, "CONFIG_BSP_LCD_RGB_BOUNCE_BUFFER_MODE");
 #endif
 
-    return lvgl_port_add_disp_rgb(&disp_cfg, &rgb_cfg);
+    lv_display_t *disp = lvgl_port_add_disp_rgb(&disp_cfg, &rgb_cfg);
+    if (!disp)
+    {
+        return NULL;
+    }
+
+#if LVGL_VERSION_MAJOR >= 9
+    lv_display_add_event_cb(disp, rounder_event_cb, LV_EVENT_INVALIDATE_AREA, NULL);
+#else
+    lv_disp_t *disp_v8 = (lv_disp_t *)disp;
+    if (disp_v8 && disp_v8->driver) {
+        disp_v8->driver->rounder_cb = bsp_lvgl_rounder_cb;
+    }
+#endif
+
+    return disp;
 }
 
 static lv_indev_t *bsp_display_indev_init(lv_display_t *disp)
