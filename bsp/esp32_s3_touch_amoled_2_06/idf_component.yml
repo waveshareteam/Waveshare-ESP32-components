@@ -10,10 +10,10 @@ dependencies:
   idf: '>=5.3'
   lvgl/lvgl: '>=8,<10'
   esp_lcd_panel_io_additions: "^1"
-description: Board Support Package (BSP) for Waveshare ESP32-S3-Touch-AMOLED-1.8
+description: Board Support Package (BSP) for Waveshare ESP32-S3-Touch-AMOLED-2.06
 tags:
 - bsp
 targets:
 - esp32s3
-url: https://www.waveshare.com/esp32-s3-touch-amoled-1.8.htm
-version: 1.0.3
+url: https://www.waveshare.com/esp32-s3-touch-amoled-2.06.htm
+version: 1.0.4
