@@ -264,7 +264,7 @@ esp_codec_dev_handle_t bsp_audio_codec_speaker_init(void)
         .ctrl_if = i2c_ctrl_if,
         .gpio_if = gpio_if,
         .codec_mode = ESP_CODEC_DEV_WORK_MODE_DAC,
-        .pa_pin = BSP_POWER_AMP_IO,
+        .pa_pin = GPIO_NUM_NC,
         .pa_reverted = false,
         .master_mode = false,
         .use_mclk = true,
