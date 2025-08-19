@@ -1,6 +1,6 @@
 # Custom IO Expander Chip CH34V003
 
-[![Component Registry](https://components.espressif.com/components/espressif/esp_io_expander_tca9554/badge.svg)](https://components.espressif.com/components/espressif/esp_io_expander_tca9554)
+[![Component Registry](https://components.espressif.com/components/waveshare/custom_io_expander_ch32v003/badge.svg)](https://components.espressif.com/components/waveshare/custom_io_expander_ch32v003)
 
 Implementation of the Custom io expander chip (CH32V003) with esp_io_expander component.
 
