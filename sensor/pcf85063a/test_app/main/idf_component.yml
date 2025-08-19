@@ -3,10 +3,6 @@ dependencies:
   ## Required IDF version
   idf: ">=5.3.0"
 
-  custom_io_expander_ch32v003:
-    public: true
-    version: "*"
-
   pcf85063a: 
     version: "*"
     path: "../../../pcf85063a"

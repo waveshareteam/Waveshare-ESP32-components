@@ -2,14 +2,16 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/i2c_master.h"
+#include "driver/gpio.h"
 #include "esp_log.h"
-#include "custom_io_expander_ch32v003.h"
 #include "pcf85063a.h"
 
 #define I2C_MASTER_SCL_IO           9
 #define I2C_MASTER_SDA_IO           8
 #define I2C_MASTER_NUM              I2C_NUM_0
 #define I2C_MASTER_FREQ_HZ          400000
+
+#define RTC_INT_PIN          GPIO_NUM_6
 
 static const char *TAG = "pcf85063a_example";
 
@@ -38,6 +40,20 @@ static pcf85063a_datetime_t Set_Alarm_Time = {
 char datetime_str[256];  // Buffer to store formatted date-time string
 
 
+static esp_err_t gpio_int_init()
+{
+    // Zero-initialize the GPIO configuration structure
+    gpio_config_t io_conf = {};
+    io_conf.intr_type = GPIO_INTR_DISABLE; // Disable interrupts for this pin
+    io_conf.pin_bit_mask = 1ULL << RTC_INT_PIN;    // Select the GPIO pin using a bitmask
+
+    io_conf.mode = GPIO_MODE_INPUT;          // Set pin as input
+    io_conf.pull_up_en = GPIO_PULLUP_ENABLE; // Enable internal pull-up resistor
+
+
+    return gpio_config(&io_conf); // Apply the configuration
+}
+
 static esp_err_t i2c_master_init(i2c_master_bus_handle_t *bus_handle) {
     i2c_master_bus_config_t bus_config = {
         .i2c_port = I2C_MASTER_NUM,
@@ -57,9 +73,7 @@ static void pcf85063a_test_task(void *arg) {
     i2c_master_bus_handle_t bus_handle = (i2c_master_bus_handle_t)arg;
     pcf85063a_dev_t dev;
     pcf85063a_datetime_t Now_time;
-    static esp_io_expander_handle_t custom_io_expander = NULL; // Custom IO expander ch32v003 handle
 
-    custom_io_expander_new_i2c_ch32v003(bus_handle, CUSTOM_IO_EXPANDER_I2C_CH32V003_ADDRESS, &custom_io_expander);
     ESP_LOGI(TAG, "Initializing PCF85063A...");
     esp_err_t ret = pcf85063a_init(&dev, bus_handle, PCF85063A_ADDRESS);
     if (ret != ESP_OK) {
@@ -86,9 +100,7 @@ static void pcf85063a_test_task(void *arg) {
         ESP_LOGI(TAG, "Now_time is %s", datetime_str);
 
         // Poll external IO pin for alarm (low level = alarm triggered)
-        uint8_t RTC_INT = 1;
-        custom_io_expander_get_int(custom_io_expander, &RTC_INT);
-        if (RTC_INT == 0)
+        if (gpio_get_level(RTC_INT_PIN) == 0)
         {
             // Re-enable alarm if repeated alarms are required
             pcf85063a_enable_alarm(&dev);
@@ -105,6 +117,7 @@ void app_main(void)
     ESP_LOGI(TAG, "Initializing I2C...");
     i2c_master_bus_handle_t bus_handle;
     esp_err_t ret = i2c_master_init(&bus_handle);
+    ret = gpio_int_init();
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize I2C (error: %d)", ret);
         return;
