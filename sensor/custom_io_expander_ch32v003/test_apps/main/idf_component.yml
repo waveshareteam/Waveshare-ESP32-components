@@ -1,0 +1,6 @@
+## IDF Component Manager Manifest File
+dependencies:
+  idf: ">=5.3"
+  custom_io_expander_ch32v003:
+    version: "*"
+    override_path: "../../../custom_io_expander_ch32v003"
