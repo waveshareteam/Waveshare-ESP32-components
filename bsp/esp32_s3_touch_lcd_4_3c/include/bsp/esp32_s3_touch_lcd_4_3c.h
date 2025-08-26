@@ -410,6 +410,19 @@ void bsp_display_unlock(void);
  */
 void bsp_display_rotate(lv_display_t *disp, lv_disp_rotation_t rotation);
 
+/**
+ * @brief Set the current PCLK frequency
+ *
+ * Display must be already initialized by calling bsp_display_start()
+ *
+ * @param[in] freq_hz PCLK frequency(HZ)
+ * 
+ * @return
+ *      - ESP_OK: Success, otherwise returns ESP_ERR_xxx
+ */
+esp_err_t bsp_set_display_pclk(uint32_t freq_hz);
+
+
 /**************************************************************************************************
  *
  * CPU Temperature

@@ -407,6 +407,11 @@ esp_err_t bsp_display_backlight_on(void)
     return bsp_display_brightness_set(100);
 }
 
+esp_err_t bsp_set_display_pclk(uint32_t freq_hz)
+{
+    return esp_lcd_rgb_panel_set_pclk(panel_handle,freq_hz);;
+}
+
 esp_err_t bsp_display_new(const bsp_display_config_t *config, esp_lcd_panel_handle_t *ret_panel, esp_lcd_panel_io_handle_t *ret_io)
 {
     esp_lcd_panel_io_handle_t io_handle = NULL;
@@ -424,7 +429,7 @@ esp_err_t bsp_display_new(const bsp_display_config_t *config, esp_lcd_panel_hand
     vTaskDelay(pdMS_TO_TICKS(200));
 
     esp_lcd_rgb_panel_config_t rgb_config = {
-           .clk_src = LCD_CLK_SRC_DEFAULT,
+           .clk_src = LCD_CLK_SRC_PLL160M,
            .psram_trans_align = 64,
            .data_width = BSP_RGB_DATA_WIDTH,
            .bits_per_pixel = BSP_LCD_BITS_PER_PIXEL,
@@ -454,7 +459,9 @@ esp_err_t bsp_display_new(const bsp_display_config_t *config, esp_lcd_panel_hand
            .timings = BSP_LCD_800_480_PANEL_35HZ_RGB_TIMING(),
            .flags.fb_in_psram = 1,
            .num_fbs = CONFIG_BSP_LCD_RGB_BUFFER_NUMS,
-           .bounce_buffer_size_px = BSP_LCD_DRAW_BUFF_SIZE,
+// #if !CONFIG_BSP_DISPLAY_LVGL_AVOID_TEAR
+//            .bounce_buffer_size_px = BSP_LCD_DRAW_BUFF_SIZE,
+// #endif
     };
 
     BSP_ERROR_CHECK_RETURN_ERR(esp_lcd_new_rgb_panel(&rgb_config, &panel_handle));
@@ -561,6 +568,7 @@ static lv_display_t *bsp_display_lcd_init()
 #endif
         }
     };
+    
     const lvgl_port_display_rgb_cfg_t rgb_cfg = {
         .flags = {
 #if CONFIG_BSP_LCD_RGB_BOUNCE_BUFFER_MODE
