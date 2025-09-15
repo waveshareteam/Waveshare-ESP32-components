@@ -46,6 +46,7 @@
 #define LED_STRIP_LED_COUNT 6
 #define LED_STRIP_MEMORY_BLOCK_WORDS 0 // let the driver choose a proper memory block size automatically
 
+/* Audio */
 #define BSP_I2S_SCLK            (GPIO_NUM_13)
 #define BSP_I2S_MCLK            (GPIO_NUM_12)
 #define BSP_I2S_LCLK            (GPIO_NUM_14)
@@ -94,7 +95,12 @@
 #define BSP_SD_CMD           (GPIO_NUM_20)
 #define BSP_SD_CLK           (GPIO_NUM_1)
 
+/* RTC */
 #define BSP_RTC_I2C_ADDRESS     (PCF85063A_ADDRESS)
+
+/* WIFI */
+#define BSP_WIFI_ANT_SELECT_IO     (IO_EXPANDER_PIN_NUM_13)
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -504,7 +510,17 @@ esp_err_t bsp_ws2812b_init();
  */
 esp_err_t bsp_setledcolor(int index, uint8_t g, uint8_t r, uint8_t b);
 
+/**************************************************************************************************
+ *
+ * WIFI ANT Interface
+ *
+ **************************************************************************************************/
+typedef enum {
+    WIFI_ANT1, /*选择外接天线 */
+    WIFI_ANT2  /*选择板载天线 */
+} wifi_ant_select_t;
 
+esp_err_t bsp_wifi_ant_select(wifi_ant_select_t ant);
 #endif // BSP_CONFIG_NO_GRAPHIC_LIB == 0
 
 #ifdef __cplusplus

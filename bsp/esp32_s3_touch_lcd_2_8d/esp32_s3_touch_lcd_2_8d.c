@@ -279,7 +279,7 @@ esp_err_t bsp_audio_init(const i2s_std_config_t *i2s_config)
     BSP_NULL_CHECK_GOTO(i2s_data_if, err);
 
     bsp_io_expander_init();
-    BSP_ERROR_CHECK_RETURN_ERR(esp_io_expander_set_dir(io_expander, BSP_POWER_AMP_IO, IO_EXPANDER_OUTPUT));
+    BSP_ERROR_CHECK_RETURN_ERR(esp_io_expander_set_dir(io_expander, BSP_POWER_AMP_IO | BSP_WIFI_ANT_SELECT_IO, IO_EXPANDER_OUTPUT));
     BSP_ERROR_CHECK_RETURN_ERR(esp_io_expander_set_level(io_expander, BSP_POWER_AMP_IO, true));
 
     return ESP_OK;
@@ -824,4 +824,15 @@ esp_err_t bsp_setledcolor(int index, uint8_t g, uint8_t r, uint8_t b) {
     ESP_ERROR_CHECK(led_strip_set_pixel(led_strip, index, g, r, b));
     ret |= led_strip_refresh(led_strip);
     return ret;
+}
+
+/**************************************************************************************************
+ *
+ * WIFI ANT Interface
+ *
+ **************************************************************************************************/
+esp_err_t bsp_wifi_ant_select(wifi_ant_select_t ant)
+{
+    BSP_ERROR_CHECK_RETURN_ERR(esp_io_expander_set_level(io_expander, BSP_WIFI_ANT_SELECT_IO, (uint8_t)ant));
+    return ESP_OK;
 }
