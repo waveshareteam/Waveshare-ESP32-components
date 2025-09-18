@@ -114,7 +114,7 @@ Each library and support package comes with detailed documentation and examples.
 - **Peripheral Utilities:**
     - Simplified access to RTC, I/O expanders, and power management ICs.
 - **Arduino-Compatible Libraries:**
-    - Easy porting of code using the Arduino ecosystem.(Out-of-the-box ready)
+    - Easy porting of code using the Arduino ecosystem.(Not ready to use out of the box)
 
 ---
 
