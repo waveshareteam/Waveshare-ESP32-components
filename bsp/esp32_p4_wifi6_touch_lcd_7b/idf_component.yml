@@ -1,0 +1,19 @@
+dependencies:
+  esp_codec_dev:
+    public: true
+    version: 1.2.*
+  esp_lcd_ek79007: 1.*
+  esp_lcd_touch_gt911: ^1
+  espressif/esp_lvgl_port:
+    public: true
+    version: ^2
+  idf: '>=5.3'
+  lvgl/lvgl: '>=8,<10'
+description: Based on ESP32-P4 chip, waveshare electronics designed a 7-inch screen, highly integrated development board
+repository: git://github.com/WaveshareCloud/Waveshare-ESP32-components.git
+tags:
+- bsp
+targets:
+- esp32p4
+url: https://www.waveshare.com/esp32-p4-wifi6-touch-lcd-7b.htm
+version: 1.0.0
