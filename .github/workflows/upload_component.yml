@@ -34,7 +34,11 @@ jobs:
             bsp/esp32_s3_touch_amoled_2_06;
             bsp/esp32_s3_touch_lcd_4b;
             bsp/esp32_p4_wifi6_touch_lcd_7b;
+            bsp/esp32_s3_touch_lcd_4_3c;
+            bsp/esp32_s3_touch_lcd_2_8d;
             sensor/qmi8658;
+            sensor/pcf85063a;
+            sensor/custom_io_expander_ch32v003;
 
           namespace: "waveshare"
           api_token: ${{ secrets.IDF_COMPONENT_API_TOKEN }}

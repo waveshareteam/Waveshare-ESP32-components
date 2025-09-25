@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "esp_lcd_panel_ops.h"
+#include "esp_lcd_panel_rgb.h"
 #include "esp_lcd_panel_io.h"
-#include "esp_lcd_panel_io_additions.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_check.h"
@@ -12,24 +12,32 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include "esp_lcd_sh8601.h"
-#include "esp_lcd_touch_ft5x06.h"
 
-#include "esp_codec_dev_defaults.h"
-#include "bsp/esp32_s3_touch_amoled_2_06.h"
-#include "bsp_err_check.h"
+#include "esp_lcd_touch_gt911.h"
+
 #include "bsp/display.h"
 #include "bsp/touch.h"
+#include "esp_codec_dev_defaults.h"
+#include "bsp/esp32_s3_touch_lcd_4_3c.h"
+#include "bsp_err_check.h"
+#include "bsp/display.h"
+#include "bsp_err_check.h"
 
-static const char *TAG = "ESP32-S3-Touch-AMOLED-2.06";
+static const char *TAG = "ESP32-S3-Touch-LCD-4.3C";
 
-static i2c_master_bus_handle_t i2c_handle = NULL; // I2C Handle
+static bool gpio_initialized = false;
+
+static i2c_master_bus_handle_t i2c_handle = NULL;  // I2C Handle
 static bool i2c_initialized = false;
-static lv_indev_t *disp_indev = NULL;
+static esp_io_expander_handle_t custom_io_expander = NULL; // Custom IO expander ch32v003 handle
 sdmmc_card_t *bsp_sdcard = NULL; // Global uSD card handler
+temperature_sensor_handle_t temp_sensor = NULL;
+static pcf85063a_dev_t dev;
+
+static lv_display_t *disp;
+static lv_indev_t *disp_indev = NULL;
 static esp_lcd_touch_handle_t tp = NULL;
-static esp_lcd_panel_handle_t panel_handle = NULL; // LCD panel handle
-static esp_lcd_panel_io_handle_t io_handle = NULL;
+static esp_lcd_panel_handle_t panel_handle = NULL;           // LCD panel handle
 uint8_t brightness;
 static i2s_chan_handle_t i2s_tx_chan = NULL;
 static i2s_chan_handle_t i2s_rx_chan = NULL;
@@ -50,26 +58,34 @@ static const audio_codec_data_if_t *i2s_data_if = NULL; /* Codec data interface 
         },                     \
     }
 
-static const sh8601_lcd_init_cmd_t lcd_init_cmds[] = {
-    {0x11, (uint8_t[]){0x00}, 0, 120},
-    {0xC4, (uint8_t[]){0x80}, 1, 0},
-    {0x44, (uint8_t[]){0x01, 0xD1}, 2, 0},
-    {0x35, (uint8_t[]){0x00}, 1, 0},
-    {0x53, (uint8_t[]){0x20}, 1, 10},
-    {0x63, (uint8_t[]){0xFF}, 1, 10},
-    {0x51, (uint8_t[]){0x00}, 1, 10},
-    {0x2A, (uint8_t[]){0x00, 0x16, 0x01, 0xAF}, 4, 0},
-    {0x2B, (uint8_t[]){0x00, 0x00, 0x01, 0xF5}, 4, 0},
-    {0x29, (uint8_t[]){0x00}, 0, 10},
-    {0x51, (uint8_t[]){0xFF}, 1, 0},
-};
-
 #define BSP_I2S_DUPLEX_MONO_CFG(_sample_rate)                                                         \
     {                                                                                                 \
         .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(_sample_rate),                                          \
         .slot_cfg = I2S_STD_PHILIP_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO), \
         .gpio_cfg = BSP_I2S_GPIO_CFG,                                                                 \
     }
+
+#define LCD_BRIGHTNESS_MAX 0xFF 
+/**************************************************************************************************
+ *
+ * GPIO Function
+ *
+ **************************************************************************************************/
+esp_err_t bsp_gpio_init(void)
+{
+    // Zero-initialize the GPIO configuration structure
+    gpio_config_t io_conf = {};
+    io_conf.intr_type = GPIO_INTR_DISABLE; // Disable interrupts for this pin
+    io_conf.pin_bit_mask = 1ULL << BSP_LCD_TOUCH_INT;    // Select the GPIO pin using a bitmask
+    io_conf.mode = GPIO_MODE_OUTPUT;          // Set pin as output
+    io_conf.pull_up_en = GPIO_PULLUP_DISABLE; // Disable pull-up
+    gpio_config(&io_conf); // Apply the configuration
+
+    gpio_initialized = true;
+
+    return ESP_OK;
+}
+
 
 /**************************************************************************************************
  *
@@ -79,8 +95,7 @@ static const sh8601_lcd_init_cmd_t lcd_init_cmds[] = {
 esp_err_t bsp_i2c_init(void)
 {
     /* I2C was initialized before */
-    if (i2c_initialized)
-    {
+    if (i2c_initialized) {
         return ESP_OK;
     }
 
@@ -89,6 +104,9 @@ esp_err_t bsp_i2c_init(void)
         .sda_io_num = BSP_I2C_SDA,
         .scl_io_num = BSP_I2C_SCL,
         .i2c_port = BSP_I2C_NUM,
+        .glitch_ignore_cnt = 7,
+        // .flags.enable_internal_pullup = true,
+        // .trans_queue_depth = 0,
     };
     BSP_ERROR_CHECK_RETURN_ERR(i2c_new_master_bus(&i2c_bus_conf, &i2c_handle));
 
@@ -110,6 +128,11 @@ i2c_master_bus_handle_t bsp_i2c_get_handle(void)
     return i2c_handle;
 }
 
+/**************************************************************************************************
+ *
+ * SPIFFS Function
+ *
+ **************************************************************************************************/
 esp_err_t bsp_spiffs_mount(void)
 {
     esp_vfs_spiffs_conf_t conf = {
@@ -129,12 +152,9 @@ esp_err_t bsp_spiffs_mount(void)
 
     size_t total = 0, used = 0;
     ret_val = esp_spiffs_info(conf.partition_label, &total, &used);
-    if (ret_val != ESP_OK)
-    {
+    if (ret_val != ESP_OK) {
         ESP_LOGE(TAG, "Failed to get SPIFFS partition information (%s)", esp_err_to_name(ret_val));
-    }
-    else
-    {
+    } else {
         ESP_LOGI(TAG, "Partition size: total: %d, used: %d", total, used);
     }
 
@@ -145,7 +165,11 @@ esp_err_t bsp_spiffs_unmount(void)
 {
     return esp_vfs_spiffs_unregister(CONFIG_BSP_SPIFFS_PARTITION_LABEL);
 }
-
+/**************************************************************************************************
+ *
+ * SD Function
+ *
+ **************************************************************************************************/
 esp_err_t bsp_sdcard_mount(void)
 {
     const esp_vfs_fat_sdmmc_mount_config_t mount_config = {
@@ -187,7 +211,18 @@ esp_err_t bsp_sdcard_unmount(void)
     return esp_vfs_fat_sdcard_unmount(BSP_SD_MOUNT_POINT, bsp_sdcard);
 }
 
-esp_err_t bsp_audio_init(const i2s_std_config_t *i2s_config)
+/**************************************************************************************************
+ *
+ * I2S Audio Function
+ *
+ **************************************************************************************************/
+esp_err_t bsp_audio_poweramp_enable(bool enable)
+{
+    BSP_ERROR_CHECK_RETURN_ERR(esp_io_expander_set_level(custom_io_expander, BSP_POWER_AMP_IO, (uint8_t)enable));
+    return ESP_OK;
+}
+
+ esp_err_t bsp_audio_init(const i2s_std_config_t *i2s_config)
 {
     esp_err_t ret = ESP_FAIL;
     if (i2s_tx_chan && i2s_rx_chan)
@@ -227,6 +262,10 @@ esp_err_t bsp_audio_init(const i2s_std_config_t *i2s_config)
     };
     i2s_data_if = audio_codec_new_i2s_data(&i2s_cfg);
     BSP_NULL_CHECK_GOTO(i2s_data_if, err);
+
+    bsp_io_expander_init();
+    BSP_ERROR_CHECK_RETURN_ERR(esp_io_expander_set_dir(custom_io_expander, BSP_POWER_AMP_IO, IO_EXPANDER_OUTPUT));
+    BSP_ERROR_CHECK_RETURN_ERR(esp_io_expander_set_level(custom_io_expander, BSP_POWER_AMP_IO, true));
 
     return ESP_OK;
 
@@ -273,7 +312,7 @@ esp_codec_dev_handle_t bsp_audio_codec_speaker_init(void)
         .ctrl_if = i2c_ctrl_if,
         .gpio_if = gpio_if,
         .codec_mode = ESP_CODEC_DEV_WORK_MODE_DAC,
-        .pa_pin = BSP_POWER_AMP_IO,
+        .pa_pin = GPIO_NUM_NC,
         .pa_reverted = false,
         .master_mode = false,
         .use_mclk = true,
@@ -326,157 +365,133 @@ esp_codec_dev_handle_t bsp_audio_codec_microphone_init(void)
     return esp_codec_dev_new(&codec_es7210_dev_cfg);
 }
 
-#define LCD_CMD_BITS (8)
-#define LCD_PARAM_BITS (8)
-#define LCD_LEDC_CH (CONFIG_BSP_DISPLAY_BRIGHTNESS_LEDC_CH)
-#define LVGL_TICK_PERIOD_MS (CONFIG_BSP_DISPLAY_LVGL_TICK)
-#define LVGL_MAX_SLEEP_MS (CONFIG_BSP_DISPLAY_LVGL_MAX_SLEEP)
-
+/**********************************************************************************************************
+ *
+ * Display Function
+ *
+ **********************************************************************************************************/
 esp_err_t bsp_display_brightness_init(void)
 {
-    bsp_display_brightness_set(100);
+    custom_io_expander_set_pwm(custom_io_expander, LCD_BRIGHTNESS_MAX);
     return ESP_OK;
 }
 
 esp_err_t bsp_display_brightness_set(int brightness_percent)
 {
-    if (panel_handle == NULL)
-    {
-        ESP_LOGE(TAG, "Panel handle is not initialized");
-        return ESP_ERR_INVALID_STATE;
+    if (brightness_percent > 100) {
+        brightness_percent = 100;
+    } else if (brightness_percent < 0) {
+        brightness_percent = 0;
     }
 
-    if (brightness_percent < 0 || brightness_percent > 100)
-    {
-        ESP_LOGE(TAG, "Invalid brightness percentage. Should be between 0 and 100.");
-        return ESP_ERR_INVALID_ARG;
-    }
+    int flipped_brightness = 100 - brightness_percent;
 
-    brightness = (uint8_t)(brightness_percent * 255 / 100);
+    brightness = (uint8_t)flipped_brightness;
 
-    uint32_t lcd_cmd = 0x51;
-    lcd_cmd &= 0xff;
-    lcd_cmd <<= 8;
-    lcd_cmd |= 0x02 << 24;
-    uint8_t param = brightness;
-    esp_lcd_panel_io_tx_param(io_handle, lcd_cmd, &param, 1);
+    custom_io_expander_set_pwm(custom_io_expander, brightness * LCD_BRIGHTNESS_MAX / 100);
 
     return ESP_OK;
 }
-
 int bsp_display_brightness_get(void)
 {
-    if (panel_handle == NULL)
-    {
-        ESP_LOGE(TAG, "Panel handle is not initialized");
-        return -1;
-    }
-
-    return brightness * 100 / 255;
+    return brightness;
 }
 
 esp_err_t bsp_display_backlight_off(void)
 {
-    ESP_LOGI(TAG, "Backlight off");
     return bsp_display_brightness_set(0);
 }
 
 esp_err_t bsp_display_backlight_on(void)
 {
-    ESP_LOGI(TAG, "Backlight on");
     return bsp_display_brightness_set(100);
 }
-#if LVGL_VERSION_MAJOR >= 9
-static void rounder_event_cb(lv_event_t *e)
+
+esp_err_t bsp_set_display_pclk(uint32_t freq_hz)
 {
-    lv_area_t *area = (lv_area_t *)lv_event_get_param(e);
-    uint16_t x1 = area->x1;
-    uint16_t x2 = area->x2;
-
-    uint16_t y1 = area->y1;
-    uint16_t y2 = area->y2;
-
-    // round the start of coordinate down to the nearest 2M number
-    area->x1 = (x1 >> 1) << 1;
-    area->y1 = (y1 >> 1) << 1;
-    // round the end of coordinate up to the nearest 2N+1 number
-    area->x2 = ((x2 >> 1) << 1) + 1;
-    area->y2 = ((y2 >> 1) << 1) + 1;
+    return esp_lcd_rgb_panel_set_pclk(panel_handle,freq_hz);;
 }
-#else
-static void bsp_lvgl_rounder_cb(lv_disp_drv_t *disp_drv, lv_area_t *area)
-{
-    uint16_t x1 = area->x1;
-    uint16_t x2 = area->x2;
 
-    uint16_t y1 = area->y1;
-    uint16_t y2 = area->y2;
-
-    // round the start of coordinate down to the nearest 2M number
-    area->x1 = (x1 >> 1) << 1;
-    area->y1 = (y1 >> 1) << 1;
-    // round the end of coordinate up to the nearest 2N+1 number
-    area->x2 = ((x2 >> 1) << 1) + 1;
-    area->y2 = ((y2 >> 1) << 1) + 1;
-}
-#endif
 esp_err_t bsp_display_new(const bsp_display_config_t *config, esp_lcd_panel_handle_t *ret_panel, esp_lcd_panel_io_handle_t *ret_io)
 {
-    esp_err_t ret = ESP_OK;
-    assert(config != NULL && config->max_transfer_sz > 0);
+    esp_lcd_panel_io_handle_t io_handle = NULL;
+    esp_io_expander_handle_t expander = NULL;
 
-    ESP_LOGI(TAG, "Initialize SPI bus");
-    const spi_bus_config_t buscfg = SH8601_PANEL_BUS_QSPI_CONFIG(BSP_LCD_PCLK,
-                                                                 BSP_LCD_DATA0,
-                                                                 BSP_LCD_DATA1,
-                                                                 BSP_LCD_DATA2,
-                                                                 BSP_LCD_DATA3,
-                                                                 config->max_transfer_sz);
-    ESP_ERROR_CHECK(spi_bus_initialize(BSP_LCD_SPI_NUM, &buscfg, SPI_DMA_CH_AUTO));
+    ESP_RETURN_ON_ERROR(bsp_display_brightness_init(), TAG, "Brightness init failed");
+    BSP_NULL_CHECK(expander = bsp_io_expander_init(), ESP_FAIL);
 
-    const esp_lcd_panel_io_spi_config_t io_config = SH8601_PANEL_IO_QSPI_CONFIG(BSP_LCD_CS, NULL, NULL);
+    esp_io_expander_set_dir(custom_io_expander, BSP_LCD_BACKLIGHT | BSP_LCD_TOUCH_RST , IO_EXPANDER_OUTPUT);
+    esp_io_expander_set_level(custom_io_expander, BSP_LCD_TOUCH_RST, 0);
+    vTaskDelay(pdMS_TO_TICKS(200));
+    gpio_set_level(BSP_LCD_TOUCH_INT, 0); 
+    vTaskDelay(pdMS_TO_TICKS(200));
+    esp_io_expander_set_level(custom_io_expander, BSP_LCD_TOUCH_RST, 1);
+    vTaskDelay(pdMS_TO_TICKS(200));
 
-    sh8601_vendor_config_t vendor_config = {
-        .init_cmds = lcd_init_cmds,
-        .init_cmds_size = sizeof(lcd_init_cmds) / sizeof(lcd_init_cmds[0]),
-        .flags = {
-            .use_qspi_interface = 1,
-        },
+    esp_lcd_rgb_panel_config_t rgb_config = {
+           .clk_src = LCD_CLK_SRC_PLL160M,
+           .psram_trans_align = 64,
+           .data_width = BSP_RGB_DATA_WIDTH,
+           .bits_per_pixel = BSP_LCD_BITS_PER_PIXEL,
+           .de_gpio_num = BSP_LCD_DE,
+           .pclk_gpio_num = BSP_LCD_PCLK,
+           .vsync_gpio_num = BSP_LCD_VSYNC,
+           .hsync_gpio_num = BSP_LCD_HSYNC,
+           .disp_gpio_num = BSP_LCD_DISP,
+           .data_gpio_nums = {
+               BSP_LCD_DATA0,
+               BSP_LCD_DATA1,
+               BSP_LCD_DATA2,
+               BSP_LCD_DATA3,
+               BSP_LCD_DATA4,
+               BSP_LCD_DATA5,
+               BSP_LCD_DATA6,
+               BSP_LCD_DATA7,
+               BSP_LCD_DATA8,
+               BSP_LCD_DATA9,
+               BSP_LCD_DATA10,
+               BSP_LCD_DATA11,
+               BSP_LCD_DATA12,
+               BSP_LCD_DATA13,
+               BSP_LCD_DATA14,
+               BSP_LCD_DATA15,
+           },
+           .timings = BSP_LCD_800_480_PANEL_35HZ_RGB_TIMING(),
+           .flags.fb_in_psram = 1,
+           .num_fbs = CONFIG_BSP_LCD_RGB_BUFFER_NUMS,
+// #if !CONFIG_BSP_DISPLAY_LVGL_AVOID_TEAR
+//            .bounce_buffer_size_px = BSP_LCD_DRAW_BUFF_SIZE,
+// #endif
     };
-    ESP_ERROR_CHECK(esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)BSP_LCD_SPI_NUM, &io_config, &io_handle));
-    const esp_lcd_panel_dev_config_t panel_config = {
-        .reset_gpio_num = BSP_LCD_RST,
-        .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB,
-        .bits_per_pixel = BSP_LCD_BITS_PER_PIXEL,
-        .vendor_config = &vendor_config,
-    };
-    ESP_ERROR_CHECK(esp_lcd_new_panel_sh8601(io_handle, &panel_config, &panel_handle));
-    esp_lcd_panel_reset(panel_handle);
-    esp_lcd_panel_init(panel_handle);
-    esp_lcd_panel_set_gap(panel_handle, 0x16, 0);
-    esp_lcd_panel_disp_on_off(panel_handle, true);
 
-    if (ret_panel)
-    {
+    BSP_ERROR_CHECK_RETURN_ERR(esp_lcd_new_rgb_panel(&rgb_config, &panel_handle));
+    BSP_ERROR_CHECK_RETURN_ERR(esp_lcd_panel_init(panel_handle));
+
+    if (ret_panel) {
         *ret_panel = panel_handle;
     }
-    if (ret_io)
-    {
+
+    if (ret_io) {
         *ret_io = io_handle;
     }
-    return ret;
+
+    return ESP_OK;
 }
+
 
 esp_err_t bsp_touch_new(const bsp_touch_config_t *config, esp_lcd_touch_handle_t *ret_touch)
 {
-    /* Initilize I2C */
-    BSP_ERROR_CHECK_RETURN_ERR(bsp_i2c_init());
-
+    if (!i2c_initialized)
+    {
+        /* Initilize I2C */
+        BSP_ERROR_CHECK_RETURN_ERR(bsp_i2c_init());
+    }
+    
     /* Initialize touch */
     const esp_lcd_touch_config_t tp_cfg = {
         .x_max = BSP_LCD_H_RES,
         .y_max = BSP_LCD_V_RES,
-        .rst_gpio_num = BSP_LCD_TOUCH_RST, // Shared with LCD reset
+        .rst_gpio_num = GPIO_NUM_NC, // Shared with LCD reset
         .int_gpio_num = BSP_LCD_TOUCH_INT,
         .levels = {
             .reset = 0,
@@ -489,17 +504,27 @@ esp_err_t bsp_touch_new(const bsp_touch_config_t *config, esp_lcd_touch_handle_t
         },
     };
     esp_lcd_panel_io_handle_t tp_io_handle = NULL;
-    esp_lcd_panel_io_i2c_config_t tp_io_config = ESP_LCD_TOUCH_IO_I2C_FT5x06_CONFIG();
+    esp_lcd_panel_io_i2c_config_t tp_io_config = {
+    .dev_addr = ESP_LCD_TOUCH_IO_I2C_GT911_ADDRESS,
+    .control_phase_bytes = 1,
+    .dc_bit_offset = 0,
+    .lcd_cmd_bits = 16,
+    .flags = {
+        .disable_control_phase = 1,
+    }
+};
     tp_io_config.scl_speed_hz = CONFIG_BSP_I2C_CLK_SPEED_HZ;
     ESP_RETURN_ON_ERROR(esp_lcd_new_panel_io_i2c(i2c_handle, &tp_io_config, &tp_io_handle), TAG, "");
-    return esp_lcd_touch_new_i2c_ft5x06(tp_io_handle, &tp_cfg, ret_touch);
+    return esp_lcd_touch_new_i2c_gt911(tp_io_handle, &tp_cfg, ret_touch);
 }
 
 static lv_display_t *bsp_display_lcd_init()
 {
-    const bsp_display_config_t disp_config = {
-        .max_transfer_sz = BSP_LCD_H_RES * BSP_LCD_V_RES * BSP_LCD_BITS_PER_PIXEL / 8,
-    };
+    esp_lcd_panel_io_handle_t io_handle = NULL;
+
+    bsp_display_config_t disp_config = { 0 };
+
+    bsp_io_expander_init();
 
     BSP_ERROR_CHECK_RETURN_NULL(bsp_display_new(&disp_config, &panel_handle, &io_handle));
 
@@ -539,9 +564,11 @@ static lv_display_t *bsp_display_lcd_init()
             .direct_mode = 1,
 #endif
 #if LVGL_VERSION_MAJOR >= 9
-            .swap_bytes = true,
+            .swap_bytes = false,
 #endif
-        }};
+        }
+    };
+    
     const lvgl_port_display_rgb_cfg_t rgb_cfg = {
         .flags = {
 #if CONFIG_BSP_LCD_RGB_BOUNCE_BUFFER_MODE
@@ -554,29 +581,16 @@ static lv_display_t *bsp_display_lcd_init()
 #else
             .avoid_tearing = false,
 #endif
-        }};
+        }
+    };
 
 #if CONFIG_BSP_LCD_RGB_BOUNCE_BUFFER_MODE
     ESP_LOGW(TAG, "CONFIG_BSP_LCD_RGB_BOUNCE_BUFFER_MODE");
 #endif
 
-    lv_display_t *disp = lvgl_port_add_disp_rgb(&disp_cfg, &rgb_cfg);
-    if (!disp)
-    {
-        return NULL;
-    }
-
-#if LVGL_VERSION_MAJOR >= 9
-    lv_display_add_event_cb(disp, rounder_event_cb, LV_EVENT_INVALIDATE_AREA, NULL);
-#else
-    lv_disp_t *disp_v8 = (lv_disp_t *)disp;
-    if (disp_v8 && disp_v8->driver) {
-        disp_v8->driver->rounder_cb = bsp_lvgl_rounder_cb;
-    }
-#endif
-
-    return disp;
+    return lvgl_port_add_disp_rgb(&disp_cfg, &rgb_cfg);
 }
+
 
 static lv_indev_t *bsp_display_indev_init(lv_display_t *disp)
 {
@@ -592,36 +606,23 @@ static lv_indev_t *bsp_display_indev_init(lv_display_t *disp)
     return lvgl_port_add_touch(&touch_cfg);
 }
 
-/**********************************************************************************************************
- *
- * Display Function
- *
- **********************************************************************************************************/
-lv_display_t *bsp_display_start(void)
+
+ lv_display_t *bsp_display_start(void)
 {
     bsp_display_cfg_t cfg = {
-        .lvgl_port_cfg = ESP_LVGL_PORT_INIT_CONFIG(),
-        .buffer_size = BSP_LCD_DRAW_BUFF_SIZE,
-        .double_buffer = BSP_LCD_DRAW_BUFF_DOUBLE,
-        .flags = {
-            .buff_dma = false,
-            .buff_spiram = true,
-        }};
+        .lvgl_port_cfg = ESP_LVGL_PORT_INIT_CONFIG()
+    };
+
     return bsp_display_start_with_config(&cfg);
 }
 
 lv_display_t *bsp_display_start_with_config(const bsp_display_cfg_t *cfg)
 {
-    lv_display_t *disp;
+    BSP_ERROR_CHECK_RETURN_NULL(lvgl_port_init(&cfg->lvgl_port_cfg)); /* lvgl task, tick etc*/
 
-    assert(cfg != NULL);
-    BSP_ERROR_CHECK_RETURN_NULL(lvgl_port_init(&cfg->lvgl_port_cfg));
-
-    BSP_NULL_CHECK(disp = bsp_display_lcd_init(cfg), NULL);
+    BSP_NULL_CHECK(disp = bsp_display_lcd_init(), NULL);
 
     BSP_NULL_CHECK(disp_indev = bsp_display_indev_init(disp), NULL);
-
-    BSP_ERROR_CHECK_RETURN_NULL(bsp_display_brightness_init());
 
     return disp;
 }
@@ -631,7 +632,7 @@ lv_indev_t *bsp_display_get_input_dev(void)
     return disp_indev;
 }
 
-void bsp_display_rotate(lv_display_t *disp, lv_disp_rotation_t rotation)
+void bsp_display_rotate(lv_display_t *disp, lv_display_rotation_t rotation)
 {
     lv_disp_set_rotation(disp, rotation);
 }
@@ -644,4 +645,122 @@ bool bsp_display_lock(uint32_t timeout_ms)
 void bsp_display_unlock(void)
 {
     lvgl_port_unlock();
+}
+
+/**************************************************************************************************
+ *
+ * IO Expander Function
+ *
+ **************************************************************************************************/
+esp_io_expander_handle_t bsp_io_expander_init()
+{
+    if (!i2c_initialized)
+    {
+        /* Initilize I2C */
+        BSP_ERROR_CHECK_RETURN_ERR(bsp_i2c_init());
+    }
+    if (!custom_io_expander) {
+        BSP_ERROR_CHECK_RETURN_NULL(custom_io_expander_new_i2c_ch32v003(i2c_handle, BSP_IO_EXPANDER_I2C_ADDRESS, &custom_io_expander));
+    }
+    return custom_io_expander;
+}
+
+esp_err_t bsp_get_custom_io_adc(uint16_t *adc_value)
+{
+    float value = 0; // Variable to store the ADC reading
+    uint16_t temp;
+    // Take 10 ADC readings and average them to reduce noise
+    for (int i = 0; i < 10; i++)
+    {
+        custom_io_expander_get_adc(custom_io_expander, &temp);
+        value += temp; // Read the ADC input
+        vTaskDelay(20); // Delay between readings
+    }
+    value /= 10.0; // Calculate the average value
+    value *= 3 * 3.3 / 1023.0;
+    if (value > 4.2)
+    {
+        value = 4.2;
+    }
+    *adc_value = value * 1000;
+    return ESP_OK;
+}
+
+esp_err_t bsp_cpu_temp_init()
+{
+    ESP_LOGI(TAG, "Install temperature sensor, expected temp ranger range: 10~50 ℃");
+    temperature_sensor_config_t temp_sensor_config = TEMPERATURE_SENSOR_CONFIG_DEFAULT(20, 50);
+    ESP_ERROR_CHECK(temperature_sensor_install(&temp_sensor_config, &temp_sensor));
+    
+    ESP_LOGI(TAG, "Enable temperature sensor");
+    ESP_ERROR_CHECK(temperature_sensor_enable(temp_sensor));
+
+    return ESP_OK;
+}
+
+esp_err_t bsp_get_cpu_temp(float *tsens_value)
+{
+    ESP_LOGI(TAG, "Read temperature");
+    ESP_ERROR_CHECK(temperature_sensor_get_celsius(temp_sensor, tsens_value));
+    ESP_LOGI(TAG, "Temperature value %.02f ℃", *tsens_value);
+
+    return ESP_OK;
+}
+
+esp_err_t bsp_get_rtc_int(uint8_t *value)
+{
+    custom_io_expander_get_int(custom_io_expander, value);
+    return ESP_OK;
+}
+
+/**************************************************************************************************
+ *
+ * PCF85063A RTC Function
+ *
+ **************************************************************************************************/
+esp_err_t bsp_rtc_init()
+{
+    if (!i2c_initialized)
+    {
+        /* Initilize I2C */
+        BSP_ERROR_CHECK_RETURN_ERR(bsp_i2c_init());
+    }
+    esp_err_t ret = pcf85063a_init(&dev, i2c_handle, BSP_RTC_I2C_ADDRESS);
+    return ret;
+}
+
+esp_err_t bsp_set_rtc_time_date(pcf85063a_datetime_t time)
+{
+    esp_err_t ret = pcf85063a_set_time_date(&dev, time);
+    return ret;
+}
+
+esp_err_t bsp_set_rtc_alarm_time(pcf85063a_datetime_t time)
+{
+    esp_err_t ret = pcf85063a_set_alarm(&dev, time);
+    return ret;
+}
+
+esp_err_t bsp_get_rtc_time_date(pcf85063a_datetime_t *time)
+{
+    esp_err_t ret = pcf85063a_get_time_date(&dev, time);
+    return ret;
+}
+
+esp_err_t bsp_get_rtc_alarm_time(pcf85063a_datetime_t *time)
+{
+    esp_err_t ret = pcf85063a_get_alarm(&dev, time);
+    return ret;
+}
+
+esp_err_t bsp_enable_rtc_alarm()
+{
+    esp_err_t ret = pcf85063a_enable_alarm(&dev);
+    return ret;
+}
+
+esp_err_t bsp_datetime_to_str(char *datetime_str, pcf85063a_datetime_t time)
+{
+    pcf85063a_datetime_to_str(datetime_str, time);
+    return ESP_OK;
 }
