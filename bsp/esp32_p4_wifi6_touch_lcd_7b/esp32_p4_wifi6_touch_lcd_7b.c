@@ -79,6 +79,9 @@ esp_err_t bsp_i2c_init(void)
         .sda_io_num = BSP_I2C_SDA,
         .scl_io_num = BSP_I2C_SCL,
         .i2c_port = BSP_I2C_NUM,
+        .glitch_ignore_cnt = 7,
+        .flags.enable_internal_pullup = true,
+        .trans_queue_depth = 0,
     };
     BSP_ERROR_CHECK_RETURN_ERR(i2c_new_master_bus(&i2c_bus_conf, &i2c_handle));
 
@@ -97,6 +100,11 @@ esp_err_t bsp_i2c_deinit(void)
 i2c_master_bus_handle_t bsp_i2c_get_handle(void)
 {
     return i2c_handle;
+}
+
+static esp_err_t bsp_i2c_device_probe(uint8_t addr)
+{
+    return i2c_master_probe(i2c_handle, addr, 100);
 }
 
 esp_err_t bsp_sdcard_mount(void)
@@ -507,7 +515,20 @@ esp_err_t bsp_touch_new(const bsp_touch_config_t *config, esp_lcd_touch_handle_t
         },
     };
     esp_lcd_panel_io_handle_t tp_io_handle = NULL;
-    esp_lcd_panel_io_i2c_config_t tp_io_config = ESP_LCD_TOUCH_IO_I2C_GT911_CONFIG();
+    esp_lcd_panel_io_i2c_config_t tp_io_config;
+    if (ESP_OK == bsp_i2c_device_probe(ESP_LCD_TOUCH_IO_I2C_GT911_ADDRESS)) {
+        ESP_LOGI(TAG, "Touch 0x5d found");
+        esp_lcd_panel_io_i2c_config_t config = ESP_LCD_TOUCH_IO_I2C_GT911_CONFIG();
+        memcpy(&tp_io_config, &config, sizeof(config));
+    } else if (ESP_OK == bsp_i2c_device_probe(ESP_LCD_TOUCH_IO_I2C_GT911_ADDRESS_BACKUP)) {
+        ESP_LOGI(TAG, "Touch 0x14 found");
+        esp_lcd_panel_io_i2c_config_t config = ESP_LCD_TOUCH_IO_I2C_GT911_CONFIG();
+        config.dev_addr = ESP_LCD_TOUCH_IO_I2C_GT911_ADDRESS_BACKUP;
+        memcpy(&tp_io_config, &config, sizeof(config));
+    } else {
+        ESP_LOGE(TAG, "Touch not found");
+        return ESP_ERR_NOT_FOUND;
+    }
     tp_io_config.scl_speed_hz = CONFIG_BSP_I2C_CLK_SPEED_HZ;
     ESP_RETURN_ON_ERROR(esp_lcd_new_panel_io_i2c(i2c_handle, &tp_io_config, &tp_io_handle), TAG, "");
     return esp_lcd_touch_new_i2c_gt911(tp_io_handle, &tp_cfg, ret_touch);

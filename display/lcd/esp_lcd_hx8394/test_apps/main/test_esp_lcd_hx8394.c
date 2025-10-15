@@ -25,8 +25,8 @@
 #define TEST_LCD_H_RES (720)
 #define TEST_LCD_V_RES (1280)
 #define TEST_LCD_BIT_PER_PIXEL (24)
-#define TEST_PIN_NUM_LCD_RST (-1)
-#define TEST_PIN_NUM_BK_LIGHT (-1) // set to -1 if not used
+#define TEST_PIN_NUM_LCD_RST (27)
+#define TEST_PIN_NUM_BK_LIGHT (26) // set to -1 if not used
 #define TEST_LCD_BK_LIGHT_ON_LEVEL (1)
 #define TEST_LCD_BK_LIGHT_OFF_LEVEL !TEST_LCD_BK_LIGHT_ON_LEVEL
 #define TEST_MIPI_DSI_LANE_NUM (2)
