@@ -40,6 +40,14 @@
 #define BSP_LCD_H_RES              (720)
 #define BSP_LCD_V_RES              (1280)
 #define BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS (700)
+#elif CONFIG_BSP_LCD_TYPE_720_1280_10_1_INCH_B
+#define BSP_LCD_H_RES              (720)
+#define BSP_LCD_V_RES              (1280)
+#define BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS (1200)
+#elif CONFIG_BSP_LCD_TYPE_720_1280_9_INCH_B
+#define BSP_LCD_H_RES              (720)
+#define BSP_LCD_V_RES              (1280)
+#define BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS (1200)
 #elif CONFIG_BSP_LCD_TYPE_480_640_2_8_INCH
 #define BSP_LCD_H_RES              (480)
 #define BSP_LCD_V_RES              (640)
