@@ -17,8 +17,9 @@ jobs:
         with:
           directories: >
             display/lcd/esp_lcd_jd9165;
-            display/lcd/esp_lcd_jd9365_8;
-            display/lcd/esp_lcd_jd9365_10_1;
+#            display/lcd/esp_lcd_jd9365_8;
+#            display/lcd/esp_lcd_jd9365_10_1;
+            display/lcd/esp_lcd_jd9365;
             display/lcd/esp_lcd_hx8394;
             display/lcd/esp_lcd_dsi;
             display/lcd/esp_lcd_sh8601;
