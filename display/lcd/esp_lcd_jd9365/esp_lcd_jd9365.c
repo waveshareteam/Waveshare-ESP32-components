@@ -181,7 +181,7 @@ err:
 
 static const jd9365_lcd_init_cmd_t vendor_specific_init_default[] = {
     //  {cmd, { data }, data_size, delay_ms}
-##if CONFIG_BSP_LCD_TYPE_720_1280_9_INCH_B
+#if CONFIG_BSP_LCD_TYPE_720_1280_9_INCH_B
      {0xE0, (uint8_t[]){0x00}, 1, 0},
      {0xE1, (uint8_t[]){0x93}, 1, 0},
      {0xE2, (uint8_t[]){0x65}, 1, 0},

@@ -139,5 +139,3 @@ esp_err_t esp_lcd_new_panel_jd9365(const esp_lcd_panel_io_handle_t io, const esp
 #ifdef __cplusplus
 }
 #endif
-
-#endif
