@@ -71,7 +71,7 @@ extern "C"
     {                                                \
         .bus_id = 0,                                 \
         .num_data_lanes = 2,                         \
-        .phy_clk_src = MIPI_DSI_PHY_CLK_SRC_DEFAULT, \
+        .phy_clk_src = 0, \
         .lane_bit_rate_mbps = 1250,                  \
     }
 
