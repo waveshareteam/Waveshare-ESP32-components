@@ -11,7 +11,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include "esp_lcd_sh8601.h"
+#include "esp_lcd_co5300.h"
 #include "esp_lcd_touch_cst820.h"
 
 #include "esp_codec_dev_defaults.h"
@@ -25,7 +25,6 @@ static const char *TAG = "ESP32-S3-Touch-AMOLED-1.32";
 static i2c_master_bus_handle_t i2c_handle = NULL; // I2C Handle
 static bool i2c_initialized = false;
 static lv_indev_t *disp_indev = NULL;
-sdmmc_card_t *bsp_sdcard = NULL; // Global uSD card handler
 static esp_lcd_touch_handle_t tp = NULL;
 static esp_lcd_panel_handle_t panel_handle = NULL; // LCD panel handle
 static esp_lcd_panel_io_handle_t io_handle = NULL;
@@ -48,7 +47,7 @@ static const audio_codec_data_if_t *i2s_data_if = NULL; /* Codec data interface 
         },                     \
     }
 
-static const sh8601_lcd_init_cmd_t lcd_init_cmds[] = {
+static const co5300_lcd_init_cmd_t lcd_init_cmds[] = {
     {0xFE, (uint8_t[]) {0x00}, 1, 0},
     {0xC4, (uint8_t[]) {0x80}, 1, 0},
     {0x3A, (uint8_t[]) {0x55}, 1, 0},
@@ -143,48 +142,6 @@ esp_err_t bsp_spiffs_unmount(void)
 {
     return esp_vfs_spiffs_unregister(CONFIG_BSP_SPIFFS_PARTITION_LABEL);
 }
-
-esp_err_t bsp_sdcard_mount(void)
-{
-    const esp_vfs_fat_sdmmc_mount_config_t mount_config = {
-#ifdef CONFIG_BSP_SD_FORMAT_ON_MOUNT_FAIL
-        .format_if_mount_failed = true,
-#else
-        .format_if_mount_failed = false,
-#endif
-        .max_files = 5,
-        .allocation_unit_size = 16 * 1024};
-
-    const sdmmc_host_t host = SDMMC_HOST_DEFAULT();
-    const sdmmc_slot_config_t slot_config = {
-        .clk = BSP_SD_CLK,
-        .cmd = BSP_SD_CMD,
-        .d0 = BSP_SD_D0,
-        .d1 = GPIO_NUM_NC,
-        .d2 = GPIO_NUM_NC,
-        .d3 = GPIO_NUM_NC,
-        .d4 = GPIO_NUM_NC,
-        .d5 = GPIO_NUM_NC,
-        .d6 = GPIO_NUM_NC,
-        .d7 = GPIO_NUM_NC,
-        .cd = SDMMC_SLOT_NO_CD,
-        .wp = SDMMC_SLOT_NO_WP,
-        .width = 1,
-        .flags = 0,
-    };
-
-#if !CONFIG_FATFS_LONG_FILENAMES
-    ESP_LOGW(TAG, "Warning: Long filenames on SD card are disabled in menuconfig!");
-#endif
-
-    return esp_vfs_fat_sdmmc_mount(BSP_SD_MOUNT_POINT, &host, &slot_config, &mount_config, &bsp_sdcard);
-}
-
-esp_err_t bsp_sdcard_unmount(void)
-{
-    return esp_vfs_fat_sdcard_unmount(BSP_SD_MOUNT_POINT, bsp_sdcard);
-}
-
 
 esp_err_t bsp_audio_init(const i2s_std_config_t *i2s_config)
 {
@@ -408,7 +365,7 @@ esp_err_t bsp_display_new(const bsp_display_config_t *config, esp_lcd_panel_hand
     esp_err_t ret = ESP_OK;
 
     ESP_LOGI(TAG, "Initialize SPI bus");
-    const spi_bus_config_t buscfg = SH8601_PANEL_BUS_QSPI_CONFIG(BSP_LCD_PCLK,
+    const spi_bus_config_t buscfg = CO5300_PANEL_BUS_QSPI_CONFIG(BSP_LCD_PCLK,
                                                                  BSP_LCD_DATA0,
                                                                  BSP_LCD_DATA1,
                                                                  BSP_LCD_DATA2,
@@ -416,9 +373,9 @@ esp_err_t bsp_display_new(const bsp_display_config_t *config, esp_lcd_panel_hand
                                                                  BSP_LCD_H_RES * BSP_LCD_V_RES * BSP_LCD_BITS_PER_PIXEL / 8);
     ESP_ERROR_CHECK(spi_bus_initialize(BSP_LCD_SPI_NUM, &buscfg, SPI_DMA_CH_AUTO));
 
-    const esp_lcd_panel_io_spi_config_t io_config = SH8601_PANEL_IO_QSPI_CONFIG(BSP_LCD_CS, NULL, NULL);
+    const esp_lcd_panel_io_spi_config_t io_config = CO5300_PANEL_IO_QSPI_CONFIG(BSP_LCD_CS, NULL, NULL);
 
-    sh8601_vendor_config_t vendor_config = {
+    co5300_vendor_config_t vendor_config = {
         .init_cmds = lcd_init_cmds,
         .init_cmds_size = sizeof(lcd_init_cmds) / sizeof(lcd_init_cmds[0]),
         .flags = {
@@ -432,7 +389,7 @@ esp_err_t bsp_display_new(const bsp_display_config_t *config, esp_lcd_panel_hand
         .bits_per_pixel = BSP_LCD_BITS_PER_PIXEL,
         .vendor_config = &vendor_config,
     };
-    ESP_ERROR_CHECK(esp_lcd_new_panel_sh8601(io_handle, &panel_config, &panel_handle));
+    ESP_ERROR_CHECK(esp_lcd_new_panel_co5300(io_handle, &panel_config, &panel_handle));
     ESP_ERROR_CHECK(esp_lcd_panel_set_gap(panel_handle, 0x06, 0x00));
     ESP_ERROR_CHECK(esp_lcd_panel_reset(panel_handle));
     ESP_ERROR_CHECK(esp_lcd_panel_init(panel_handle));
@@ -521,25 +478,10 @@ static lv_display_t *bsp_display_lcd_init()
             .swap_bytes = true,
 #endif
         }};
-    const lvgl_port_display_rgb_cfg_t rgb_cfg = {
-        .flags = {
-#if CONFIG_BSP_LCD_RGB_BOUNCE_BUFFER_MODE
-            .bb_mode = 1,
-#else
-            .bb_mode = 0,
-#endif
-#if CONFIG_BSP_DISPLAY_LVGL_AVOID_TEAR
-            .avoid_tearing = true,
-#else
-            .avoid_tearing = false,
-#endif
-        }};
-
 #if CONFIG_BSP_LCD_RGB_BOUNCE_BUFFER_MODE
     ESP_LOGW(TAG, "CONFIG_BSP_LCD_RGB_BOUNCE_BUFFER_MODE");
 #endif
-
-    lv_display_t *disp = lvgl_port_add_disp_rgb(&disp_cfg, &rgb_cfg);
+    lv_display_t *disp = lvgl_port_add_disp(&disp_cfg);
     if (!disp)
     {
         return NULL;

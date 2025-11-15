@@ -24,8 +24,6 @@
 #define BSP_CAPS_AUDIO          1
 #define BSP_CAPS_AUDIO_SPEAKER  1
 #define BSP_CAPS_AUDIO_MIC      1
-#define BSP_CAPS_SDCARD         0
-#define BSP_CAPS_IMU            0
 
 /**************************************************************************************************
  * ESP-SparkBot-BSP pinout
@@ -54,11 +52,6 @@
 #define BSP_LCD_RST           (GPIO_NUM_8)
 #define BSP_LCD_TOUCH_RST     (GPIO_NUM_7)
 #define BSP_LCD_TOUCH_INT     (GPIO_NUM_6)
-
-/* uSD card */
-#define BSP_SD_D0            (GPIO_NUM_NC)
-#define BSP_SD_CMD           (GPIO_NUM_NC)
-#define BSP_SD_CLK           (GPIO_NUM_NC)
 
 
 #define LVGL_BUFFER_HEIGHT          (CONFIG_BSP_DISPLAY_LVGL_BUF_HEIGHT)
@@ -203,33 +196,6 @@ esp_err_t bsp_spiffs_unmount(void);
  * \endcode
  **************************************************************************************************/
 #define BSP_SD_MOUNT_POINT      CONFIG_BSP_SD_MOUNT_POINT
-extern sdmmc_card_t *bsp_sdcard;
-
-/**
- * @brief Mount microSD card to virtual file system
- *
- * @return
- *      - ESP_OK on success
- *      - ESP_ERR_INVALID_STATE if esp_vfs_fat_sdmmc_mount was already called
- *      - ESP_ERR_NO_MEM if memory cannot be allocated
- *      - ESP_FAIL if partition cannot be mounted
- *      - other error codes from SDMMC or SPI drivers, SDMMC protocol, or FATFS drivers
- */
-esp_err_t bsp_sdcard_mount(void);
-
-/**
- * @brief Unmount microSD card from virtual file system
- *
- * @return
- *      - ESP_OK on success
- *      - ESP_ERR_NOT_FOUND if the partition table does not contain FATFS partition with given label
- *      - ESP_ERR_INVALID_STATE if esp_vfs_fat_spiflash_mount was already called
- *      - ESP_ERR_NO_MEM if memory can not be allocated
- *      - ESP_FAIL if partition can not be mounted
- *      - other error codes from wear levelling library, SPI flash driver, or FATFS drivers
- */
-esp_err_t bsp_sdcard_unmount(void);
-
 
 /**************************************************************************************************
  *
