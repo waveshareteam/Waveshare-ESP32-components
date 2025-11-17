@@ -57,19 +57,6 @@ Alternatively, you can create `idf_component.yml`. More is in [Espressif's docum
     };
     ESP_ERROR_CHECK(esp_lcd_new_panel_io_i2c(i2c_bus_handle, &io_config, &io_handle));
 
-/**
- * Uncomment these line if use custom initialization commands.
- * The array should be declared as static const and positioned outside the function.
- */
-// static const sh8601_lcd_init_cmd_t lcd_init_cmds[] = {
-// //  {cmd, { data }, data_size, delay_ms}
-//    {0x44, (uint8_t []){0x00, 0xc8}, 2, 0},
-//    {0x35, (uint8_t []){0x00}, 0, 0},
-//    {0x53, (uint8_t []){0x20}, 1, 25},
-//    {0x29, (uint8_t []){0x00}, 0, 120},
-//     ...
-// };
-
     ESP_LOGI(TAG, "Install SSD1315 panel driver");
     esp_lcd_panel_handle_t panel_handle = NULL;
     esp_lcd_panel_dev_config_t panel_config = {
