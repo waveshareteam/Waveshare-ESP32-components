@@ -1,4 +1,4 @@
-# Waveshare ESP32-S3-Touch-AMOLED-1.8 Display Support
+# Waveshare ESP32-S3-LR1121-OLED-0.96 Display Support
 
 [![Component Registry](https://components.espressif.com/components/waveshare/esp_oled_ssd1315/badge.svg)](https://components.espressif.com/components/waveshare/esp_oled_ssd1315)
 
