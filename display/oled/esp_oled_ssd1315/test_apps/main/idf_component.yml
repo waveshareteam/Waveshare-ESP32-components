@@ -1,0 +1,7 @@
+## IDF Component Manager Manifest File
+dependencies:
+  idf: ">=5.0.4"
+  esp_oled_ssd1315:
+    version: "*"
+    override_path: "../../../esp_oled_ssd1315"
+  lvgl/lvgl: "9.2.0"

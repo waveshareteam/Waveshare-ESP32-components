@@ -1,0 +1,11 @@
+dependencies:
+  idf:
+    version: '>=5.3'
+description: ESP LCD FOR Waveshare ESP32-S3-LR1121-OLED-0.96 DISPLAY SSD1315
+issues: https://github.com/waveshareteam/Waveshare-ESP32-components/issues
+repository: git://github.com/waveshareteam/Waveshare-ESP32-components.git
+repository_info:
+  commit_sha: 310ccc681289046194f6a1aa7489bf157761888b
+  path: display/oled/esp_oled_ssd1315
+url: https://github.com/waveshareteam/Waveshare-ESP32-components/tree/master/display/oled/esp_oled_ssd1315
+version: 1.0.0
