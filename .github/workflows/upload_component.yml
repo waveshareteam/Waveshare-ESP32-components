@@ -43,6 +43,7 @@ jobs:
             sensor/qmi8658;
             sensor/pcf85063a;
             sensor/custom_io_expander_ch32v003;
-
+            lora/esp_lora_1121;
+            
           namespace: "waveshare"
           api_token: ${{ secrets.IDF_COMPONENT_API_TOKEN }}
