@@ -39,6 +39,7 @@ jobs:
             bsp/esp32_s3_touch_lcd_4_3c;
             bsp/esp32_s3_touch_lcd_2_8d;
             bsp/esp32_s3_touch_lcd_1_83;
+            bsp/esp32_s3_touch_amoled_1_32;
             bsp/esp32_c6_touch_amoled_2_06;
             sensor/qmi8658;
             sensor/pcf85063a;
