@@ -1,6 +1,6 @@
 # LoRa LR1121
 
-[![Component Registry](https://components.espressif.com/components/waveshare/lr1121/badge.svg)](https://components.espressif.com/components/waveshare/lora_1121)
+[![Component Registry](https://components.espressif.com/components/waveshare/esp_lora_1121/badge.svg)](https://components.espressif.com/components/waveshare/esp_lora_1121)
 
 LR1121 transceiver driver, LR1121 is a multi-band, ultra-low-power RF transceiver.
 
