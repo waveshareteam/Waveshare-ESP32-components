@@ -1,0 +1,1 @@
+idf_component_register(SRCS "esp_oled_ssd1315.c" INCLUDE_DIRS "include" PRIV_REQUIRES "driver" REQUIRES "esp_lcd")
