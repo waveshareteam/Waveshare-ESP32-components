@@ -440,11 +440,7 @@ static lv_display_t *bsp_display_lcd_init()
     BSP_ERROR_CHECK_RETURN_NULL(bsp_display_new(&disp_config, &panel_handle, &io_handle));
 
     int buffer_size = 0;
-#if CONFIG_BSP_DISPLAY_LVGL_AVOID_TEAR
-    buffer_size = BSP_LCD_H_RES * BSP_LCD_V_RES;
-#else
     buffer_size = BSP_LCD_H_RES * LVGL_BUFFER_HEIGHT;
-#endif /* CONFIG_BSP_DISPLAY_LVGL_AVOID_TEAR */
 
     const lvgl_port_display_cfg_t disp_cfg = {
         .io_handle = io_handle,
@@ -469,11 +465,6 @@ static lv_display_t *bsp_display_lcd_init()
             .swap_bytes = true,
 #endif
         }};
-
-#if CONFIG_BSP_LCD_RGB_BOUNCE_BUFFER_MODE
-    ESP_LOGW(TAG, "CONFIG_BSP_LCD_RGB_BOUNCE_BUFFER_MODE");
-#endif
-
     lv_display_t *disp = lvgl_port_add_disp(&disp_cfg);
     if (!disp)
     {
@@ -515,12 +506,7 @@ lv_display_t *bsp_display_start(void)
 {
     bsp_display_cfg_t cfg = {
         .lvgl_port_cfg = ESP_LVGL_PORT_INIT_CONFIG(),
-        .buffer_size = BSP_LCD_DRAW_BUFF_SIZE,
-        .double_buffer = BSP_LCD_DRAW_BUFF_DOUBLE,
-        .flags = {
-            .buff_dma = false,
-            .buff_spiram = true,
-        }};
+    };
     return bsp_display_start_with_config(&cfg);
 }
 

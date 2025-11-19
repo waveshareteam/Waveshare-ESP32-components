@@ -24,6 +24,8 @@
 #define BSP_CAPS_AUDIO          1
 #define BSP_CAPS_AUDIO_SPEAKER  1
 #define BSP_CAPS_AUDIO_MIC      1
+#define BSP_CAPS_SDCARD         0
+#define BSP_CAPS_IMU            0
 
 /**************************************************************************************************
  * ESP-SparkBot-BSP pinout
@@ -183,19 +185,6 @@ esp_err_t bsp_spiffs_mount(void);
  *      - ESP_ERR_INVALID_STATE if already unmounted
  */
 esp_err_t bsp_spiffs_unmount(void);
-
-/**************************************************************************************************
- *
- * uSD card
- *
- * After mounting the uSD card, it can be accessed with stdio functions ie.:
- * \code{.c}
- * FILE* f = fopen(BSP_MOUNT_POINT"/hello.txt", "w");
- * fprintf(f, "Hello %s!\n", bsp_sdcard->cid.name);
- * fclose(f);
- * \endcode
- **************************************************************************************************/
-#define BSP_SD_MOUNT_POINT      CONFIG_BSP_SD_MOUNT_POINT
 
 /**************************************************************************************************
  *
