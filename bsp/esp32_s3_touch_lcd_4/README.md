@@ -6,5 +6,5 @@ The ESP32-S3-Touch-LCD-4 is a 4-inch 480×480 capacitive touch development board
 
 |                                    HW version                                     | BSP Version |
 |:---------------------------------------------------------------------------------:|:-----------:|
-|      [V4.0](https://github.com/Y1hsiaochunnn/ESP32-S3-Touch-LCD-4/tree/main)      |     ^2      |
-|      [V3.0](https://github.com/Y1hsiaochunnn/ESP32-S3-Touch-LCD-4/tree/V3.0)      |   ^1.1.0    |
+|      [V4.0](https://github.com/waveshareteam/ESP32-S3-Touch-LCD-4/tree/main)      |     ^2      |
+|      [V3.0](https://github.com/waveshareteam/ESP32-S3-Touch-LCD-4/tree/V3.0)      |   ^1.1.0    |
