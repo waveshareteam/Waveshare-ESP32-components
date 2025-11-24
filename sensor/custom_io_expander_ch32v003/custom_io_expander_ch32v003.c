@@ -29,7 +29,7 @@
 
 /* Default register value on power-up */
 #define DIR_REG_DEFAULT_VAL     (0xff)
-#define OUT_REG_DEFAULT_VAL     (0xff)
+#define OUT_REG_DEFAULT_VAL     (0x00)
 
 /**
  * @brief Device Structure Type
