@@ -9,4 +9,4 @@ repository_info:
   commit_sha: a601dda0fe2effa2a4147414d432273ba48e1d23
   path: custom_io/custom_io_expander_ch32v003
 url: https://github.com/waveshareteam/Waveshare-ESP32-components
-version: 1.0.0
+version: 1.0.1
