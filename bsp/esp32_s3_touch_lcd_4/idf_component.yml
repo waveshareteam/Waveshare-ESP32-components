@@ -1,5 +1,8 @@
 dependencies:
   esp_lcd_st7701: "*"
+  waveshare/custom_io_expander_ch32v003:
+    public: true
+    version: "*"
   esp_lcd_touch_gt911: "*"
   espressif/esp_lvgl_port:
     public: true
@@ -8,11 +11,10 @@ dependencies:
   lvgl/lvgl: '>=8,<10'
   esp_lcd_panel_io_additions: "^1"
 
-  esp_io_expander_tca9554: "^2"
 description: Board Support Package (BSP) for Waveshare ESP32-S3-Touch-LCD-4
 tags:
 - bsp
 targets:
 - esp32s3
 url: https://www.waveshare.com/esp32-s3-touch-lcd-4.htm
-version: 1.1.0
+version: 2.0.0
