@@ -72,6 +72,20 @@ esp_err_t esp_lcd_touch_new_i2c_cst9217(const esp_lcd_panel_io_handle_t io, cons
     /* Save config */
     memcpy(&cst9217->config, config, sizeof(esp_lcd_touch_config_t));
 
+    if (cst9217->config.int_gpio_num != GPIO_NUM_NC) {
+        const gpio_config_t int_gpio_config = {
+            .mode = GPIO_MODE_INPUT,
+            .intr_type = (cst9217->config.levels.interrupt ? GPIO_INTR_POSEDGE : GPIO_INTR_NEGEDGE),
+            .pin_bit_mask = BIT64(cst9217->config.int_gpio_num)
+        };
+        ESP_GOTO_ON_ERROR(gpio_config(&int_gpio_config), err, TAG, "GPIO intr config failed");
+
+        /* Register interrupt callback */
+        if (cst9217->config.interrupt_callback) {
+            esp_lcd_touch_register_interrupt_callback(cst9217, cst9217->config.interrupt_callback);
+        }
+    }
+
     /* Initialize reset GPIO */
     if (cst9217->config.rst_gpio_num != GPIO_NUM_NC)
     {
