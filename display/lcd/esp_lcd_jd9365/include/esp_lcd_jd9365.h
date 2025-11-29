@@ -134,6 +134,46 @@ esp_err_t esp_lcd_new_panel_jd9365(const esp_lcd_panel_io_handle_t io, const esp
         },                                               \
         .flags.use_dma2d = true,                         \
     }
+
+#define JD9365_800_800_PANEL_60HZ_DPI_CONFIG(px_format) \
+    {                                                    \
+        .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
+        .dpi_clock_freq_mhz = 80,                        \
+        .virtual_channel = 0,                            \
+        .pixel_format = px_format,                       \
+        .num_fbs = 1,                                    \
+        .video_timing = {                                \
+            .h_size = 800,                               \
+            .v_size = 800,                              \
+            .hsync_back_porch = 20,                      \
+            .hsync_pulse_width = 20,                     \
+            .hsync_front_porch = 40,                     \
+            .vsync_back_porch = 12,                      \
+            .vsync_pulse_width = 4,                      \
+            .vsync_front_porch = 24,                     \
+        },                                               \
+        .flags.use_dma2d = true,                         \
+    }
+
+#define JD9365_720_720_PANEL_60HZ_DPI_CONFIG(px_format) \
+    {                                                    \
+        .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
+        .dpi_clock_freq_mhz = 80,                        \
+        .virtual_channel = 0,                            \
+        .pixel_format = px_format,                       \
+        .num_fbs = 1,                                    \
+        .video_timing = {                                \
+            .h_size = 720,                               \
+            .v_size = 720,                              \
+            .hsync_back_porch = 20,                      \
+            .hsync_pulse_width = 20,                     \
+            .hsync_front_porch = 40,                     \
+            .vsync_back_porch = 12,                      \
+            .vsync_pulse_width = 4,                      \
+            .vsync_front_porch = 24,                     \
+        },                                               \
+        .flags.use_dma2d = true,                         \
+    }
 #endif
 
 #ifdef __cplusplus
