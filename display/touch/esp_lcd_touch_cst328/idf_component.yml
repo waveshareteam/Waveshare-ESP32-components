@@ -1,7 +1,7 @@
 dependencies:
   esp_lcd_touch:
     public: true
-    version: "^1.1.0"
+    version: "^1.0.0"
   idf: '>=4.4.2'
 description: "ESP LCD Touch CST328 -The touch controller CST328 is adapted by waveshare"
 url: "https://github.com/waveshareteam/Waveshare-ESP32-components/tree/master/display/touch/esp_lcd_touch_cst328"
