@@ -1,0 +1,23 @@
+dependencies:
+  esp_codec_dev:
+    version: "~1.5"
+    public: true
+  esp_lcd_touch_gt911: ^1
+  espressif/esp_lvgl_adapter:
+    public: true
+    version: "*"
+  idf: '>=5.5'
+  lvgl/lvgl: '>=8,<10'
+  waveshare/esp_lcd_jd9365: '*'
+  waveshare/esp_lcd_ili9881c: '*'
+  waveshare/esp_lcd_dsi: '*'
+  waveshare/esp_lcd_hx8394: "^1.0.2"
+description: a small size and highly integrated development board designed by waveshare
+  electronics based on ESP32-P4 chip
+repository: git://github.com/WaveshareCloud/Waveshare-ESP32-components.git
+tags:
+- bsp
+targets:
+- esp32p4
+url: https://github.com/waveshareteam/Waveshare-ESP32-components
+version: 1.0.0
