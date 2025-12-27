@@ -27,7 +27,6 @@ static const char *TAG = "ESP32-S3-Touch-AMOLED-1.75";
 static i2c_master_bus_handle_t i2c_handle = NULL; // I2C Handle
 static bool i2c_initialized = false;
 static esp_io_expander_handle_t io_expander = NULL; // IO expander tca9554 handle
-static lv_display_t *disp;
 static lv_indev_t *disp_indev = NULL;
 sdmmc_card_t *bsp_sdcard = NULL; // Global uSD card handler
 static esp_lcd_touch_handle_t tp = NULL;
@@ -37,6 +36,12 @@ uint8_t brightness;
 static i2s_chan_handle_t i2s_tx_chan = NULL;
 static i2s_chan_handle_t i2s_rx_chan = NULL;
 static const audio_codec_data_if_t *i2s_data_if = NULL; /* Codec data interface */
+
+#if LVGL_VERSION_MAJOR >= 9
+void lcd_touch_cst9217_read_cb_lvgl9(lv_indev_t *indev_drv, lv_indev_data_t *data);
+#else
+void lcd_touch_cst9217_read_cb_lvgl8(lv_indev_drv_t *drv, lv_indev_data_t *data);
+#endif
 
 #define BSP_ES7210_CODEC_ADDR ES7210_CODEC_DEFAULT_ADDR
 #define BSP_I2S_GPIO_CFG       \
@@ -604,8 +609,97 @@ static lv_indev_t *bsp_display_indev_init(lv_display_t *disp)
         .handle = tp,
     };
 
-    return lvgl_port_add_touch(&touch_cfg);
+    lv_indev_t *indev = lvgl_port_add_touch(&touch_cfg);
+    #if LVGL_VERSION_MAJOR >= 9
+    if (indev) {
+        lv_indev_set_driver_data(indev, tp); // Set the touch handle for LVGL 9
+        lv_indev_set_read_cb(indev, lcd_touch_cst9217_read_cb_lvgl9);
+    }
+    #else
+    if (indev && indev->driver) {
+        indev->driver->user_data = tp;
+        indev->driver->read_cb = lcd_touch_cst9217_read_cb_lvgl8;
+    }
+    #endif
+    return indev;
 }
+
+
+#if LVGL_VERSION_MAJOR >= 9
+// LVGL 9+ callback signature
+void lcd_touch_cst9217_read_cb_lvgl9(lv_indev_t *indev_drv, lv_indev_data_t *data) {
+    esp_lcd_touch_handle_t touch_handle = (esp_lcd_touch_handle_t)lv_indev_get_driver_data(indev_drv);
+    if (!touch_handle) {
+        ESP_LOGE(TAG, "Touch handle is NULL in callback");
+        data->state = LV_INDEV_STATE_RELEASED;
+        return;
+    }
+
+    esp_err_t err = esp_lcd_touch_read_data(touch_handle);
+    if (err == ESP_ERR_INVALID_RESPONSE) {
+        data->state = LV_INDEV_STATE_RELEASED;
+        return;
+    } else if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_lcd_touch_read_data failed: %s (0x%x)", esp_err_to_name(err), err);
+        data->state = LV_INDEV_STATE_RELEASED;
+        return;
+    }
+
+    uint8_t touch_cnt = 0;
+    esp_lcd_touch_point_data_t touch_data[CONFIG_ESP_LCD_TOUCH_MAX_POINTS] = {0};
+    err = esp_lcd_touch_get_data(touch_handle, touch_data, &touch_cnt, CONFIG_ESP_LCD_TOUCH_MAX_POINTS);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_lcd_touch_get_data failed: %s (0x%x)", esp_err_to_name(err), err);
+        data->state = LV_INDEV_STATE_RELEASED;
+        return;
+    }
+
+    if (touch_cnt > 0) {
+        data->point.x = touch_data[0].x;
+        data->point.y = touch_data[0].y;
+        data->state = LV_INDEV_STATE_PRESSED;
+    } else {
+        data->state = LV_INDEV_STATE_RELEASED;
+    }
+}
+#else
+// LVGL 8 callback signature
+void lcd_touch_cst9217_read_cb_lvgl8(lv_indev_drv_t *drv, lv_indev_data_t *data) {
+    esp_lcd_touch_handle_t touch_handle = (esp_lcd_touch_handle_t)drv->user_data;
+    if (!touch_handle) {
+        ESP_LOGE(TAG, "Touch handle is NULL in callback");
+        data->state = LV_INDEV_STATE_RELEASED;
+        return;
+    }
+
+    esp_err_t err = esp_lcd_touch_read_data(touch_handle);
+    if (err == ESP_ERR_INVALID_RESPONSE) {
+        data->state = LV_INDEV_STATE_RELEASED;
+        return;
+    } else if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_lcd_touch_read_data failed: %s (0x%x)", esp_err_to_name(err), err);
+        data->state = LV_INDEV_STATE_RELEASED;
+        return;
+    }
+
+    uint8_t touch_cnt = 0;
+    esp_lcd_touch_point_data_t touch_data[CONFIG_ESP_LCD_TOUCH_MAX_POINTS] = {0};
+    err = esp_lcd_touch_get_data(touch_handle, touch_data, &touch_cnt, CONFIG_ESP_LCD_TOUCH_MAX_POINTS);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_lcd_touch_get_data failed: %s (0x%x)", esp_err_to_name(err), err);
+        data->state = LV_INDEV_STATE_RELEASED;
+        return;
+    }
+
+    if (touch_cnt > 0) {
+        data->point.x = touch_data[0].x;
+        data->point.y = touch_data[0].y;
+        data->state = LV_INDEV_STATE_PRESSED;
+    } else {
+        data->state = LV_INDEV_STATE_RELEASED;
+    }
+}
+#endif
 
 /**********************************************************************************************************
  *
