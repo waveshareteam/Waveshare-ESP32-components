@@ -31,6 +31,13 @@ typedef struct {
     int max_transfer_sz;    /*!< Maximum transfer size, in bytes. */
 } bsp_display_config_t;
 
+typedef enum {
+    BSP_DISPLAY_ROTATE_0   = 0,
+    BSP_DISPLAY_ROTATE_90  = 1,
+    BSP_DISPLAY_ROTATE_180 = 2,
+    BSP_DISPLAY_ROTATE_270 = 3,
+} bsp_display_rotation_t;
+
 /**
  * @brief Create new display panel
  *
@@ -67,6 +74,8 @@ esp_err_t bsp_display_new(const bsp_display_config_t *config, esp_lcd_panel_hand
  */
 esp_err_t bsp_display_brightness_init(void);
 
+esp_err_t bsp_display_rotation_set(bsp_display_rotation_t rotation);
+
 /**
  * @brief Set display's brightness
  *
@@ -79,7 +88,9 @@ esp_err_t bsp_display_brightness_init(void);
  *      - ESP_ERR_INVALID_ARG   Parameter error
  */
 esp_err_t bsp_display_brightness_set(int brightness_percent);
+
 int bsp_display_brightness_get(void);
+
 /**
  * @brief Turn on display backlight
  *
