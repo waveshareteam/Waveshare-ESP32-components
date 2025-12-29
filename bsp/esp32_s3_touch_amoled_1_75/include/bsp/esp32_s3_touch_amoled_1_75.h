@@ -12,7 +12,7 @@
 #include "esp_io_expander_tca9554.h"
 
 #include "lvgl.h"
-#include "esp_lvgl_port.h"
+#include "esp_lv_adapter.h"
 
 
 /**************************************************************************************************
@@ -54,7 +54,7 @@
 #define BSP_LCD_BACKLIGHT     (GPIO_NUM_NC)
 #define BSP_LCD_RST           (GPIO_NUM_39)
 #define BSP_LCD_TOUCH_RST     (GPIO_NUM_40)
-#define BSP_LCD_TOUCH_INT     (GPIO_NUM_NC)
+#define BSP_LCD_TOUCH_INT     (GPIO_NUM_11)
 
 /* uSD card */
 #define BSP_SD_D0            (GPIO_NUM_3)
@@ -257,21 +257,19 @@ esp_io_expander_handle_t bsp_io_expander_init(void);
 #define BSP_LCD_SPI_NUM            (SPI2_HOST)
 
 #if (BSP_CONFIG_NO_GRAPHIC_LIB == 0)
-#define BSP_LCD_DRAW_BUFF_SIZE     (BSP_LCD_H_RES * CONFIG_BSP_LCD_RGB_BOUNCE_BUFFER_HEIGHT)
-#define BSP_LCD_DRAW_BUFF_DOUBLE   (0)
 
 /**
  * @brief BSP display configuration structure
  */
 typedef struct {
-    lvgl_port_cfg_t lvgl_port_cfg;  /*!< LVGL port configuration */
-    uint32_t        buffer_size;    /*!< Size of the buffer for the screen in pixels */
-    uint32_t        trans_size;
-    bool            double_buffer;  /*!< True, if should be allocated two buffers */
+    esp_lv_adapter_config_t          lv_adapter_cfg;
+    esp_lv_adapter_rotation_t        rotation;
+    esp_lv_adapter_tear_avoid_mode_t tear_avoid_mode;
     struct {
-        unsigned int buff_dma: 1;    /*!< Allocated LVGL buffer will be DMA capable */
-        unsigned int buff_spiram: 1; /*!< Allocated LVGL buffer will be in PSRAM */
-    } flags;
+        unsigned int swap_xy;  /*!< Swap X and Y after read coordinates */
+        unsigned int mirror_x; /*!< Mirror X after read coordinates */
+        unsigned int mirror_y; /*!< Mirror Y after read coordinates */
+    } touch_flags;
 } bsp_display_cfg_t;
 
 /**
@@ -293,7 +291,7 @@ lv_display_t *bsp_display_start(void);
  *
  * @return Pointer to LVGL display or NULL when error occurred
  */
-lv_display_t *bsp_display_start_with_config(const bsp_display_cfg_t *cfg);
+lv_display_t *bsp_display_start_with_config(bsp_display_cfg_t *cfg);
 
 /**
  * @brief Get pointer to input device (touch, buttons, ...)
