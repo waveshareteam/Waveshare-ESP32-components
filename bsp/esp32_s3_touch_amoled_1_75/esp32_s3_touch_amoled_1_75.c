@@ -652,7 +652,7 @@ esp_err_t bsp_display_rotation_set(bsp_display_rotation_t rotation)
 
 bool bsp_display_lock(uint32_t timeout_ms)
 {
-    return esp_lv_adapter_lock(timeout_ms);
+    return (esp_lv_adapter_lock(timeout_ms) == ESP_OK);
 }
 
 void bsp_display_unlock(void)
