@@ -815,6 +815,11 @@ void bsp_display_unlock(void)
     esp_lv_adapter_unlock();
 }
 
+esp_lcd_panel_handle_t bsp_display_get_panel_handle(void)
+{
+    return panel_handle;
+}
+
 #endif // (BSP_CONFIG_NO_GRAPHIC_LIB == 0)
 
 static void usb_lib_task(void *arg)
