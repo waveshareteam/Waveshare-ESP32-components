@@ -807,7 +807,7 @@ lv_indev_t *bsp_display_get_input_dev(void)
 
 bool bsp_display_lock(uint32_t timeout_ms)
 {
-    return esp_lv_adapter_lock(timeout_ms);
+    return (esp_lv_adapter_lock(timeout_ms) == ESP_OK);
 }
 
 void bsp_display_unlock(void)
