@@ -12,14 +12,14 @@
 #include "usb/usb_host.h"
 #include "sd_pwr_ctrl_by_on_chip_ldo.h"
 
-#if CONFIG_BSP_LCD_TYPE_800_1280_10_1_INCH || CONFIG_BSP_LCD_TYPE_800_1280_10_1_INCH_A || CONFIG_BSP_LCD_TYPE_800_1280_8_INCH_A || CONFIG_BSP_LCD_TYPE_720_1280_9_INCH_B || CONFIG_BSP_LCD_TYPE_720_1280_10_1_INCH_B
+#if CONFIG_BSP_LCD_TYPE_800_1280_10_1_INCH_A || CONFIG_BSP_LCD_TYPE_800_1280_8_INCH_A || CONFIG_BSP_LCD_TYPE_720_1280_9_INCH_B || CONFIG_BSP_LCD_TYPE_720_1280_10_1_INCH_B || CONFIG_BSP_LCD_TYPE_720_720_4_INCH || CONFIG_BSP_LCD_TYPE_800_800_3_4_INCH
 #include "esp_lcd_jd9365.h"
 #elif CONFIG_BSP_LCD_TYPE_720_1280_7_INCH_A
 #include "esp_lcd_ili9881c.h"
+#elif CONFIG_BSP_LCD_TYPE_1024_600_7_INCH_C
+#include "esp_lcd_ek79007.h"
 #elif CONFIG_BSP_LCD_TYPE_720_1280_5_INCH_A
 #include "esp_lcd_hx8394.h"
-#else
-#include "esp_lcd_dsi.h"
 #endif
 
 #include "bsp/esp32_p4_platform.h"
@@ -355,16 +355,8 @@ esp_err_t bsp_display_brightness_set(int brightness_percent)
 
     uint8_t data = (uint8_t)(255 * brightness_percent * 0.01);
     uint8_t chip_addr = 0x45;
-#if CONFIG_BSP_LCD_TYPE_800_1280_10_1_INCH
-    uint8_t data_addr = 0x86;
-    uint8_t data_to_send[2] = {data_addr, data};
-#elif CONFIG_BSP_LCD_TYPE_800_1280_10_1_INCH_A || CONFIG_BSP_LCD_TYPE_800_1280_8_INCH_A || CONFIG_BSP_LCD_TYPE_720_1280_7_INCH_A || CONFIG_BSP_LCD_TYPE_720_1280_5_INCH_A || CONFIG_BSP_LCD_TYPE_720_1280_9_INCH_B || CONFIG_BSP_LCD_TYPE_720_1280_10_1_INCH_B
     uint8_t data_addr = 0x96;
     uint8_t data_to_send[2] = {data_addr, data};
-#else
-    uint8_t data_addr = 0xab;
-    uint8_t data_to_send[2] = {data_addr, 0xff - data};
-#endif
 
     i2c_device_config_t i2c_dev_conf = {
         .scl_speed_hz = 100 * 1000,
@@ -455,13 +447,25 @@ esp_err_t bsp_display_new_with_handles(const bsp_display_config_t *config, bsp_l
     ESP_GOTO_ON_ERROR(esp_lcd_new_panel_io_dbi(mipi_dsi_bus, &dbi_config, &io), err, TAG, "New panel IO failed");
 
     esp_lcd_panel_handle_t disp_panel = NULL;
-#if CONFIG_BSP_LCD_TYPE_800_1280_10_1_INCH || CONFIG_BSP_LCD_TYPE_800_1280_10_1_INCH_A || CONFIG_BSP_LCD_TYPE_800_1280_8_INCH_A || CONFIG_BSP_LCD_TYPE_720_1280_9_INCH_B || CONFIG_BSP_LCD_TYPE_720_1280_10_1_INCH_B
+#if CONFIG_BSP_LCD_TYPE_800_1280_10_1_INCH_A || CONFIG_BSP_LCD_TYPE_800_1280_8_INCH_A || CONFIG_BSP_LCD_TYPE_720_1280_9_INCH_B || CONFIG_BSP_LCD_TYPE_720_1280_10_1_INCH_B || CONFIG_BSP_LCD_TYPE_720_720_4_INCH || CONFIG_BSP_LCD_TYPE_800_800_3_4_INCH
     ESP_LOGI(TAG, "Install Waveshare LCD control panel");
 #if CONFIG_BSP_LCD_TYPE_720_1280_9_INCH_B || CONFIG_BSP_LCD_TYPE_720_1280_10_1_INCH_B
 #if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
     esp_lcd_dpi_panel_config_t dpi_config = JD9365_720_1280_PANEL_60HZ_DPI_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB888);
 #else
     esp_lcd_dpi_panel_config_t dpi_config = JD9365_720_1280_PANEL_60HZ_DPI_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
+#endif
+#elif CONFIG_BSP_LCD_TYPE_720_720_4_INCH
+#if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
+    esp_lcd_dpi_panel_config_t dpi_config = JD9365_720_720_PANEL_60HZ_DPI_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB888);
+#else
+    esp_lcd_dpi_panel_config_t dpi_config = JD9365_720_720_PANEL_60HZ_DPI_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
+#endif
+#elif CONFIG_BSP_LCD_TYPE_800_800_3_4_INCH
+#if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
+    esp_lcd_dpi_panel_config_t dpi_config = JD9365_800_800_PANEL_60HZ_DPI_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB888);
+#else
+    esp_lcd_dpi_panel_config_t dpi_config = JD9365_800_800_PANEL_60HZ_DPI_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
 #endif
 #else
 #if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
@@ -524,6 +528,49 @@ esp_err_t bsp_display_new_with_handles(const bsp_display_config_t *config, bsp_l
     ESP_GOTO_ON_ERROR(esp_lcd_panel_reset(disp_panel), err, TAG, "LCD panel reset failed");
     ESP_GOTO_ON_ERROR(esp_lcd_panel_init(disp_panel), err, TAG, "LCD panel init failed");
     ESP_GOTO_ON_ERROR(esp_lcd_panel_disp_on_off(disp_panel, true), err, TAG, "LCD panel ON failed");
+#elif CONFIG_BSP_LCD_TYPE_1024_600_7_INCH_C
+    bsp_i2c_init();
+    uint8_t chip_addr = 0x45;
+    uint8_t write_cmds[4][2] = {{0x95, 0x11}, {0x95, 0x17}, {0x96, 0x00}, {0x96, 0xFF}};
+    i2c_device_config_t i2c_dev_conf = {
+        .scl_speed_hz = 100 * 1000,
+        .device_address = chip_addr,
+    };
+    i2c_master_dev_handle_t dev_handle = NULL;
+    if (i2c_master_bus_add_device(i2c_handle, &i2c_dev_conf, &dev_handle) == ESP_OK)
+    {
+        for (uint8_t i = 0; i < 4; i++)
+        {
+            i2c_master_transmit(dev_handle, write_cmds[i], 2, 50);
+        }
+        i2c_master_bus_rm_device(dev_handle);
+    }
+#if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
+    esp_lcd_dpi_panel_config_t dpi_config = EK79007_1024_600_PANEL_60HZ_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB888);
+#else
+    esp_lcd_dpi_panel_config_t dpi_config = EK79007_1024_600_PANEL_60HZ_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
+#endif
+    dpi_config.num_fbs = CONFIG_BSP_LCD_DPI_BUFFER_NUMS;
+
+    ek79007_vendor_config_t vendor_config = {
+        .mipi_config = {
+            .dsi_bus = mipi_dsi_bus,
+            .dpi_config = &dpi_config,
+        },
+    };
+    esp_lcd_panel_dev_config_t lcd_dev_config = {
+#if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
+        .bits_per_pixel = 24,
+#else
+        .bits_per_pixel = 16,
+#endif
+        .rgb_ele_order = BSP_LCD_COLOR_SPACE,
+        .reset_gpio_num = BSP_LCD_RST,
+        .vendor_config = &vendor_config,
+    };
+    ESP_GOTO_ON_ERROR(esp_lcd_new_panel_ek79007(io, &lcd_dev_config, &disp_panel), err, TAG, "New LCD panel EK79007 failed");
+    ESP_GOTO_ON_ERROR(esp_lcd_panel_reset(disp_panel), err, TAG, "LCD panel reset failed");
+    ESP_GOTO_ON_ERROR(esp_lcd_panel_init(disp_panel), err, TAG, "LCD panel init failed");
 #elif CONFIG_BSP_LCD_TYPE_720_1280_5_INCH_A
     ESP_LOGI(TAG, "Install Waveshare 5-DSI-TOUCH-A LCD control panel");
 #if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
@@ -554,95 +601,6 @@ esp_err_t bsp_display_new_with_handles(const bsp_display_config_t *config, bsp_l
     ESP_GOTO_ON_ERROR(esp_lcd_panel_reset(disp_panel), err, TAG, "LCD panel reset failed");
     ESP_GOTO_ON_ERROR(esp_lcd_panel_init(disp_panel), err, TAG, "LCD panel init failed");
     ESP_GOTO_ON_ERROR(esp_lcd_panel_disp_on_off(disp_panel, true), err, TAG, "LCD panel ON failed");
-#else
-    ESP_LOGI(TAG, "Install Waveshare DSI LCD control panel");
-#if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
-#if CONFIG_BSP_LCD_TYPE_480_640_2_8_INCH
-    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_2_8_INCH_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB888);
-#elif CONFIG_BSP_LCD_TYPE_800_800_3_4_INCH_C
-    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_3_4_INCH_C_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB888);
-#elif CONFIG_BSP_LCD_TYPE_720_720_4_INCH_C
-    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_4_INCH_C_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB888);
-#elif CONFIG_BSP_LCD_TYPE_480_800_4_INCH
-    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_4_INCH_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB888);
-#elif CONFIG_BSP_LCD_TYPE_720_1280_5_INCH_D
-    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_5_INCH_D_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB888);
-#elif CONFIG_BSP_LCD_TYPE_720_1560_6_25_INCH
-    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_6_25_INCH_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB888);
-#elif CONFIG_BSP_LCD_TYPE_1024_600_5_INCH_C
-    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_5_INCH_C_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB888);
-#elif CONFIG_BSP_LCD_TYPE_1024_600_7_INCH_C
-    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_7_INCH_C_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB888);
-#elif CONFIG_BSP_LCD_TYPE_400_1280_7_9_INCH
-    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_7_9_INCH_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB888);
-#elif CONFIG_BSP_LCD_TYPE_1280_800_7_INCH_E
-    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_7_INCH_E_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB888);
-#elif CONFIG_BSP_LCD_TYPE_1280_720_7_INCH_H
-    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_7_INCH_H_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB888);
-#elif CONFIG_BSP_LCD_TYPE_1280_800_8_INCH_C
-    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_8_INCH_C_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB888);
-#elif CONFIG_BSP_LCD_TYPE_1280_800_10_1_INCH_C
-    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_10_1_INCH_C_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB888);
-#elif CONFIG_BSP_LCD_TYPE_480_1920_8_8_INCH
-    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_8_8_INCH_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB888);
-#elif CONFIG_BSP_LCD_TYPE_320_1480_11_9_INCH
-    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_11_9_INCH_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB888);
-#endif
-
-#else
-#if CONFIG_BSP_LCD_TYPE_480_640_2_8_INCH
-    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_2_8_INCH_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
-#elif CONFIG_BSP_LCD_TYPE_800_800_3_4_INCH_C
-    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_3_4_INCH_C_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
-#elif CONFIG_BSP_LCD_TYPE_720_720_4_INCH_C
-    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_4_INCH_C_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
-#elif CONFIG_BSP_LCD_TYPE_480_800_4_INCH
-    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_4_INCH_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
-#elif CONFIG_BSP_LCD_TYPE_720_1280_5_INCH_D
-    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_5_INCH_D_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
-#elif CONFIG_BSP_LCD_TYPE_720_1560_6_25_INCH
-    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_6_25_INCH_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
-#elif CONFIG_BSP_LCD_TYPE_1024_600_5_INCH_C
-    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_5_INCH_C_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
-#elif CONFIG_BSP_LCD_TYPE_1024_600_7_INCH_C
-    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_7_INCH_C_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
-#elif CONFIG_BSP_LCD_TYPE_400_1280_7_9_INCH
-    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_7_9_INCH_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
-#elif CONFIG_BSP_LCD_TYPE_1280_800_7_INCH_E
-    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_7_INCH_E_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
-#elif CONFIG_BSP_LCD_TYPE_1280_720_7_INCH_E
-    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_7_INCH_H_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
-#elif CONFIG_BSP_LCD_TYPE_1280_800_8_INCH_C
-    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_8_INCH_C_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
-#elif CONFIG_BSP_LCD_TYPE_1280_800_10_1_INCH_C
-    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_10_1_INCH_C_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
-#elif CONFIG_BSP_LCD_TYPE_480_1920_8_8_INCH
-    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_8_8_INCH_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
-#elif CONFIG_BSP_LCD_TYPE_320_1480_11_9_INCH
-    esp_lcd_dpi_panel_config_t dpi_config = DSI_PANEL_DPI_11_9_INCH_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
-#endif
-#endif
-    dpi_config.num_fbs = CONFIG_BSP_LCD_DPI_BUFFER_NUMS;
-
-    dsi_vendor_config_t vendor_config = {
-        .mipi_config = {
-            .dsi_bus = mipi_dsi_bus,
-            .dpi_config = &dpi_config,
-        },
-    };
-    esp_lcd_panel_dev_config_t lcd_dev_config = {
-#if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
-        .bits_per_pixel = 24,
-#else
-        .bits_per_pixel = 16,
-#endif
-        .rgb_ele_order = BSP_LCD_COLOR_SPACE,
-        .reset_gpio_num = BSP_LCD_RST,
-        .vendor_config = &vendor_config,
-    };
-    ESP_GOTO_ON_ERROR(esp_lcd_new_panel_dsi(io, &lcd_dev_config, &disp_panel), err, TAG, "New LCD panel Waveshare failed");
-    ESP_GOTO_ON_ERROR(esp_lcd_panel_reset(disp_panel), err, TAG, "LCD panel reset failed");
-    ESP_GOTO_ON_ERROR(esp_lcd_panel_init(disp_panel), err, TAG, "LCD panel init failed");
 #endif
 
     /* Return all handles */
@@ -680,13 +638,8 @@ esp_err_t bsp_touch_new(const bsp_display_cfg_t *cfg, esp_lcd_touch_handle_t *re
 
     /* Initialize touch */
     const esp_lcd_touch_config_t tp_cfg = {
-#if CONFIG_BSP_LCD_TYPE_480_640_2_8_INCH || CONFIG_BSP_LCD_TYPE_480_800_4_INCH
-        .x_max = BSP_LCD_V_RES,
-        .y_max = BSP_LCD_H_RES,
-#else
         .x_max = BSP_LCD_H_RES,
         .y_max = BSP_LCD_V_RES,
-#endif
         .rst_gpio_num = BSP_LCD_TOUCH_RST, // Shared with LCD reset
         .int_gpio_num = BSP_LCD_TOUCH_INT,
         .levels = {
