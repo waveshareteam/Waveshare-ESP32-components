@@ -650,9 +650,9 @@ esp_err_t bsp_display_rotation_set(bsp_display_rotation_t rotation)
     return esp_lcd_panel_io_tx_param(io_handle, lcd_cmd, &madctl, 1);
 }
 
-bool bsp_display_lock(uint32_t timeout_ms)
+esp_err_t bsp_display_lock(uint32_t timeout_ms)
 {
-    return (esp_lv_adapter_lock(timeout_ms) == ESP_OK);
+    return esp_lv_adapter_lock(timeout_ms);
 }
 
 void bsp_display_unlock(void)

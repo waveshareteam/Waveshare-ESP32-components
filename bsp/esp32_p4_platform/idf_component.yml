@@ -21,4 +21,4 @@ tags:
 targets:
 - esp32p4
 url: https://github.com/waveshareteam/Waveshare-ESP32-components
-version: 1.0.4
+version: 1.0.5

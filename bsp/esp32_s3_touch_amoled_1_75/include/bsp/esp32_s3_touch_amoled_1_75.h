@@ -309,7 +309,7 @@ lv_indev_t *bsp_display_get_input_dev(void);
  * @return true  Mutex was taken
  * @return false Mutex was NOT taken
  */
-bool bsp_display_lock(uint32_t timeout_ms);
+esp_err_t bsp_display_lock(uint32_t timeout_ms);
 
 /**
  * @brief Give LVGL mutex
