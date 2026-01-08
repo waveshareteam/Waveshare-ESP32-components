@@ -6,7 +6,7 @@ dependencies:
   waveshare/esp_lcd_touch_cst9217: "*"
   espressif/esp_lvgl_adapter:
     public: true
-    version: "*"
+    version: "0.1.*"
   idf: '>=5.5'
   lvgl/lvgl: '>=8,<10'
   esp_lcd_panel_io_additions: "^1"
@@ -19,4 +19,4 @@ tags:
 targets:
 - esp32s3
 url: https://www.waveshare.com/esp32-s3-touch-amoled-1.75.htm
-version: 2.0.1
+version: 2.0.2

@@ -5,7 +5,7 @@ dependencies:
   esp_lcd_touch_gt911: ^1
   espressif/esp_lvgl_adapter:
     public: true
-    version: "*"
+    version: "0.1.*"
   idf: '>=5.5'
   lvgl/lvgl: '>=8,<10'
   waveshare/esp_lcd_jd9365: '*'
@@ -21,4 +21,4 @@ tags:
 targets:
 - esp32p4
 url: https://github.com/waveshareteam/Waveshare-ESP32-components
-version: 1.0.3
+version: 1.0.4
