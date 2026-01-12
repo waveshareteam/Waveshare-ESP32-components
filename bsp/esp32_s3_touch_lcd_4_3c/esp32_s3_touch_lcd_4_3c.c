@@ -15,12 +15,12 @@
 
 #include "esp_lcd_touch_gt911.h"
 
-#include "bsp/display.h"
-#include "bsp/touch.h"
+
 #include "esp_codec_dev_defaults.h"
 #include "bsp/esp32_s3_touch_lcd_4_3c.h"
 #include "bsp_err_check.h"
 #include "bsp/display.h"
+#include "bsp/touch.h"
 #include "bsp_err_check.h"
 
 static const char *TAG = "ESP32-S3-Touch-LCD-4.3C";
@@ -128,6 +128,10 @@ i2c_master_bus_handle_t bsp_i2c_get_handle(void)
     return i2c_handle;
 }
 
+static esp_err_t bsp_i2c_device_probe(uint8_t addr)
+{
+    return i2c_master_probe(i2c_handle, addr, 100);
+}
 /**************************************************************************************************
  *
  * SPIFFS Function
@@ -409,7 +413,7 @@ esp_err_t bsp_display_backlight_on(void)
 
 esp_err_t bsp_set_display_pclk(uint32_t freq_hz)
 {
-    return esp_lcd_rgb_panel_set_pclk(panel_handle,freq_hz);;
+    return esp_lcd_rgb_panel_set_pclk(panel_handle,freq_hz);
 }
 
 esp_err_t bsp_display_new(const bsp_display_config_t *config, esp_lcd_panel_handle_t *ret_panel, esp_lcd_panel_io_handle_t *ret_io)
@@ -420,58 +424,58 @@ esp_err_t bsp_display_new(const bsp_display_config_t *config, esp_lcd_panel_hand
     ESP_RETURN_ON_ERROR(bsp_display_brightness_init(), TAG, "Brightness init failed");
     BSP_NULL_CHECK(expander = bsp_io_expander_init(), ESP_FAIL);
 
-    esp_io_expander_set_dir(custom_io_expander, BSP_LCD_BACKLIGHT | BSP_LCD_TOUCH_RST , IO_EXPANDER_OUTPUT);
+    esp_io_expander_set_dir(custom_io_expander, BSP_LCD_BACKLIGHT | BSP_LCD_TOUCH_RST, IO_EXPANDER_OUTPUT);
     esp_io_expander_set_level(custom_io_expander, BSP_LCD_TOUCH_RST, 0);
     vTaskDelay(pdMS_TO_TICKS(200));
-    gpio_set_level(BSP_LCD_TOUCH_INT, 0); 
+    gpio_set_level(BSP_LCD_TOUCH_INT, 0);
     vTaskDelay(pdMS_TO_TICKS(200));
-    esp_io_expander_set_level(custom_io_expander, BSP_LCD_TOUCH_RST, 1);
+    esp_io_expander_set_level(custom_io_expander, BSP_LCD_BACKLIGHT | BSP_LCD_TOUCH_RST, 1);
     vTaskDelay(pdMS_TO_TICKS(200));
 
     esp_lcd_rgb_panel_config_t rgb_config = {
-           .clk_src = LCD_CLK_SRC_PLL160M,
-           .psram_trans_align = 64,
-           .data_width = BSP_RGB_DATA_WIDTH,
-           .bits_per_pixel = BSP_LCD_BITS_PER_PIXEL,
-           .de_gpio_num = BSP_LCD_DE,
-           .pclk_gpio_num = BSP_LCD_PCLK,
-           .vsync_gpio_num = BSP_LCD_VSYNC,
-           .hsync_gpio_num = BSP_LCD_HSYNC,
-           .disp_gpio_num = BSP_LCD_DISP,
-           .data_gpio_nums = {
-               BSP_LCD_DATA0,
-               BSP_LCD_DATA1,
-               BSP_LCD_DATA2,
-               BSP_LCD_DATA3,
-               BSP_LCD_DATA4,
-               BSP_LCD_DATA5,
-               BSP_LCD_DATA6,
-               BSP_LCD_DATA7,
-               BSP_LCD_DATA8,
-               BSP_LCD_DATA9,
-               BSP_LCD_DATA10,
-               BSP_LCD_DATA11,
-               BSP_LCD_DATA12,
-               BSP_LCD_DATA13,
-               BSP_LCD_DATA14,
-               BSP_LCD_DATA15,
-           },
-           .timings = BSP_LCD_800_480_PANEL_35HZ_RGB_TIMING(),
-           .flags.fb_in_psram = 1,
-           .num_fbs = CONFIG_BSP_LCD_RGB_BUFFER_NUMS,
-// #if !CONFIG_BSP_DISPLAY_LVGL_AVOID_TEAR
-//            .bounce_buffer_size_px = BSP_LCD_DRAW_BUFF_SIZE,
-// #endif
+        .clk_src = LCD_CLK_SRC_PLL160M,
+        .psram_trans_align = 64,
+        .data_width = BSP_RGB_DATA_WIDTH,
+        .bits_per_pixel = BSP_LCD_BITS_PER_PIXEL,
+        .de_gpio_num = BSP_LCD_DE,
+        .pclk_gpio_num = BSP_LCD_PCLK,
+        .vsync_gpio_num = BSP_LCD_VSYNC,
+        .hsync_gpio_num = BSP_LCD_HSYNC,
+        .disp_gpio_num = BSP_LCD_DISP,
+        .data_gpio_nums = {
+            BSP_LCD_DATA0,
+            BSP_LCD_DATA1,
+            BSP_LCD_DATA2,
+            BSP_LCD_DATA3,
+            BSP_LCD_DATA4,
+            BSP_LCD_DATA5,
+            BSP_LCD_DATA6,
+            BSP_LCD_DATA7,
+            BSP_LCD_DATA8,
+            BSP_LCD_DATA9,
+            BSP_LCD_DATA10,
+            BSP_LCD_DATA11,
+            BSP_LCD_DATA12,
+            BSP_LCD_DATA13,
+            BSP_LCD_DATA14,
+            BSP_LCD_DATA15,
+        },
+        .timings = BSP_LCD_800_480_PANEL_35HZ_RGB_TIMING(),
+        .flags.fb_in_psram = 1,
+        .num_fbs = CONFIG_BSP_LCD_RGB_BUFFER_NUMS,
+        // .bounce_buffer_size_px = BSP_LCD_H_RES * 10,
     };
 
     BSP_ERROR_CHECK_RETURN_ERR(esp_lcd_new_rgb_panel(&rgb_config, &panel_handle));
     BSP_ERROR_CHECK_RETURN_ERR(esp_lcd_panel_init(panel_handle));
 
-    if (ret_panel) {
+    if (ret_panel)
+    {
         *ret_panel = panel_handle;
     }
 
-    if (ret_io) {
+    if (ret_io)
+    {
         *ret_io = io_handle;
     }
 
@@ -479,14 +483,15 @@ esp_err_t bsp_display_new(const bsp_display_config_t *config, esp_lcd_panel_hand
 }
 
 
-esp_err_t bsp_touch_new(const bsp_touch_config_t *config, esp_lcd_touch_handle_t *ret_touch)
+esp_err_t bsp_touch_new(const bsp_display_cfg_t *cfg, esp_lcd_touch_handle_t *ret_touch)
 {
+    assert(cfg != NULL);
     if (!i2c_initialized)
     {
         /* Initilize I2C */
         BSP_ERROR_CHECK_RETURN_ERR(bsp_i2c_init());
     }
-    
+
     /* Initialize touch */
     const esp_lcd_touch_config_t tp_cfg = {
         .x_max = BSP_LCD_H_RES,
@@ -498,131 +503,106 @@ esp_err_t bsp_touch_new(const bsp_touch_config_t *config, esp_lcd_touch_handle_t
             .interrupt = 0,
         },
         .flags = {
-            .swap_xy = 0,
-            .mirror_x = 0,
-            .mirror_y = 0,
+            .swap_xy = cfg->touch_flags.swap_xy,
+            .mirror_x = cfg->touch_flags.mirror_x,
+            .mirror_y = cfg->touch_flags.mirror_y,
         },
     };
     esp_lcd_panel_io_handle_t tp_io_handle = NULL;
-    esp_lcd_panel_io_i2c_config_t tp_io_config = {
-    .dev_addr = ESP_LCD_TOUCH_IO_I2C_GT911_ADDRESS,
-    .control_phase_bytes = 1,
-    .dc_bit_offset = 0,
-    .lcd_cmd_bits = 16,
-    .flags = {
-        .disable_control_phase = 1,
+    esp_lcd_panel_io_i2c_config_t tp_io_config;
+    if (ESP_OK == bsp_i2c_device_probe(ESP_LCD_TOUCH_IO_I2C_GT911_ADDRESS))
+    {
+        ESP_LOGI(TAG, "Touch 0x5d found");
+        esp_lcd_panel_io_i2c_config_t config = ESP_LCD_TOUCH_IO_I2C_GT911_CONFIG();
+        memcpy(&tp_io_config, &config, sizeof(config));
     }
-};
+    else if (ESP_OK == bsp_i2c_device_probe(ESP_LCD_TOUCH_IO_I2C_GT911_ADDRESS_BACKUP))
+    {
+        ESP_LOGI(TAG, "Touch 0x14 found");
+        esp_lcd_panel_io_i2c_config_t config = ESP_LCD_TOUCH_IO_I2C_GT911_CONFIG();
+        config.dev_addr = ESP_LCD_TOUCH_IO_I2C_GT911_ADDRESS_BACKUP;
+        memcpy(&tp_io_config, &config, sizeof(config));
+    }
+    else
+    {
+        ESP_LOGE(TAG, "Touch not found");
+        return ESP_ERR_NOT_FOUND;
+    }
     tp_io_config.scl_speed_hz = CONFIG_BSP_I2C_CLK_SPEED_HZ;
     ESP_RETURN_ON_ERROR(esp_lcd_new_panel_io_i2c(i2c_handle, &tp_io_config, &tp_io_handle), TAG, "");
     return esp_lcd_touch_new_i2c_gt911(tp_io_handle, &tp_cfg, ret_touch);
 }
 
-static lv_display_t *bsp_display_lcd_init()
+static lv_display_t *bsp_display_lcd_init(const bsp_display_cfg_t *cfg)
 {
+    assert(cfg != NULL);
     esp_lcd_panel_io_handle_t io_handle = NULL;
-
-    bsp_display_config_t disp_config = { 0 };
 
     bsp_io_expander_init();
 
-    BSP_ERROR_CHECK_RETURN_NULL(bsp_display_new(&disp_config, &panel_handle, &io_handle));
+    BSP_ERROR_CHECK_RETURN_NULL(bsp_display_new(NULL, &panel_handle, &io_handle));
 
-    int buffer_size = 0;
-#if CONFIG_BSP_DISPLAY_LVGL_AVOID_TEAR
-    buffer_size = BSP_LCD_H_RES * BSP_LCD_V_RES;
-#else
-    buffer_size = BSP_LCD_H_RES * LVGL_BUFFER_HEIGHT;
-#endif /* CONFIG_BSP_DISPLAY_LVGL_AVOID_TEAR */
-
-    const lvgl_port_display_cfg_t disp_cfg = {
-        .io_handle = io_handle,
-        .panel_handle = panel_handle,
-        .buffer_size = buffer_size,
-
-        .monochrome = false,
-        .hres = BSP_LCD_H_RES,
-        .vres = BSP_LCD_V_RES,
-#if LVGL_VERSION_MAJOR >= 9
-        .color_format = LV_COLOR_FORMAT_RGB565,
-#endif
-
-        .rotation = {
-            .swap_xy = false,
-            .mirror_x = false,
-            .mirror_y = false,
+    ESP_LOGI(TAG, "Registering RGB display");
+    esp_lv_adapter_display_config_t display_config = {
+        .panel = panel_handle,
+        .panel_io = io_handle,
+        .profile = {
+            .interface = ESP_LV_ADAPTER_PANEL_IF_RGB,
+            .rotation = cfg->rotation,
+            .hor_res = BSP_LCD_H_RES,
+            .ver_res = BSP_LCD_V_RES,
+            .buffer_height = 50,
+            .use_psram = true,
+            .enable_ppa_accel = false,
+            .require_double_buffer = true,
         },
-        .flags = {
-            .sw_rotate = true,
-            .buff_dma = false,
-#if CONFIG_BSP_DISPLAY_LVGL_PSRAM
-            .buff_spiram = false,
-#endif
-#if CONFIG_BSP_DISPLAY_LVGL_FULL_REFRESH
-            .full_refresh = 1,
-#elif CONFIG_BSP_DISPLAY_LVGL_DIRECT_MODE
-            .direct_mode = 1,
-#endif
-#if LVGL_VERSION_MAJOR >= 9
-            .swap_bytes = false,
-#endif
-        }
+        .tear_avoid_mode = cfg->tear_avoid_mode,
     };
-    
-    const lvgl_port_display_rgb_cfg_t rgb_cfg = {
-        .flags = {
-#if CONFIG_BSP_LCD_RGB_BOUNCE_BUFFER_MODE
-            .bb_mode = 1,
-#else
-            .bb_mode = 0,
-#endif
-#if CONFIG_BSP_DISPLAY_LVGL_AVOID_TEAR
-            .avoid_tearing = true,
-#else
-            .avoid_tearing = false,
-#endif
-        }
-    };
-
-#if CONFIG_BSP_LCD_RGB_BOUNCE_BUFFER_MODE
-    ESP_LOGW(TAG, "CONFIG_BSP_LCD_RGB_BOUNCE_BUFFER_MODE");
-#endif
-
-    return lvgl_port_add_disp_rgb(&disp_cfg, &rgb_cfg);
+    return esp_lv_adapter_register_display(&display_config);
 }
 
-
-static lv_indev_t *bsp_display_indev_init(lv_display_t *disp)
+static lv_indev_t *bsp_display_indev_init(const bsp_display_cfg_t *cfg, lv_display_t *disp)
 {
-    BSP_ERROR_CHECK_RETURN_NULL(bsp_touch_new(NULL, &tp));
+    assert(cfg != NULL);
+    BSP_ERROR_CHECK_RETURN_NULL(bsp_touch_new(cfg, &tp));
     assert(tp);
 
     /* Add touch input (for selected screen) */
-    const lvgl_port_touch_cfg_t touch_cfg = {
+    const esp_lv_adapter_touch_config_t touch_cfg = {
         .disp = disp,
         .handle = tp,
+        .scale = {.x = 1.0f, .y = 1.0f},
     };
 
-    return lvgl_port_add_touch(&touch_cfg);
+    return esp_lv_adapter_register_touch(&touch_cfg);
 }
 
 
  lv_display_t *bsp_display_start(void)
 {
     bsp_display_cfg_t cfg = {
-        .lvgl_port_cfg = ESP_LVGL_PORT_INIT_CONFIG()
-    };
+        .lv_adapter_cfg = ESP_LV_ADAPTER_DEFAULT_CONFIG(),
+        .rotation = ESP_LV_ADAPTER_ROTATE_0,
+        .tear_avoid_mode = ESP_LV_ADAPTER_TEAR_AVOID_MODE_DOUBLE_DIRECT,
+        .touch_flags = {
+            .swap_xy = 0,
+            .mirror_x = 0,
+            .mirror_y = 0}};
 
     return bsp_display_start_with_config(&cfg);
 }
 
-lv_display_t *bsp_display_start_with_config(const bsp_display_cfg_t *cfg)
+lv_display_t *bsp_display_start_with_config(bsp_display_cfg_t *cfg)
 {
-    BSP_ERROR_CHECK_RETURN_NULL(lvgl_port_init(&cfg->lvgl_port_cfg)); /* lvgl task, tick etc*/
+     assert(cfg != NULL);
+    BSP_ERROR_CHECK_RETURN_NULL(esp_lv_adapter_init(&cfg->lv_adapter_cfg));
 
-    BSP_NULL_CHECK(disp = bsp_display_lcd_init(), NULL);
+    BSP_NULL_CHECK(disp = bsp_display_lcd_init(cfg), NULL);
+    ESP_LOGI(TAG, "Display registered successfully");
 
-    BSP_NULL_CHECK(disp_indev = bsp_display_indev_init(disp), NULL);
+    BSP_NULL_CHECK(disp_indev = bsp_display_indev_init(cfg, disp), NULL);
+
+    ESP_ERROR_CHECK(esp_lv_adapter_start());
 
     return disp;
 }
@@ -637,14 +617,14 @@ void bsp_display_rotate(lv_display_t *disp, lv_display_rotation_t rotation)
     lv_disp_set_rotation(disp, rotation);
 }
 
-bool bsp_display_lock(uint32_t timeout_ms)
+esp_err_t bsp_display_lock(uint32_t timeout_ms)
 {
-    return lvgl_port_lock(timeout_ms);
+    return esp_lv_adapter_lock(timeout_ms);
 }
 
 void bsp_display_unlock(void)
 {
-    lvgl_port_unlock();
+    esp_lv_adapter_unlock();
 }
 
 /**************************************************************************************************

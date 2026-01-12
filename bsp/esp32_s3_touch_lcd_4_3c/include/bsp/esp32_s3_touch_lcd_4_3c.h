@@ -13,8 +13,7 @@
 #include "esp_codec_dev.h"
 
 #include "lvgl.h"
-#include "esp_lvgl_port.h"
-
+#include "esp_lv_adapter.h"
 
 /**************************************************************************************************
  *  BSP Capabilities
@@ -338,22 +337,38 @@ esp_err_t bsp_get_rtc_int(uint8_t *value);
 #define BSP_LCD_SPI_NUM            (SPI3_HOST)
 
 #if (BSP_CONFIG_NO_GRAPHIC_LIB == 0)
-#define BSP_LCD_DRAW_BUFF_SIZE     (BSP_LCD_H_RES * CONFIG_BSP_LCD_RGB_BOUNCE_BUFFER_HEIGHT)
-#define BSP_LCD_DRAW_BUFF_DOUBLE   (0)
 
 /**
  * @brief BSP display configuration structure
  */
 typedef struct {
-    lvgl_port_cfg_t lvgl_port_cfg;  /*!< LVGL port configuration */
-    uint32_t        buffer_size;    /*!< Size of the buffer for the screen in pixels */
-    uint32_t        trans_size;
-    bool            double_buffer;  /*!< True, if should be allocated two buffers */
+    esp_lv_adapter_config_t          lv_adapter_cfg;
+    esp_lv_adapter_rotation_t        rotation;
+    esp_lv_adapter_tear_avoid_mode_t tear_avoid_mode;
     struct {
-        unsigned int buff_dma: 1;    /*!< Allocated LVGL buffer will be DMA capable */
-        unsigned int buff_spiram: 1; /*!< Allocated LVGL buffer will be in PSRAM */
-    } flags;
+        unsigned int swap_xy;  /*!< Swap X and Y after read coordinates */
+        unsigned int mirror_x; /*!< Mirror X after read coordinates */
+        unsigned int mirror_y; /*!< Mirror Y after read coordinates */
+    } touch_flags;
 } bsp_display_cfg_t;
+
+#define BSP_TOUCH_FLAGS_FROM_ROT(_rot)                                      \
+    ((_rot) == ESP_LV_ADAPTER_ROTATE_0)   ?                                  \
+        (typeof(((bsp_display_cfg_t *)0)->touch_flags)){ .swap_xy = 0, .mirror_x = 0, .mirror_y = 0 } : \
+    ((_rot) == ESP_LV_ADAPTER_ROTATE_90)  ?                                  \
+        (typeof(((bsp_display_cfg_t *)0)->touch_flags)){ .swap_xy = 1, .mirror_x = 1, .mirror_y = 0 } : \
+    ((_rot) == ESP_LV_ADAPTER_ROTATE_180) ?                                  \
+        (typeof(((bsp_display_cfg_t *)0)->touch_flags)){ .swap_xy = 0, .mirror_x = 1, .mirror_y = 1 } : \
+        /* ROTATE_270 */                                                      \
+        (typeof(((bsp_display_cfg_t *)0)->touch_flags)){ .swap_xy = 1, .mirror_x = 0, .mirror_y = 1 }
+
+#define BSP_DISPLAY_CFG_ROT(_cfg,_rot)                                  \
+{                                                                  \
+    .lv_adapter_cfg = _cfg,             \
+    .rotation = (_rot),                                            \
+    .tear_avoid_mode = ESP_LV_ADAPTER_TEAR_AVOID_MODE_DOUBLE_DIRECT, \
+    .touch_flags = BSP_TOUCH_FLAGS_FROM_ROT(_rot),                 \
+}
 
 /**
  * @brief Initialize display
@@ -374,7 +389,7 @@ lv_display_t *bsp_display_start(void);
  *
  * @return Pointer to LVGL display or NULL when error occurred
  */
-lv_display_t *bsp_display_start_with_config(const bsp_display_cfg_t *cfg);
+lv_display_t *bsp_display_start_with_config(bsp_display_cfg_t *cfg);
 
 /**
  * @brief Get pointer to input device (touch, buttons, ...)
@@ -392,7 +407,7 @@ lv_indev_t *bsp_display_get_input_dev(void);
  * @return true  Mutex was taken
  * @return false Mutex was NOT taken
  */
-bool bsp_display_lock(uint32_t timeout_ms);
+esp_err_t bsp_display_lock(uint32_t timeout_ms);
 
 /**
  * @brief Give LVGL mutex

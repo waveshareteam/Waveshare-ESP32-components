@@ -2,22 +2,26 @@ dependencies:
   esp_codec_dev:
     public: true
     version: ~1.3.1
+  esp_lcd_touch_gt911: '*'
+  espressif/esp_lvgl_adapter:
+    version: "*"
+    public: true
+  idf: '>=5.3'
+  lvgl/lvgl: ~9.4.*
   waveshare/custom_io_expander_ch32v003:
     public: true
-    version: "*"
+    version: '*'
   waveshare/pcf85063a:
     public: true
-    version: "*"
-  esp_lcd_touch_gt911: '*'
-  espressif/esp_lvgl_port:
-    public: true
-    version: ^2
-  idf: '>=5.3'
-  lvgl/lvgl: '>=8,<10'
+    version: '*'
 description: Board Support Package (BSP) for Waveshare ESP32-S3-Touch-LCD-4.3C
+repository: git://github.com/waveshareteam/Waveshare-ESP32-components.git
+repository_info:
+  commit_sha: c878e3e56f23f7cdd67ac36e13ec549705f0a5d4
+  path: bsp/esp32_s3_touch_lcd_4_3c
 tags:
 - bsp
 targets:
 - esp32s3
 url: https://github.com/waveshareteam/Waveshare-ESP32-components
-version: 1.0.0
+version: 2.0.0
