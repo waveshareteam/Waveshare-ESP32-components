@@ -15,6 +15,13 @@
 #include "lvgl.h"
 #include "esp_lv_adapter.h"
 
+#include "driver/usb_serial_jtag.h"
+
+#if SOC_USB_SERIAL_JTAG_SUPPORTED
+#include "soc/usb_serial_jtag_reg.h"
+#include "hal/usb_serial_jtag_ll.h"
+#endif
+
 /**************************************************************************************************
  *  BSP Capabilities
  **************************************************************************************************/
@@ -92,6 +99,9 @@
 #define BSP_SD_CMD           (GPIO_NUM_11)
 #define BSP_SD_CLK           (GPIO_NUM_12)
 
+/* USB */
+#define BSP_USB_DP           (GPIO_NUM_20)
+
 /** @} */ // end of uSD card
 
 #define BSP_IO_EXPANDER_I2C_ADDRESS     (CUSTOM_IO_EXPANDER_I2C_CH32V003_ADDRESS)
@@ -103,12 +113,19 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Init USB Serial JTAG PHY
+ *
+ */
+void _usb_serial_jtag_phy_init();
+
 /**************************************************************************************************
  *
  * I2C interface
  *
  **************************************************************************************************/
 #define BSP_I2C_NUM     CONFIG_BSP_I2C_NUM
+
 
 /**
  * @brief Init I2C driver

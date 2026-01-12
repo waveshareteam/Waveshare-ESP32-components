@@ -66,6 +66,39 @@ static const audio_codec_data_if_t *i2s_data_if = NULL; /* Codec data interface 
     }
 
 #define LCD_BRIGHTNESS_MAX 0xFF 
+
+/**********************************************************************************************************
+ *
+ * USB Function
+ *
+ **********************************************************************************************************/
+void _usb_serial_jtag_phy_init()
+{
+    gpio_config_t io_usb_power_conf = {
+        .pin_bit_mask = (1ULL << BSP_USB_DP),
+        .mode = GPIO_MODE_OUTPUT,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE
+    };
+    gpio_config(&io_usb_power_conf);
+    gpio_set_level(BSP_USB_DP, 0);
+    
+    SET_PERI_REG_MASK(USB_SERIAL_JTAG_CONF0_REG, USB_SERIAL_JTAG_PAD_PULL_OVERRIDE);
+    CLEAR_PERI_REG_MASK(USB_SERIAL_JTAG_CONF0_REG, USB_SERIAL_JTAG_DP_PULLUP);
+    SET_PERI_REG_MASK(USB_SERIAL_JTAG_CONF0_REG, USB_SERIAL_JTAG_DP_PULLDOWN);
+    vTaskDelay(pdMS_TO_TICKS(10));
+#if USB_SERIAL_JTAG_LL_EXT_PHY_SUPPORTED
+    usb_serial_jtag_ll_phy_enable_external(false);  // Use internal PHY
+    usb_serial_jtag_ll_phy_enable_pad(true);        // Enable USB PHY pads
+#else // USB_SERIAL_JTAG_LL_EXT_PHY_SUPPORTED
+    usb_serial_jtag_ll_phy_set_defaults();          // External PHY not supported. Set default values.
+#endif // USB_WRAP_LL_EXT_PHY_SUPPORTED
+    CLEAR_PERI_REG_MASK(USB_SERIAL_JTAG_CONF0_REG, USB_SERIAL_JTAG_DP_PULLDOWN);
+    SET_PERI_REG_MASK(USB_SERIAL_JTAG_CONF0_REG, USB_SERIAL_JTAG_DP_PULLUP);
+    CLEAR_PERI_REG_MASK(USB_SERIAL_JTAG_CONF0_REG, USB_SERIAL_JTAG_PAD_PULL_OVERRIDE);
+}
+
 /**************************************************************************************************
  *
  * GPIO Function
@@ -85,7 +118,6 @@ esp_err_t bsp_gpio_init(void)
 
     return ESP_OK;
 }
-
 
 /**************************************************************************************************
  *
