@@ -67,26 +67,12 @@ menu "Board Support Package"
 
     endmenu
     menu "Display"
-        config BSP_LCD_RGB_BOUNCE_BUFFER_HEIGHT
-            int "RGB Bounce buffer height"
-            default 20
+        config BSP_LCD_TRANS_QUEUE_DEPTH
+            int "spi/qspi transfer queue depth"
+            default 10
             help
-                Height of bounce buffer. The width of the buffer is the same as that of the LCD.
-
-        config BSP_DISPLAY_BRIGHTNESS_LEDC_CH
-            int "LEDC channel index"
-            default 1
-            range 0 7
-            help
-                LEDC channel is used to generate PWM signal that controls display brightness.
-                Set LEDC index that should be used.
-
-        config BSP_DISPLAY_LVGL_BUF_HEIGHT
-            depends on !BSP_DISPLAY_LVGL_AVOID_TEAR
-            int "LVGL buffer height"
-            default 30
-            help
-                Height of LVGL buffer. The width of the buffer is the same as that of the LCD.
+                Number of SPI/QSPI transfers that can be queued for the LCD.
+                Higher values may improve throughput but use more RAM.
     endmenu
 
     config BSP_I2S_NUM

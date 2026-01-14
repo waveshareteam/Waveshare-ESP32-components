@@ -102,6 +102,7 @@
 #define BSP_LCD_CS            (GPIO_NUM_6) 
 #define BSP_LCD_RST           (GPIO_NUM_NC) // Connected via IO expander P1
 #define BSP_LCD_BACKLIGHT     (GPIO_NUM_NC) // Connected via IO expander PWM1
+#define BSP_LCD_TOUCH_RST     (GPIO_NUM_NC) // Connected via IO expander P0
 #define BSP_LCD_TOUCH_INT     (GPIO_NUM_9) // Connected via IO expander P4
 /** @} */ // end of display
 
@@ -586,12 +587,23 @@ uint16_t bsp_get_io_expander_adc(void);
  * Display's backlight must be enabled explicitly by calling bsp_display_backlight_on()
  **************************************************************************************************/
 #define BSP_LCD_PIXEL_CLOCK_HZ     (80 * 1000 * 1000)
-#define BSP_LCD_SPI_NUM            (SPI3_HOST)
-
-#define BSP_LCD_DRAW_BUFF_SIZE     (BSP_LCD_H_RES * 20)
-#define BSP_LCD_DRAW_BUFF_DOUBLE   (1)
+#define BSP_LCD_SPI_NUM            (SPI2_HOST)
 
 #if (BSP_CONFIG_NO_GRAPHIC_LIB == 0)
+
+/**
+ * @brief BSP display configuration structure
+ */
+typedef struct {
+    esp_lv_adapter_config_t          lv_adapter_cfg;
+    esp_lv_adapter_rotation_t        rotation;
+    esp_lv_adapter_tear_avoid_mode_t tear_avoid_mode;
+    struct {
+        unsigned int swap_xy;  /*!< Swap X and Y after read coordinates */
+        unsigned int mirror_x; /*!< Mirror X after read coordinates */
+        unsigned int mirror_y; /*!< Mirror Y after read coordinates */
+    } touch_flags;
+} bsp_display_cfg_t;
 
 /**
  * @brief Initialize display
@@ -602,6 +614,18 @@ uint16_t bsp_get_io_expander_adc(void);
  * @return Pointer to LVGL display or NULL when error occurred
  */
 lv_display_t *bsp_display_start(void);
+
+/**
+ * @brief Initialize display
+ *
+ * This function initializes SPI, display controller and starts LVGL handling task.
+ * LCD backlight must be enabled separately by calling bsp_display_brightness_set()
+ *
+ * @param cfg display configuration
+ *
+ * @return Pointer to LVGL display or NULL when error occurred
+ */
+lv_display_t *bsp_display_start_with_config(bsp_display_cfg_t *cfg);
 
 /**
  * @brief Get pointer to display device 

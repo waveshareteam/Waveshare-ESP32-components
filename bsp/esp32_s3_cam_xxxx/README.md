@@ -1,4 +1,4 @@
-# BSP: Waveshare ESP32-S3-Touch-LCD-1.83
+# BSP: Waveshare ESP32-S3-CAM-XXXX
 
 [![Component Registry](https://components.espressif.com/components/waveshare/esp32_s3_touch_lcd_1_83/badge.svg)](https://components.espressif.com/components/waveshare/esp32_s3_touch_lcd_1_83)
 
