@@ -162,18 +162,18 @@ void app_main(void)
 
     while(1) {
 
-        lcd_fill_screen(lcd_panel, 0xF800); // 填充红色
+        lcd_fill_screen(lcd_panel, 0xF800); // fill with red
         vTaskDelay(pdMS_TO_TICKS(2000));
 
-        lcd_fill_screen(lcd_panel, 0x07E0); // 填充绿色
+        lcd_fill_screen(lcd_panel, 0x07E0); // fill with green
         vTaskDelay(pdMS_TO_TICKS(2000));
 
-        lcd_fill_screen(lcd_panel, 0x001F); // 填充蓝色
+        lcd_fill_screen(lcd_panel, 0x001F); // fill with blue
         vTaskDelay(pdMS_TO_TICKS(2000));
 
-        lcd_fill_screen(lcd_panel, 0xFFE0); // 填充黄色
+        lcd_fill_screen(lcd_panel, 0xFFE0); // fill with yellow
         vTaskDelay(pdMS_TO_TICKS(2000));
 
-        lcd_fill_screen(lcd_panel, 0xFFFF); // 填充白色
+        lcd_fill_screen(lcd_panel, 0xFFFF); // fill with white
     }
 }
