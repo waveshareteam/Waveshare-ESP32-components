@@ -13,7 +13,7 @@
 #include "esp_lcd_panel_ops.h"
 #include "esp_spiffs.h"
 
-#include "bsp/esp32_s3_cam_xxxx.h"
+#include "bsp/esp32_s3_cam_ovxxxx.h"
 #include "bsp/display.h"
 #include "bsp/touch.h"
 #include "esp_lcd_touch_cst816s.h"
@@ -22,7 +22,7 @@
 #include "bsp_err_check.h"
 #include "iot_button.h"
 
-static const char *TAG = "esp32_s3_cam_xxxx";
+static const char *TAG = "esp32_s3_cam_ovxxxx";
 
 /**
  * @brief I2C handle for BSP usage
@@ -405,7 +405,7 @@ esp_err_t bsp_display_new(const bsp_display_config_t *config, esp_lcd_panel_hand
         .lcd_cmd_bits = LCD_CMD_BITS,
         .lcd_param_bits = LCD_PARAM_BITS,
         .spi_mode = 0,
-        .trans_queue_depth = 2,
+        .trans_queue_depth = CONFIG_BSP_LCD_TRANS_QUEUE_DEPTH,
     };
     ESP_GOTO_ON_ERROR(esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)BSP_LCD_SPI_NUM, &io_config, ret_io), err, TAG, "New panel IO failed");
 
@@ -449,6 +449,7 @@ static void touch_callback(esp_lcd_touch_handle_t tp)
 }
 esp_err_t bsp_touch_new(const bsp_display_cfg_t *cfg, esp_lcd_touch_handle_t *ret_touch)
 {
+    assert(cfg != NULL);
     /* Initilize I2C */
     BSP_ERROR_CHECK_RETURN_ERR(bsp_i2c_init());
 
@@ -461,7 +462,7 @@ esp_err_t bsp_touch_new(const bsp_display_cfg_t *cfg, esp_lcd_touch_handle_t *re
     const esp_lcd_touch_config_t tp_cfg = {
         .x_max = BSP_LCD_V_RES,
         .y_max = BSP_LCD_H_RES,
-        .rst_gpio_num = BSP_LCD_TOUCH_RST, // Shared with LCD reset
+        .rst_gpio_num = BSP_LCD_TOUCH_RST,
         .int_gpio_num = BSP_LCD_TOUCH_INT,
         .levels = {
             .reset = 0,
@@ -508,10 +509,7 @@ static lv_display_t *bsp_display_lcd_init(const bsp_display_cfg_t *cfg)
         .tear_avoid_mode = cfg->tear_avoid_mode,
     };
 
-    esp_lv_adapter_display_config_t display_config = ESP_LV_ADAPTER_DISPLAY_SPI_WITH_PSRAM_DEFAULT_CONFIG(panel_handle, io_handle, BSP_LCD_H_RES, BSP_LCD_V_RES, ESP_LV_ADAPTER_ROTATE_0);
-    display_config.profile.buffer_height = 50;
-
-    lv_display_t *disp = esp_lv_adapter_register_display(&display_config);
+    lv_display_t *disp = esp_lv_adapter_register_display(&disp_cfg);
     if (!disp)
     {
         return NULL;
@@ -587,7 +585,7 @@ lv_display_t *bsp_display_start(void)
     bsp_display_cfg_t cfg = {
         .lv_adapter_cfg = ESP_LV_ADAPTER_DEFAULT_CONFIG(),
         .rotation = ESP_LV_ADAPTER_ROTATE_0,
-        .tear_avoid_mode = ESP_LV_ADAPTER_TEAR_AVOID_MODE_DEFAULT,
+        .tear_avoid_mode = ESP_LV_ADAPTER_TEAR_AVOID_MODE_NONE,
         .touch_flags = {
             .swap_xy = 1,
             .mirror_x = 1,
@@ -622,27 +620,16 @@ lv_indev_t *bsp_display_get_input_dev(void)
     return disp_indev;
 }
 
-void bsp_display_rotate(lv_display_t *disp, lv_disp_rotation_t rotation)
+esp_err_t bsp_display_lock(uint32_t timeout_ms)
 {
-    lv_disp_set_rotation(disp, rotation);
-}
-
-bool bsp_display_lock(uint32_t timeout_ms)
-{
-    int32_t tmp = (int32_t)timeout_ms;
-
-    if (tmp == 0) {
-        tmp = -1; 
-    }
-
-    esp_err_t err = esp_lv_adapter_lock(tmp);
-    return (err == ESP_OK);
+    return esp_lv_adapter_lock(timeout_ms);
 }
 
 void bsp_display_unlock(void)
 {
     esp_lv_adapter_unlock();
 }
+
 #endif // (BSP_CONFIG_NO_GRAPHIC_LIB == 0)
 
 esp_err_t bsp_spiffs_mount(void)

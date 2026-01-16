@@ -1,5 +1,5 @@
 #pragma once
-//#include "esp_lcd_touch.h"
+#include "esp_lcd_touch.h"
 
 #ifdef __cplusplus
 extern "C" {

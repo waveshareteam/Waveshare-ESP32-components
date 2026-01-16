@@ -1,12 +1,12 @@
 dependencies:
   idf: ">=5.3"
+  lvgl/lvgl: ">=8,<10"
   espressif/esp_lvgl_adapter:
-    version: "0.1.0-beta.2"
+    version: "^0.1.*"
     public: true
-  espressif/esp_lcd_touch: ^1.2.0
   espressif/esp_lcd_touch_cst816s: ^1.1.0
   esp_codec_dev:
-    version: "~1.5.4"
+    version: "~1.5"
     public: true
   espressif/esp32-camera: ^2.1.4
   espressif/button: ^4.1.4

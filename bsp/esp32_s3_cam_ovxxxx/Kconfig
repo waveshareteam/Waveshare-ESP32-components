@@ -68,11 +68,11 @@ menu "Board Support Package"
     endmenu
     menu "Display"
         config BSP_LCD_TRANS_QUEUE_DEPTH
-            int "spi/qspi transfer queue depth"
-            default 10
+            int "Set The depth of the SPI transmission task queue for the SPI screen"
+            default 2
+            range 1 10
             help
-                Number of SPI/QSPI transfers that can be queued for the LCD.
-                Higher values may improve throughput but use more RAM.
+                Cache the SPI screen instruction/pixel data transmission tasks, implement asynchronous non-blocking screen refreshing, and the CPU can execute other logic after submitting the task.
     endmenu
 
     config BSP_I2S_NUM
