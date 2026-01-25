@@ -135,9 +135,9 @@ esp_err_t pcf85063a_get_alarm(pcf85063a_dev_t *dev, pcf85063a_datetime_t *time)
 {
     if (!dev ) return ESP_ERR_INVALID_ARG;
     esp_err_t ret;
-    uint8_t bufss[7] = {0};
+    uint8_t bufss[5] = {0};
 
-    ret = pcf85063a_read_register(dev, PCF85063A_RTC_CTRL_2_ADDR, bufss, 7);
+    ret = pcf85063a_read_register(dev, PCF85063A_RTC_SECOND_ALARM, bufss, 5);
     // Convert the BCD format seconds, minutes, hours, day, and weekday into decimal and store them in the time structure
 	time->sec = bcdToDec(bufss[0] & 0x7F);	// Seconds, up to 7 valid bits, mask processing 										
 	time->min = bcdToDec(bufss[1] & 0x7F);	// Minutes, up to 7 valid bits, mask processing 										 
