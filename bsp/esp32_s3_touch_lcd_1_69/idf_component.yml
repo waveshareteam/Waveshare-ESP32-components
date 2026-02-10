@@ -1,0 +1,15 @@
+dependencies:
+  esp_lcd_touch_cst816s: "*"
+  espressif/esp_lvgl_port:
+    public: true
+    version: ^2
+  idf: '>=5.3'
+  lvgl/lvgl: '>=8,<10'
+  esp_lcd_panel_io_additions: "^1"
+description: Board Support Package (BSP) for Waveshare ESP32-S3-Touch-LCD-1.69
+tags:
+- bsp
+targets:
+- esp32s3
+url: https://github.com/waveshareteam/Waveshare-ESP32-components
+version: 1.0.4
