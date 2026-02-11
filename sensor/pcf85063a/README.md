@@ -13,7 +13,7 @@ PCF85063A sensor driver,PCF85063A is RTC.
 Packages from this repository are uploaded to [Espressif's component service](https://components.espressif.com/).
 You can add them to your project via `idf.py add-dependancy`, e.g.
 ```
-    idf.py add-dependency waveshare/pcf85063a==1.0.0
+    idf.py add-dependency waveshare/pcf85063a==1.1.0
 ```
 
 Alternatively, you can create `idf_component.yml`. More is in [Espressif's documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/tools/idf-component-manager.html).
@@ -55,7 +55,7 @@ static esp_err_t i2c_master_init(i2c_master_bus_handle_t *bus_handle) {
 ### Read the current time and check if the alarm has been triggered
 ```c
     while (1) {
-        
+
         // Read current time from RTC
         pcf85063a_get_time_date(&dev, &Now_time);
 
@@ -76,16 +76,67 @@ static esp_err_t i2c_master_init(i2c_master_bus_handle_t *bus_handle) {
     }
 ```
 
+### Timer functionality
+
+The PCF85063A includes an 8-bit countdown timer with selectable clock
+frequencies for various timing applications.
+
+#### Timer Configuration
+
+```c
+    // Timer configurations for different durations:
+    // 4.096 kHz: 244 μs to 62.256 ms
+    // 64 Hz:     15.625 ms to 3.984 s
+    // 1 Hz:      1 s to 255 s (4 min 15 s)
+    // 1/60 Hz:   60 s to 4 hours 15 min
+
+    // Example: Set 30-second timer with 1Hz clock + interrupt enabled
+    uint8_t timer_mode = PCF85063A_RTC_TIMER_TCF_1HZ | PCF85063A_RTC_TIMER_MODE_TIE;
+    pcf85063a_enable_timer(&dev, 30, timer_mode);
+
+    // Alternative: Set 2-minute timer using 1/60 Hz clock
+    uint8_t timer_mode_slow = PCF85063A_RTC_TIMER_TCF_1_60HZ | PCF85063A_RTC_TIMER_MODE_TIE;
+    pcf85063a_enable_timer(&dev, 2, timer_mode_slow);
+```
+
+#### Timer Interrupt Handling
+
+```c
+    // Check and clear timer interrupts
+    uint8_t timer_flag;
+    pcf85063a_get_timer_flag(&dev, &timer_flag);
+
+    if (timer_flag) {
+        ESP_LOGI(TAG, "Timer expired!");
+
+        // Clear timer flag (required for next interrupt)
+        pcf85063a_clear_timer_flag(&dev);
+
+        // Timer automatically reloads and continues counting
+        // To stop: pcf85063a_disable_timer(&dev);
+    }
+```
+
+#### Timer Value Monitoring
+
+```c
+    // Read current countdown value
+    uint8_t current_value;
+    pcf85063a_get_timer_value(&dev, &current_value);
+    ESP_LOGI(TAG, "Timer countdown: %d", current_value);
+```
+
 ### Running results
+
 ```shell
 I (278) pcf85063a_example: Initializing PCF85063A...
 I (288) PCF85063A: PCF85063A initialized successfully
 I (288) pcf85063a_example: Set current time.
 I (298) pcf85063a_example: Set alarm time.
 I (298) pcf85063a_example: Enable alarm interrupt.
-I (308) pcf85063a_example: Now_time is  2025.7.30  3 9:0:0 
-I (1308) pcf85063a_example: Now_time is  2025.7.30  3 9:0:1 
-I (2308) pcf85063a_example: Now_time is  2025.7.30  3 9:0:2 
+I (308) pcf85063a_example: Now_time is  2025.7.30  3 9:0:0
+I (1308) pcf85063a_example: Now_time is  2025.7.30  3 9:0:1
+I (2308) pcf85063a_example: Now_time is  2025.7.30  3 9:0:2
 I (2308) pcf85063a_example: The alarm clock goes off.
 I (3308) pcf85063a_example: Now_time is  2025.7.30  3 9:0:3
 ------------

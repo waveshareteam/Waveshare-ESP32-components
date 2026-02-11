@@ -77,6 +77,19 @@ extern "C" {
 #define PCF85063A_RTC_TIMER_MODE_TIE  (0X02) // Timer Interrupt Enable 0-Disable, 1-Enable 
 #define PCF85063A_RTC_TIMER_MODE_TI_TP (0X01) // Timer Interrupt Mode 0-Interrupt follows Timer Flag, 1-Interrupt generates a pulse 
 
+/* 
+ * Timer Clock Frequency Selection (TCF[1:0]) - bits 4:3 of Timer Mode register
+ */
+#define PCF85063A_RTC_TIMER_TCF_4096HZ (0x00) // 4.096 kHz timer source clock
+#define PCF85063A_RTC_TIMER_TCF_64HZ   (0x08) // 64 Hz timer source clock
+#define PCF85063A_RTC_TIMER_TCF_1HZ    (0x10) // 1 Hz timer source clock
+#define PCF85063A_RTC_TIMER_TCF_1_60HZ (0x18) // 1/60 Hz timer source clock (default)
+
+/* 
+ * Timer Interrupt Mode (TI_TP) - bit 0 of Timer Mode register
+ */
+#define PCF85063A_RTC_TIMER_TI_TP      (0x01) // 1=pulse mode, 0=level mode 
+
 
 // Format 
 #define PCF85063A_RTC_ALARM 			(0x80)	// Set AEN_x registers 
@@ -154,6 +167,46 @@ esp_err_t pcf85063a_set_alarm(pcf85063a_dev_t *dev, pcf85063a_datetime_t time);
  * Read the alarm time set 
  **/
 esp_err_t pcf85063a_get_alarm(pcf85063a_dev_t *dev, pcf85063a_datetime_t *time);
+
+/**
+ * Enable Timer with specified parameters
+ **/
+esp_err_t pcf85063a_enable_timer(pcf85063a_dev_t *dev, uint8_t timer_value, uint8_t timer_mode);
+
+/**
+ * Set Timer value (countdown value 0-255)
+ **/
+esp_err_t pcf85063a_set_timer_value(pcf85063a_dev_t *dev, uint8_t timer_value);
+
+/**
+ * Set Timer mode configuration
+ **/
+esp_err_t pcf85063a_set_timer_mode(pcf85063a_dev_t *dev, uint8_t timer_mode);
+
+/**
+ * Get Timer flag status
+ **/
+esp_err_t pcf85063a_get_timer_flag(pcf85063a_dev_t *dev, uint8_t *flag);
+
+/**
+ * Clear Timer flag
+ **/
+esp_err_t pcf85063a_clear_timer_flag(pcf85063a_dev_t *dev);
+
+/**
+ * Disable Timer
+ **/
+esp_err_t pcf85063a_disable_timer(pcf85063a_dev_t *dev);
+
+/**
+ * Get current Timer value (countdown value)
+ **/
+esp_err_t pcf85063a_get_timer_value(pcf85063a_dev_t *dev, uint8_t *timer_value);
+
+/**
+ * Set Timer with proper disable/enable sequence
+ **/
+esp_err_t pcf85063a_set_timer_safe(pcf85063a_dev_t *dev, uint8_t timer_value, uint8_t timer_mode);
 
 /**
  * Convert time to string 
