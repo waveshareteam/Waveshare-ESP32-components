@@ -1,4 +1,4 @@
-# BSP: Waveshare ESP32-P4-PLATFORM
+# BSP: Waveshare ESP32-P4-WIFI6-Touch-LCD-X
 
 [![Component Registry](https://components.espressif.com/components/waveshare/esp32_p4_wifi6_touch_lcd_x/badge.svg)](https://components.espressif.com/components/waveshare/esp32_p4_wifi6_touch_lcd_x)
 
