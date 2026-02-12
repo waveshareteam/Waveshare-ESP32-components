@@ -25,6 +25,7 @@ jobs:
             display/lcd/esp_lcd_st7703;
             display/lcd/esp_lcd_jd9365_10_1;
             display/lcd/esp_lcd_jd9365_8;
+            display/lcd/esp_lcd_ota7290b;
             display/lcd/esp_lcd_st7735;
             display/oled/esp_oled_ssd1315;
             bsp/esp32_p4_nano;
