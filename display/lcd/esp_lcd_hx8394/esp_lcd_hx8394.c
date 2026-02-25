@@ -128,7 +128,7 @@ esp_err_t esp_lcd_new_panel_hx8394(const esp_lcd_panel_io_handle_t io, const esp
     i2c_bus_write_bytes(i2c0_device1, 0x96, 1, &data);
 
     i2c_bus_device_delete(&i2c0_device1);
-    // i2c_bus_delete(&i2c0_bus);
+    i2c_bus_delete(&i2c0_bus);
 
     vTaskDelay(pdMS_TO_TICKS(1000));
 
