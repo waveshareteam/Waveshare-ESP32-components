@@ -3,3 +3,4 @@ dependencies:
 description: "PCF85063A, adapted by the Waveshare team"
 url: "https://github.com/waveshareteam/Waveshare-ESP32-components/tree/master/sensor/pcf85063a"
 version: "1.1.0"
+
