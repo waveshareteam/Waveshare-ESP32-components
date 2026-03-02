@@ -56,6 +56,10 @@
 #define BSP_LCD_H_RES              (800)
 #define BSP_LCD_V_RES              (800)
 #define BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS (1200)
+#elif CONFIG_BSP_LCD_TYPE_480_1920_8_8_INCH_A
+#define BSP_LCD_H_RES              (480)
+#define BSP_LCD_V_RES              (1920)
+#define BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS (1300)
 #endif
 
 #define BSP_LCD_MIPI_DSI_LANE_NUM          (2)    // 2 data lanes

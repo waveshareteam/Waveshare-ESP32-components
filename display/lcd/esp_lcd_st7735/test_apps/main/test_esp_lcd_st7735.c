@@ -21,11 +21,10 @@
 #define LCD_V_RES          (128)    // LCD vertical resolution
 
 /* LCD SPI Configuration */
-#define LCD_SPI_NUM        (SPI3_HOST)       // SPI host to use
+#define LCD_SPI_NUM        (SPI2_HOST)       // SPI host to use
 #define LCD_PIXEL_CLK_HZ   (40 * 1000 * 1000) // SPI clock frequency (40MHz)
 #define LCD_CMD_BITS       (8)                // Command bit width
 #define LCD_PARAM_BITS     (8)                // Parameter bit width
-#define LCD_COLOR_SPACE    (ESP_LCD_COLOR_SPACE_RGB) // Color space
 #define LCD_BITS_PER_PIXEL (16)               // Pixel bit width (RGB565 format)
 #define LCD_BL_ON_LEVEL    (1)                // Backlight on level (1=high level, 0=low level)
 
@@ -40,6 +39,29 @@
 static const char *TAG = "LCD_DRIVER";       
 static esp_lcd_panel_io_handle_t lcd_io = NULL;  // LCD panel IO handle (SPI communication layer)
 esp_lcd_panel_handle_t lcd_panel = NULL;  // LCD panel handle (ST7735 driver layer)
+
+
+// static st7735_lcd_init_cmd_t st7735_init_cmds[] = {
+//     // Rcmd1                                                                                      // Software reset, 150 ms delay
+//     {ST7735_SLPOUT, (uint8_t[]){0x00}, 1, 120},                                                                                           // Out of sleep mode, 255 ms delay
+//     {ST7735_FRMCTR1, (uint8_t[]){0x05, 0x3C, 0x3C}, 3, 0},                                                                                // Frame rate ctrl - normal mode
+//     {ST7735_FRMCTR2, (uint8_t[]){0x05, 0x3C, 0x3C}, 3, 0},                                                                                // Frame rate control - idle mode
+//     {ST7735_FRMCTR3, (uint8_t[]){0x05, 0x3C, 0x3C, 0x05, 0x3C, 0x3C}, 6, 0},                                                              // Frame rate ctrl - partial mode
+//     {ST7735_INVCTR, (uint8_t[]){0x03}, 1, 0},                                                                                             // Display inversion ctrl
+//     {ST7735_PWCTR1, (uint8_t[]){0xA4, 0x04, 0x84}, 3, 0},                                                                                 // Power control
+//     {ST7735_PWCTR2, (uint8_t[]){0xC8}, 1, 0},                                                                                             // Power control
+//     {ST7735_PWCTR3, (uint8_t[]){0x0D, 0x00}, 2, 0},                                                                                       // Power control
+//     {ST7735_PWCTR4, (uint8_t[]){0x8D, 0x2A}, 2, 0},                                                                                       // Power control
+//     {ST7735_PWCTR5, (uint8_t[]){0x8D, 0xEE}, 2, 0},                                                                                       // Power control
+//     {ST7735_VMCTR1, (uint8_t[]){0x1D}, 1, 0},                                                                                             // Power control                                
+//     {ST7735_GMCTRP1, (uint8_t[]){0x0C, 0x0A, 0x06, 0x00, 0x1A, 0x11, 0x0B, 0x0A, 0x0B, 0x0C, 0x19, 0x33, 0x00, 0x06, 0x02, 0x10}, 16, 0}, // Positive Gamma
+//     {ST7735_GMCTRN1, (uint8_t[]){0x0D, 0x0F, 0x03, 0x00, 0x11, 0x0A, 0x06, 0x08, 0x09, 0x0D, 0x1C, 0x3A, 0x00, 0x09, 0x07, 0x10}, 16, 0}, // Negative Gamma
+//     {ST7735_TEON, (uint8_t[]){0x00}, 1, 0},
+//     {ST7735_COLMOD, (uint8_t[]){0x05}, 1, 0}, 
+//     {ST7735_MADCTL, (uint8_t[]){0xC8}, 1, 0},                                                                                 // Normal display on, no args, w/delay 10 ms delay
+
+// };
+
 
 void lcd_fill_screen(esp_lcd_panel_handle_t panel_handle, uint16_t color)
 {
@@ -110,12 +132,18 @@ esp_err_t lcd_init(void)
     ESP_GOTO_ON_ERROR(esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)LCD_SPI_NUM, &io_config, &lcd_io), 
                       err, TAG, "Panel IO init failed");
 
+    // st7735_vendor_config_t vendor_config={  
+    // .init_cmds = st7735_init_cmds,
+    // .init_cmds_size = sizeof(st7735_init_cmds) / sizeof(st7735_lcd_init_cmd_t),
+    // };
+
     // 4. Install ST7735 LCD driver
     ESP_LOGD(TAG, "Install ST7735 panel driver");
     const esp_lcd_panel_dev_config_t panel_config = {
         .reset_gpio_num = LCD_GPIO_RST,
-        .color_space = LCD_COLOR_SPACE,
-        .bits_per_pixel = LCD_BITS_PER_PIXEL
+        .color_space = LCD_RGB_ELEMENT_ORDER_BGR,
+        .bits_per_pixel = LCD_BITS_PER_PIXEL,
+        // .vendor_config =&vendor_config,
     };
     ESP_GOTO_ON_ERROR(esp_lcd_new_panel_st7735(lcd_io, &panel_config, &lcd_panel), 
                       err, TAG, "ST7735 driver init failed");
@@ -124,6 +152,8 @@ esp_err_t lcd_init(void)
     ESP_LOGD(TAG, "Reset and init ST7735 panel");
     ESP_GOTO_ON_ERROR(esp_lcd_panel_reset(lcd_panel), err, TAG, "Panel reset failed");
     ESP_GOTO_ON_ERROR(esp_lcd_panel_init(lcd_panel), err, TAG, "Panel init failed");
+
+    ESP_GOTO_ON_ERROR(esp_lcd_panel_set_gap(lcd_panel,2,3),err, TAG, "Set gap failed");
     
     // ST7735 has default color inversion; enable color correction
     ESP_GOTO_ON_ERROR(esp_lcd_panel_invert_color(lcd_panel, true), err, TAG, "Invert color failed");
@@ -174,6 +204,5 @@ void app_main(void)
         lcd_fill_screen(lcd_panel, 0xFFE0); // fill with yellow
         vTaskDelay(pdMS_TO_TICKS(2000));
 
-        lcd_fill_screen(lcd_panel, 0xFFFF); // fill with white
     }
 }

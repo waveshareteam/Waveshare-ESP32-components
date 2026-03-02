@@ -14,6 +14,8 @@
 
 #if CONFIG_BSP_LCD_TYPE_800_1280_10_1_INCH_A || CONFIG_BSP_LCD_TYPE_800_1280_8_INCH_A || CONFIG_BSP_LCD_TYPE_720_1280_9_INCH_B || CONFIG_BSP_LCD_TYPE_720_1280_10_1_INCH_B || CONFIG_BSP_LCD_TYPE_720_720_4_INCH || CONFIG_BSP_LCD_TYPE_800_800_3_4_INCH
 #include "esp_lcd_jd9365.h"
+#elif CONFIG_BSP_LCD_TYPE_480_1920_8_8_INCH_A
+#include "esp_lcd_ota7290b.h"
 #elif CONFIG_BSP_LCD_TYPE_720_1280_7_INCH_A
 #include "esp_lcd_ili9881c.h"
 #elif CONFIG_BSP_LCD_TYPE_1024_600_7_INCH_C
@@ -431,7 +433,7 @@ esp_err_t bsp_display_new_with_handles(const bsp_display_config_t *config, bsp_l
     esp_lcd_dsi_bus_config_t bus_config = {
         .bus_id = 0,
         .num_data_lanes = BSP_LCD_MIPI_DSI_LANE_NUM,
-        .phy_clk_src = MIPI_DSI_PHY_CLK_SRC_DEFAULT,
+        .phy_clk_src = 0,
         .lane_bit_rate_mbps = BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS,
     };
     ESP_RETURN_ON_ERROR(esp_lcd_new_dsi_bus(&bus_config, &mipi_dsi_bus), TAG, "New DSI bus init failed");
@@ -496,7 +498,33 @@ esp_err_t bsp_display_new_with_handles(const bsp_display_config_t *config, bsp_l
     ESP_GOTO_ON_ERROR(esp_lcd_new_panel_jd9365(io, &lcd_dev_config, &disp_panel), err, TAG, "New LCD panel Waveshare failed");
     ESP_GOTO_ON_ERROR(esp_lcd_panel_reset(disp_panel), err, TAG, "LCD panel reset failed");
     ESP_GOTO_ON_ERROR(esp_lcd_panel_init(disp_panel), err, TAG, "LCD panel init failed");
+#elif CONFIG_BSP_LCD_TYPE_480_1920_8_8_INCH_A
+    ESP_LOGI(TAG, "Install Waveshare 8.8-DSI-TOUCH-A LCD control panel");
+#if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
+    esp_lcd_dpi_panel_config_t dpi_config = OTA7290B_480_1920_PANEL_60HZ_DPI_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB888);
+#else
+    esp_lcd_dpi_panel_config_t dpi_config = OTA7290B_480_1920_PANEL_60HZ_DPI_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
+#endif
+    dpi_config.num_fbs = CONFIG_BSP_LCD_DPI_BUFFER_NUMS;
 
+    ota7290b_vendor_config_t vendor_config = {
+        .mipi_config = {
+            .dsi_bus = mipi_dsi_bus,
+            .dpi_config = &dpi_config,
+        },
+    };
+    esp_lcd_panel_dev_config_t lcd_dev_config = {
+#if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
+        .bits_per_pixel = 24,
+#else
+        .bits_per_pixel = 16,
+#endif
+        .rgb_ele_order = BSP_LCD_COLOR_SPACE,
+        .reset_gpio_num = BSP_LCD_RST,
+        .vendor_config = &vendor_config,
+    };
+    ESP_GOTO_ON_ERROR(esp_lcd_new_panel_ota7290b(io, &lcd_dev_config, &disp_panel), err, TAG, "New LCD panel ILI9881C failed");
+    ESP_GOTO_ON_ERROR(esp_lcd_panel_init(disp_panel), err, TAG, "LCD panel init failed");
 #elif CONFIG_BSP_LCD_TYPE_720_1280_7_INCH_A
     ESP_LOGI(TAG, "Install Waveshare 7-DSI-TOUCH-A LCD control panel");
 

@@ -25,6 +25,7 @@ jobs:
             display/lcd/esp_lcd_st7703;
             display/lcd/esp_lcd_jd9365_10_1;
             display/lcd/esp_lcd_jd9365_8;
+            display/lcd/esp_lcd_ota7290b;
             display/lcd/esp_lcd_st7735;
             display/oled/esp_oled_ssd1315;
             bsp/esp32_p4_nano;
@@ -32,6 +33,7 @@ jobs:
             bsp/esp32_s3_touch_lcd_4;
             bsp/esp32_s3_touch_amoled_1_8;
             bsp/esp32_s3_touch_amoled_1_75;
+            bsp/esp32_p4_wifi6_touch_lcd_x;
             bsp/esp32_p4_wifi6_touch_lcd_xc;
             display/touch/esp_lcd_touch_cst9217;
             display/touch/esp_lcd_touch_cst328;
@@ -42,6 +44,7 @@ jobs:
             bsp/esp32_s3_touch_lcd_4_3c;
             bsp/esp32_s3_touch_lcd_2_8d;
             bsp/esp32_s3_touch_lcd_1_83;
+            bsp/esp32_s3_touch_lcd_1_69;
             bsp/esp32_s3_touch_amoled_1_32;
             bsp/esp32_c6_touch_amoled_1_32;
             bsp/esp32_c6_touch_amoled_2_06;

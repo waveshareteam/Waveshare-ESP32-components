@@ -148,6 +148,118 @@ esp_err_t pcf85063a_get_alarm(pcf85063a_dev_t *dev, pcf85063a_datetime_t *time)
 	return ret;
 }
 
+esp_err_t pcf85063a_enable_timer(pcf85063a_dev_t *dev, uint8_t timer_value, uint8_t timer_mode)
+{
+    if (!dev) return ESP_ERR_INVALID_ARG;
+    
+    // Timer value 0 stops the timer according to datasheet
+    if (timer_value == 0) {
+        return pcf85063a_disable_timer(dev);
+    }
+    
+    // Use safe configuration sequence
+    return pcf85063a_set_timer_safe(dev, timer_value, timer_mode);
+}
+
+esp_err_t pcf85063a_set_timer_value(pcf85063a_dev_t *dev, uint8_t timer_value)
+{
+    if (!dev) return ESP_ERR_INVALID_ARG;
+    
+    uint8_t buf[2] = {PCF85063A_RTC_TIMER_VAL, timer_value};
+    return pcf85063a_write_register(dev, buf, 2);
+}
+
+esp_err_t pcf85063a_set_timer_mode(pcf85063a_dev_t *dev, uint8_t timer_mode)
+{
+    if (!dev) return ESP_ERR_INVALID_ARG;
+    
+    uint8_t buf[2] = {PCF85063A_RTC_TIMER_MODE, timer_mode};
+    return pcf85063a_write_register(dev, buf, 2);
+}
+
+esp_err_t pcf85063a_get_timer_flag(pcf85063a_dev_t *dev, uint8_t *flag)
+{
+    if (!dev || !flag) return ESP_ERR_INVALID_ARG;
+    esp_err_t ret;
+    
+    ret = pcf85063a_read_register(dev, PCF85063A_RTC_CTRL_2_ADDR, flag, 1);
+    *flag &= PCF85063A_RTC_CTRL_2_TF;  // Mask to get only the timer flag bit
+    
+    return ret;
+}
+
+esp_err_t pcf85063a_clear_timer_flag(pcf85063a_dev_t *dev)
+{
+    if (!dev) return ESP_ERR_INVALID_ARG;
+    esp_err_t ret;
+    uint8_t ctrl2_val;
+    
+    // Read current Control_2 register value
+    ret = pcf85063a_read_register(dev, PCF85063A_RTC_CTRL_2_ADDR, &ctrl2_val, 1);
+    if (ret != ESP_OK) return ret;
+    
+    // Clear timer flag bit (write 0 to clear, preserve other bits)
+    ctrl2_val &= ~PCF85063A_RTC_CTRL_2_TF;
+    
+    uint8_t buf[2] = {PCF85063A_RTC_CTRL_2_ADDR, ctrl2_val};
+    return pcf85063a_write_register(dev, buf, 2);
+}
+
+esp_err_t pcf85063a_disable_timer(pcf85063a_dev_t *dev)
+{
+    if (!dev) return ESP_ERR_INVALID_ARG;
+    esp_err_t ret;
+    uint8_t timer_mode;
+    
+    // Read current timer mode
+    ret = pcf85063a_read_register(dev, PCF85063A_RTC_TIMER_MODE, &timer_mode, 1);
+    if (ret != ESP_OK) return ret;
+    
+    // Disable timer by clearing TE bit
+    timer_mode &= ~PCF85063A_RTC_TIMER_MODE_TE;
+    
+    uint8_t buf[2] = {PCF85063A_RTC_TIMER_MODE, timer_mode};
+    return pcf85063a_write_register(dev, buf, 2);
+}
+
+esp_err_t pcf85063a_get_timer_value(pcf85063a_dev_t *dev, uint8_t *timer_value)
+{
+    if (!dev || !timer_value) return ESP_ERR_INVALID_ARG;
+    esp_err_t ret;
+    uint8_t value1, value2;
+    
+    // Read timer value twice for consistency as recommended by datasheet
+    ret = pcf85063a_read_register(dev, PCF85063A_RTC_TIMER_VAL, &value1, 1);
+    if (ret != ESP_OK) return ret;
+    
+    ret = pcf85063a_read_register(dev, PCF85063A_RTC_TIMER_VAL, &value2, 1);
+    if (ret != ESP_OK) return ret;
+    
+    // If values differ, timer is actively counting, use second reading
+    *timer_value = value2;
+    
+    return ESP_OK;
+}
+
+esp_err_t pcf85063a_set_timer_safe(pcf85063a_dev_t *dev, uint8_t timer_value, uint8_t timer_mode)
+{
+    if (!dev) return ESP_ERR_INVALID_ARG;
+    esp_err_t ret;
+    
+    // Disable timer first as recommended by datasheet
+    ret = pcf85063a_disable_timer(dev);
+    if (ret != ESP_OK) return ret;
+    
+    // Set timer value
+    ret = pcf85063a_set_timer_value(dev, timer_value);
+    if (ret != ESP_OK) return ret;
+    
+    // Set timer mode and enable
+    ret = pcf85063a_set_timer_mode(dev, timer_mode | PCF85063A_RTC_TIMER_MODE_TE);
+    
+    return ret;
+}
+
 /**
  * Convert normal decimal numbers to binary coded decimal 
  **/

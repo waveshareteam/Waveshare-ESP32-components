@@ -2,6 +2,7 @@
 
 #pragma once
 #include "esp_lcd_types.h"
+#include "esp_err.h"
 
 /* LCD color formats */
 #define ESP_LCD_COLOR_FORMAT_RGB565    (1)
