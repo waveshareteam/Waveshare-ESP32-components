@@ -22,6 +22,8 @@
 #include "esp_lcd_ek79007.h"
 #elif CONFIG_BSP_LCD_TYPE_720_1280_5_INCH_A
 #include "esp_lcd_hx8394.h"
+#elif CONFIG_BSP_LCD_TYPE_480_800_4_INCH_A || CONFIG_BSP_LCD_TYPE_480_800_4_3_INCH_A
+#include "esp_lcd_st7701.h"
 #endif
 
 #include "bsp/esp32_p4_platform.h"
@@ -32,6 +34,99 @@
 #include "esp_codec_dev_defaults.h"
 
 static const char *TAG = "ESP32_P4_PLATFORM";
+#if CONFIG_BSP_LCD_TYPE_480_800_4_3_INCH_A
+static const st7701_lcd_init_cmd_t vendor_specific_init_default[] = {
+    {0xFF, (uint8_t[]){0x77, 0x01, 0x00, 0x00, 0x13}, 5, 0},
+    {0xEF, (uint8_t[]){0x08}, 1, 0},
+    {0xFF, (uint8_t[]){0x77, 0x01, 0x00, 0x00, 0x10}, 5, 0},
+    {0xC0, (uint8_t[]){0x63, 0x00}, 2, 0},
+    {0xC1, (uint8_t[]){0x0D, 0x02}, 2, 0},
+    {0xC2, (uint8_t[]){0x17, 0x08}, 2, 0},
+    {0xCC, (uint8_t[]){0x10}, 1, 0},
+    {0xB0, (uint8_t[]){0x40, 0xC9, 0x94, 0x0E, 0x10, 0x05, 0x0B, 0x09, 0x08, 0x26, 0x04, 0x52, 0x10, 0x69, 0x6B, 0x69}, 16, 0},
+
+    {0xB1, (uint8_t[]){0x40, 0xD2, 0x98, 0x0C, 0x92, 0x07, 0x09, 0x08, 0x07, 0x25, 0x02, 0x0E, 0x0C, 0x6E, 0x78, 0x55}, 16, 0},
+
+    {0xFF, (uint8_t[]){0x77, 0x01, 0x00, 0x00, 0x11}, 5, 0},
+    {0xB0, (uint8_t[]){0x5D}, 1, 0},
+    {0xB1, (uint8_t[]){0x4E}, 1, 0},
+    {0xB2, (uint8_t[]){0x87}, 1, 0},
+    {0xB3, (uint8_t[]){0x80}, 1, 0},
+    {0xB5, (uint8_t[]){0x4E}, 1, 0},
+    {0xB7, (uint8_t[]){0x85}, 1, 0},
+    {0xB8, (uint8_t[]){0x21}, 1, 0},
+    {0xB9, (uint8_t[]){0x10, 0x1F}, 2, 0},
+    {0xBB, (uint8_t[]){0x03}, 1, 0},
+    {0xBC, (uint8_t[]){0x00}, 1, 0},
+
+    {0xC1, (uint8_t[]){0x78}, 1, 0},
+    {0xC2, (uint8_t[]){0x78}, 1, 0},
+    {0xD0, (uint8_t[]){0x88}, 1, 0},
+    {0xE0, (uint8_t[]){0x00, 0x3A, 0x02}, 3, 0},
+    {0xE1, (uint8_t[]){0x04, 0xA0, 0x00, 0xA0, 0x05, 0xA0, 0x00, 0xA0, 0x00, 0x40, 0x40}, 11, 0},
+
+    {0xE2, (uint8_t[]){0x30, 0x00, 0x40, 0x40, 0x32, 0xA0, 0x00, 0xA0, 0x00, 0xA0, 0x00, 0xA0, 0x00}, 13, 0},
+
+    {0xE3, (uint8_t[]){0x00, 0x00, 0x33, 0x33}, 4, 0},
+    {0xE4, (uint8_t[]){0x44, 0x44}, 2, 0},
+    {0xE5, (uint8_t[]){0x09, 0x2E, 0xA0, 0xA0, 0x0B, 0x30, 0xA0, 0xA0, 0x05, 0x2A, 0xA0, 0xA0, 0x07, 0x2C, 0xA0, 0xA0}, 16, 0},
+
+    {0xE6, (uint8_t[]){0x00, 0x00, 0x33, 0x33}, 4, 0},
+    {0xE7, (uint8_t[]){0x44, 0x44}, 2, 0},
+    {0xE8, (uint8_t[]){0x08, 0x2D, 0xA0, 0xA0, 0x0A, 0x2F, 0xA0, 0xA0, 0x04, 0x29, 0xA0, 0xA0, 0x06, 0x2B, 0xA0, 0xA0}, 16, 0},
+
+    {0xEB, (uint8_t[]){0x00, 0x00, 0x4E, 0x4E, 0x00, 0x00, 0x00}, 7, 0},
+    {0xEC, (uint8_t[]){0x08, 0x01}, 2, 0},
+
+    {0xED, (uint8_t[]){0xB0, 0x2B, 0x98, 0xA4, 0x56, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xF7, 0x65, 0x4A, 0x89, 0xB2, 0x0B}, 16, 0},
+
+    {0xEF, (uint8_t[]){0x08, 0x08, 0x08, 0x45, 0x3F, 0x54}, 6, 0},
+    {0xFF, (uint8_t[]){0x77, 0x01, 0x00, 0x00, 0x00}, 5, 0},
+    {0x11, (uint8_t[]){0x00}, 0, 120},
+    {0x29, (uint8_t[]){0x00}, 0, 0},
+};
+#elif CONFIG_BSP_LCD_TYPE_480_800_4_INCH_A
+static const st7701_lcd_init_cmd_t vendor_specific_init_default[] = {
+    {0x11, (uint8_t[]){0x00}, 0, 120},
+    {0xFF, (uint8_t[]){0x77, 0x01, 0x00, 0x00, 0x13}, 5, 0},
+    {0xEF, (uint8_t[]){0x08}, 1, 0},
+    {0xFF, (uint8_t[]){0x77, 0x01, 0x00, 0x00, 0x10}, 5, 0},
+    {0xC0, (uint8_t[]){0x63, 0x00}, 2, 0},
+    {0xC1, (uint8_t[]){0x0C, 0x02}, 2, 0},
+    {0xC2, (uint8_t[]){0x01, 0x07}, 2, 0},
+    {0xCC, (uint8_t[]){0x10}, 1, 0},
+    {0xB0, (uint8_t[]){0xCD, 0x18, 0x1F, 0x0F, 0x13, 0x08, 0x09, 0x08, 0x08, 0x24, 0x03, 0x10, 0x0E, 0x21, 0x24, 0x0B}, 16, 0},
+    {0xB1, (uint8_t[]){0xC3, 0x0F, 0x18, 0x0B, 0x0F, 0x05, 0x09, 0x09, 0x08, 0x24, 0x06, 0x13, 0x13, 0x28, 0x2D, 0x15}, 16, 0},
+    {0xFF, (uint8_t[]){0x77, 0x01, 0x00, 0x00, 0x11}, 5, 0},
+    {0xB0, (uint8_t[]){0x5D}, 1, 0},
+    {0xB1, (uint8_t[]){0x3F}, 1, 0},
+    {0xB2, (uint8_t[]){0x82}, 1, 0},
+    {0xB3, (uint8_t[]){0x80}, 1, 0},
+    {0xB5, (uint8_t[]){0x45}, 1, 0},
+    {0xB7, (uint8_t[]){0x85}, 1, 0},
+    {0xB8, (uint8_t[]){0x21}, 1, 0},
+    {0xB9, (uint8_t[]){0x10, 0x1F}, 2, 0},
+    {0xBB, (uint8_t[]){0x03}, 1, 0},
+    {0xBC, (uint8_t[]){0x3E}, 1, 0},
+    {0xC1, (uint8_t[]){0x78}, 1, 0},
+    {0xC2, (uint8_t[]){0x78}, 1, 0},
+    {0xD0, (uint8_t[]){0x88}, 1, 100},
+    {0xE0, (uint8_t[]){0x00, 0x00, 0x02}, 3, 0},
+    {0xE1, (uint8_t[]){0x04, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x20, 0x20}, 11, 0},
+    {0xE2, (uint8_t[]){0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, 12, 0},
+    {0xE3, (uint8_t[]){0x00, 0x00, 0x33, 0x00}, 4, 0},
+    {0xE4, (uint8_t[]){0x22, 0x00}, 2, 0},
+    {0xE5, (uint8_t[]){0x04, 0x34, 0x9A, 0xA0, 0x06, 0x34, 0x9A, 0xA0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, 16, 0},
+    {0xE6, (uint8_t[]){0x00, 0x00, 0x33, 0x00}, 4, 0},
+    {0xE7, (uint8_t[]){0x22, 0x00}, 2, 0},
+    {0xE8, (uint8_t[]){0x05, 0x34, 0x9A, 0xA0, 0x07, 0x34, 0x9A, 0xA0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, 16, 0},
+    {0xEB, (uint8_t[]){0x02, 0x00, 0x40, 0x40, 0x00, 0x00, 0x00}, 7, 0},
+    {0xEC, (uint8_t[]){0x00, 0x00}, 2, 0},
+    {0xED, (uint8_t[]){0xFA, 0x45, 0x0B, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xB0, 0x54, 0xAF}, 16, 0},
+    {0xFF, (uint8_t[]){0x77, 0x01, 0x00, 0x00, 0x00}, 5, 200},
+    {0x29, (uint8_t[]){0x00}, 0, 0},
+};
+#endif
 
 #if (BSP_CONFIG_NO_GRAPHIC_LIB == 0)
 static lv_indev_t *disp_indev = NULL;
@@ -626,6 +721,73 @@ esp_err_t bsp_display_new_with_handles(const bsp_display_config_t *config, bsp_l
         .vendor_config = &vendor_config,
     };
     ESP_GOTO_ON_ERROR(esp_lcd_new_panel_hx8394(io, &lcd_dev_config, &disp_panel), err, TAG, "New LCD panel ILI9881C failed");
+    ESP_GOTO_ON_ERROR(esp_lcd_panel_reset(disp_panel), err, TAG, "LCD panel reset failed");
+    ESP_GOTO_ON_ERROR(esp_lcd_panel_init(disp_panel), err, TAG, "LCD panel init failed");
+    ESP_GOTO_ON_ERROR(esp_lcd_panel_disp_on_off(disp_panel, true), err, TAG, "LCD panel ON failed");
+#elif CONFIG_BSP_LCD_TYPE_480_800_4_INCH_A || CONFIG_BSP_LCD_TYPE_480_800_4_3_INCH_A
+    ESP_LOGI(TAG, "Install Waveshare 4-DSI-TOUCH-A or 4.3-DSI-TOUCH-A LCD control panel");
+    bsp_i2c_init();
+    uint8_t chip_addr = 0x45;
+    uint8_t write_cmds[4][2] = {{0x95, 0x11}, {0x95, 0x17}, {0x96, 0x00}, {0x96, 0xFF}};
+    i2c_device_config_t i2c_dev_conf = {
+        .scl_speed_hz = 100 * 1000,
+        .device_address = chip_addr,
+    };
+    i2c_master_dev_handle_t dev_handle = NULL;
+    if (i2c_master_bus_add_device(i2c_handle, &i2c_dev_conf, &dev_handle) == ESP_OK)
+    {
+        for (uint8_t i = 0; i < 4; i++)
+        {
+            i2c_master_transmit(dev_handle, write_cmds[i], 2, 50);
+        }
+        i2c_master_bus_rm_device(dev_handle);
+    }
+    esp_lcd_dpi_panel_config_t dpi_config = {                                                 
+        .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,  
+        .dpi_clock_freq_mhz = 30,                     
+        .virtual_channel = 0,               
+#if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
+        .pixel_format = LCD_COLOR_PIXEL_FORMAT_RGB888,                    
+#else
+        .pixel_format = LCD_COLOR_PIXEL_FORMAT_RGB565,                    
+#endif
+        .num_fbs = 1,                                 
+        .video_timing = {                             
+            .h_size = 480,                            
+            .v_size = 800,                            
+            .hsync_back_porch = 42,                   
+            .hsync_pulse_width = 12,                  
+            .hsync_front_porch = 42,                  
+            .vsync_back_porch = 2,                    
+            .vsync_pulse_width = 8,                   
+            .vsync_front_porch = 60,                  
+        },                                            
+        .flags.use_dma2d = true,                      
+    };
+    dpi_config.num_fbs = CONFIG_BSP_LCD_DPI_BUFFER_NUMS;
+
+    st7701_vendor_config_t vendor_config = {
+        .init_cmds = vendor_specific_init_default,
+        .init_cmds_size = sizeof(vendor_specific_init_default) / sizeof(st7701_lcd_init_cmd_t),
+        .flags = {
+            .use_mipi_interface = 1,
+        },
+        .mipi_config = {
+            .dsi_bus = mipi_dsi_bus,
+            .dpi_config = &dpi_config,
+        },
+    };
+    esp_lcd_panel_dev_config_t lcd_dev_config = {
+#if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
+        .bits_per_pixel = 24,
+#else
+        .bits_per_pixel = 16,
+#endif
+        .rgb_ele_order = BSP_LCD_COLOR_SPACE,
+        .reset_gpio_num = BSP_LCD_RST,
+        .vendor_config = &vendor_config,
+    };
+    ESP_GOTO_ON_ERROR(esp_lcd_new_panel_st7701(io, &lcd_dev_config, &disp_panel), err, TAG, "New LCD panel ILI9881C failed");
     ESP_GOTO_ON_ERROR(esp_lcd_panel_reset(disp_panel), err, TAG, "LCD panel reset failed");
     ESP_GOTO_ON_ERROR(esp_lcd_panel_init(disp_panel), err, TAG, "LCD panel init failed");
     ESP_GOTO_ON_ERROR(esp_lcd_panel_disp_on_off(disp_panel, true), err, TAG, "LCD panel ON failed");
