@@ -54,6 +54,8 @@ jobs:
             sensor/pcf85063a;
             sensor/custom_io_expander_ch32v003;
             lora/esp_lora_1121;
+            bsp/esp32_s3_lr1121_oled_1_54;
+            display/oled/esp_oled_ssd1309;
             
           namespace: "waveshare"
           api_token: ${{ secrets.IDF_COMPONENT_API_TOKEN }}
