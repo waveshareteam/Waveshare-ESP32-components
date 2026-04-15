@@ -8,4 +8,4 @@ repository_info:
   commit_sha: 3375617c3eba80466945ccc7849706dac256111d
   path: display/oled/esp_oled_ssd1309
 url: https://github.com/waveshareteam/Waveshare-ESP32-components/tree/master/display/oled/esp_oled_ssd1309
-version: 1.0.0
+version: 1.0.1
