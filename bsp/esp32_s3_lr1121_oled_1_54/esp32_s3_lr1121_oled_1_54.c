@@ -60,7 +60,7 @@ static const audio_codec_data_if_t *i2s_data_if = NULL; /* Codec data interface 
 #define BSP_I2S_DUPLEX_MONO_CFG(_sample_rate)                                                         \
     {                                                                                                 \
         .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(_sample_rate),                                          \
-        .slot_cfg = I2S_STD_PHILIP_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO), \
+        .slot_cfg = I2S_STD_PHILIP_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO), \
         .gpio_cfg = BSP_I2S_GPIO_CFG,                                                                 \
     }
 
@@ -96,17 +96,6 @@ esp_err_t bsp_i2c_init(void)
     if (i2c_initialized) {
         return ESP_OK;
     }
-
-    // i2c_master_bus_config_t i2c_bus_conf = {
-    //     .clk_source = I2C_CLK_SRC_DEFAULT,
-    //     .sda_io_num = BSP_I2C_SDA,
-    //     .scl_io_num = BSP_I2C_SCL,
-    //     .i2c_port = BSP_I2C_NUM,
-    //     .glitch_ignore_cnt = 7,
-    //     .flags.enable_internal_pullup = true,
-    //     .trans_queue_depth = 0,
-    // };
-    // BSP_ERROR_CHECK_RETURN_ERR(i2c_new_master_bus(&i2c_bus_conf, &i2c_handle));
 
     i2c_config_t conf = {
         .mode = I2C_MODE_MASTER,
@@ -277,7 +266,7 @@ esp_err_t bsp_audio_poweramp_enable(bool enable)
     return ESP_OK;
 }
 
- esp_err_t bsp_audio_init(const i2s_std_config_t *i2s_config, uint32_t sample_rate)
+esp_err_t bsp_audio_init(const i2s_std_config_t *i2s_config, uint32_t sample_rate)
 {
     esp_err_t ret = ESP_FAIL;
     if (i2s_tx_chan && i2s_rx_chan)
@@ -306,8 +295,46 @@ esp_err_t bsp_audio_poweramp_enable(bool enable)
     }
     if (i2s_rx_chan != NULL)
     {
-        ESP_GOTO_ON_ERROR(i2s_channel_init_std_mode(i2s_rx_chan, p_i2s_cfg), err, TAG, "I2S channel initialization failed");
-        ESP_GOTO_ON_ERROR(i2s_channel_enable(i2s_rx_chan), err, TAG, "I2S enabling failed");
+
+        i2s_tdm_config_t tdm_cfg = {
+            .clk_cfg = {
+                .sample_rate_hz = sample_rate,
+                .clk_src = I2S_CLK_SRC_DEFAULT,
+                .ext_clk_freq_hz = 0,
+                .mclk_multiple = I2S_MCLK_MULTIPLE_256,
+                .bclk_div = 8,
+            },
+            .slot_cfg = {
+                .data_bit_width = I2S_DATA_BIT_WIDTH_16BIT,
+                .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO,
+                .slot_mode = I2S_SLOT_MODE_STEREO, //I2S_SLOT_MODE_STEREO
+                .slot_mask = I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3,
+                .ws_width = I2S_TDM_AUTO_WS_WIDTH,
+                .ws_pol = false,
+                .bit_shift = true,
+                .left_align = false,
+                .big_endian = false,
+                .bit_order_lsb = false,
+                .skip_mask = false,
+                .total_slot = 4
+            },
+            .gpio_cfg = {
+                .mclk = BSP_I2S_MCLK,  
+                .bclk = BSP_I2S_SCLK,  
+                .ws = BSP_I2S_LCLK,    
+                .dout = BSP_I2S_DOUT,  
+                .din = BSP_I2S_DSIN,   
+                .invert_flags = {
+                    .mclk_inv = false,
+                    .bclk_inv = false,
+                    .ws_inv = false
+                }
+            }
+        };
+        ESP_ERROR_CHECK(i2s_channel_init_tdm_mode(i2s_rx_chan, &tdm_cfg));
+
+        ESP_GOTO_ON_ERROR(i2s_channel_enable(i2s_rx_chan), err, TAG, "RX enable failed");
+
     }
 
     audio_codec_i2s_cfg_t i2s_cfg = {
@@ -408,6 +435,7 @@ esp_codec_dev_handle_t bsp_audio_codec_microphone_init(uint32_t sample_rate)
     es7210_codec_cfg_t es7210_cfg = {
         .ctrl_if = i2c_ctrl_if,
     };
+    es7210_cfg.mic_selected = ES7120_SEL_MIC1 | ES7120_SEL_MIC2 | ES7120_SEL_MIC3 | ES7120_SEL_MIC4;    
     const audio_codec_if_t *es7210_dev = es7210_codec_new(&es7210_cfg);
     BSP_NULL_CHECK(es7210_dev, NULL);
 
@@ -473,7 +501,6 @@ esp_err_t bsp_display_new(const bsp_display_config_t *config, esp_lcd_panel_hand
     ESP_ERROR_CHECK(esp_lcd_new_panel_ssd1309(io_handle, &panel_config, &panel_handle));
 
     ESP_ERROR_CHECK(esp_lcd_panel_init(panel_handle));
-    // ESP_ERROR_CHECK(esp_lcd_panel_mirror(panel_handle,false,true));
     ESP_ERROR_CHECK(esp_lcd_panel_invert_color(panel_handle,false));
     ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel_handle, true));
 
@@ -499,12 +526,12 @@ static lv_display_t *bsp_display_lcd_init(const bsp_display_cfg_t *cfg)
 
     ESP_LOGI(TAG, "Registering OLED display");
     esp_lv_adapter_display_config_t display_config =  ESP_LV_ADAPTER_DISPLAY_SPI_MONO_DEFAULT_CONFIG(
-        panel_handle,           	// LCD 面板句柄
-        io_handle,        			// LCD 面板 IO 句柄（某些接口可为 NULL）
-        BSP_LCD_H_RES,             		// 水平分辨率
-        BSP_LCD_V_RES,             	// 垂直分辨率
-        cfg->rotation, 	// 旋转角度
-        ESP_LV_ADAPTER_MONO_LAYOUT_VTILED 	// 市场布局
+        panel_handle,           	// LCD panel handle
+        io_handle,        			// LCD panel IO handle (can be NULL)
+        BSP_LCD_H_RES,             		// Horizontal resolution
+        BSP_LCD_V_RES,             	// Vertical resolution
+        cfg->rotation, 	// Rotation
+        ESP_LV_ADAPTER_MONO_LAYOUT_VTILED 	// Vertical tiled layout
     );
     
     return esp_lv_adapter_register_display(&display_config);
@@ -529,7 +556,7 @@ esp_err_t bsp_buttons_new(const bsp_display_cfg_t *cfg, esp_buttons_handle_t *re
     };
 
     const button_config_t btn_cfg = {0};
-    /* 创建按键设备 */
+    /* Create button devices */
     esp_err_t ret = iot_button_new_gpio_device(&btn_cfg, &bsp_button_config[0], &prev_btn_handle);
     if (ret != ESP_OK) {
         return ret;
@@ -679,16 +706,16 @@ esp_err_t bsp_bat_init(uint16_t mah)
         .full_charge_cap = 650,
         .design_cap = 650,
         .reserve_cap = 0,
-        .near_full = 100,
+        .near_full = 97,
         .self_discharge_rate = 10,
-        .EDV0 = 3200,
-        .EDV1 = 3300,
-        .EDV2 = 3400,
-        .EMF = 3670,
-        .C0 = 115,
-        .R0 = 968,
-        .T0 = 4547,
-        .R1 = 4764,
+        .EDV0 = 3000,
+        .EDV1 = 3150,
+        .EDV2 = 3300,
+        .EMF = 3750,
+        .C0 = 140,
+        .R0 = 1200,
+        .T0 = 4200,
+        .R1 = 5200,
         .TC = 11,
         .C1 = 0,
         .DOD0   = 4200,
@@ -700,8 +727,8 @@ esp_err_t bsp_bat_init(uint16_t mah)
         .DOD60  = 3750,
         .DOD70  = 3700,
         .DOD80  = 3600,
-        .DOD90  = 3450,
-        .DOD100 = 3200,
+        .DOD90  = 3400,
+        .DOD100 = 3000,
     };
     default_cedv.full_charge_cap = mah;
     default_cedv.design_cap = mah;

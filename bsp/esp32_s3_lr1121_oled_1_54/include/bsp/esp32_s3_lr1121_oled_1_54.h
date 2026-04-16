@@ -6,6 +6,7 @@
 #include "i2c_bus.h"
 #include "driver/sdmmc_host.h"
 #include "driver/i2s_std.h"
+#include "driver/i2s_tdm.h"
 #include "esp_oled_ssd1309.h"
 #include "driver/temperature_sensor.h"
 #include "pcf85063a.h"

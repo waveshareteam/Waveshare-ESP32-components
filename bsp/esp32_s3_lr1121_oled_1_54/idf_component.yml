@@ -7,7 +7,7 @@ dependencies:
     public: true
     version: 1.4.*  
   waveshare/esp_oled_ssd1309: 
-    version: "*"
+    version: 1.0.*
     public: true
   waveshare/pcf85063a:
     public: true
@@ -29,4 +29,4 @@ tags:
 targets:
 - esp32s3
 url: https://github.com/waveshareteam/Waveshare-ESP32-components
-version: 1.0.2
+version: 1.0.3

@@ -1,0 +1,5 @@
+{
+    "files.associations": {
+        "esp_oled_ssd1309.h": "c"
+    }
+}
