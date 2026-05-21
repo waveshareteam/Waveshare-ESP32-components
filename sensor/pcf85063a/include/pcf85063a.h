@@ -211,7 +211,7 @@ esp_err_t pcf85063a_set_timer_safe(pcf85063a_dev_t *dev, uint8_t timer_value, ui
 /**
  * Convert time to string 
  **/
-void pcf85063a_datetime_to_str(char *datetime_str, pcf85063a_datetime_t time);
+void pcf85063a_datetime_to_str(char *datetime_str, size_t size, pcf85063a_datetime_t time);
 
 esp_err_t  pcf85063a_write_register(pcf85063a_dev_t *dev, uint8_t *pdata, uint8_t length);
 

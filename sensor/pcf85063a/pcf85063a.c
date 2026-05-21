@@ -279,9 +279,9 @@ static int bcdToDec(uint8_t val)
 /**
  * Convert time to string 
  **/
-void pcf85063a_datetime_to_str(char *datetime_str, pcf85063a_datetime_t time)
+void pcf85063a_datetime_to_str(char *datetime_str, size_t size, pcf85063a_datetime_t time)
 {
-	sprintf(datetime_str, " %d.%d.%d  %d %d:%d:%d ", time.year, time.month,
+	snprintf(datetime_str, size, " %d.%d.%d  %d %d:%d:%d ", time.year, time.month,
 			time.day, time.dotw, time.hour, time.min, time.sec);
 }
 
