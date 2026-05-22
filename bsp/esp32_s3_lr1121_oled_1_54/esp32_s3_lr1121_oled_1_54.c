@@ -545,11 +545,11 @@ esp_err_t bsp_buttons_new(const bsp_display_cfg_t *cfg, esp_buttons_handle_t *re
             .active_level = 0,
         },
         {
-            .gpio_num = MENU_KEY_GPIO,
+            .gpio_num = PWR_KEY_GPIO,
             .active_level = 0,
         },
         {
-            .gpio_num = PTT_KEY_GPIO,
+            .gpio_num = MENU_KEY_GPIO,
             .active_level = 0,
         },
     };
