@@ -17,7 +17,7 @@
 #define I2C_TIMEOUT_MS          (1000)
 #define I2C_CLK_SPEED           (400000)
 
-#define IO_COUNT                (8)
+#define IO_COUNT                (16)
 
 /* Register address */
 #define DIRECTION_REG_ADDR      (0x02)
@@ -28,8 +28,8 @@
 #define RTC_REG_ADDR            (0x07)
 
 /* Default register value on power-up */
-#define DIR_REG_DEFAULT_VAL     (0xff)
-#define OUT_REG_DEFAULT_VAL     (0x00)
+#define DIR_REG_DEFAULT_VAL     (0xffff)
+#define OUT_REG_DEFAULT_VAL     (0x0000)
 
 /**
  * @brief Device Structure Type
@@ -39,8 +39,8 @@ typedef struct {
     esp_io_expander_t base;
     i2c_master_dev_handle_t i2c_handle;
     struct {
-        uint8_t direction;
-        uint8_t output;
+        uint16_t direction;
+        uint16_t output;
     } regs;
 } custom_io_expander_ch32v003_t;
 
@@ -96,20 +96,20 @@ static esp_err_t read_input_reg(esp_io_expander_handle_t handle, uint32_t *value
 {
     custom_io_expander_ch32v003_t *custom_io = (custom_io_expander_ch32v003_t *)__containerof(handle, custom_io_expander_ch32v003_t, base);
 
-    uint8_t temp = 0;
+    uint8_t temp[2] = {0};
     ESP_RETURN_ON_ERROR(i2c_master_transmit_receive(custom_io->i2c_handle, (uint8_t[]) {
         INPUT_REG_ADDR
-    }, 1, &temp, sizeof(temp), I2C_TIMEOUT_MS), TAG, "Read input reg failed");
-    *value = temp;
+    }, 1, temp, sizeof(temp), I2C_TIMEOUT_MS), TAG, "Read input reg failed");
+    *value = (((uint32_t)temp[1]) << 8) | (temp[0]);
     return ESP_OK;
 }
 
 static esp_err_t write_output_reg(esp_io_expander_handle_t handle, uint32_t value)
 {
     custom_io_expander_ch32v003_t *custom_io = (custom_io_expander_ch32v003_t *)__containerof(handle, custom_io_expander_ch32v003_t, base);
-    value &= 0xff;
+    value &= 0xffff;
 
-    uint8_t data[] = {OUTPUT_REG_ADDR, value};
+    uint8_t data[] = {OUTPUT_REG_ADDR, value & 0xff, value >> 8};
     ESP_RETURN_ON_ERROR(i2c_master_transmit(custom_io->i2c_handle, data, sizeof(data), I2C_TIMEOUT_MS), TAG, "Write output reg failed");
     custom_io->regs.output = value;
     return ESP_OK;
@@ -126,9 +126,9 @@ static esp_err_t read_output_reg(esp_io_expander_handle_t handle, uint32_t *valu
 static esp_err_t write_direction_reg(esp_io_expander_handle_t handle, uint32_t value)
 {
     custom_io_expander_ch32v003_t *custom_io = (custom_io_expander_ch32v003_t *)__containerof(handle, custom_io_expander_ch32v003_t, base);
-    value &= 0xff;
+    value &= 0xffff;
 
-    uint8_t data[] = {DIRECTION_REG_ADDR, value};
+    uint8_t data[] = {DIRECTION_REG_ADDR, value & 0xff, value >> 8};
     ESP_RETURN_ON_ERROR(i2c_master_transmit(custom_io->i2c_handle, data, sizeof(data), I2C_TIMEOUT_MS), TAG, "Write direction reg failed");
     custom_io->regs.direction = value;
     return ESP_OK;

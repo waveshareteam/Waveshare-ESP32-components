@@ -1,12 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2026 Waveshare Electronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
  * @file
- * @brief ESP IO expander: TCA9554
+ * @brief ESP IO expander: CH32V003
  */
 
 #pragma once
