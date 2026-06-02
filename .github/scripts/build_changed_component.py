@@ -5,24 +5,37 @@ import subprocess
 import sys
 from pathlib import Path
 
-import yaml
-
 
 REPO = Path.cwd()
 DEFAULT_TARGET = "esp32s3"
 
 
-def load_manifest(path):
-    with open(path, "r", encoding="utf-8") as manifest_file:
-        return yaml.safe_load(manifest_file) or {}
+def strip_scalar(value):
+    value = value.strip()
+    if not value:
+        return ""
+    if (value[0] == value[-1]) and value[0] in ("'", '"'):
+        return value[1:-1]
+    return value
 
 
 def component_targets(component_dir):
-    manifest = load_manifest(component_dir / "idf_component.yml")
-    targets = manifest.get("targets") or [DEFAULT_TARGET]
-    if isinstance(targets, str):
-        targets = [targets]
-    return [str(target) for target in targets]
+    manifest = component_dir / "idf_component.yml"
+    lines = manifest.read_text(encoding="utf-8").splitlines()
+    targets = []
+    for line_number, line in enumerate(lines):
+        if line.strip() != "targets:" or line.startswith((" ", "\t")):
+            continue
+        for child in lines[line_number + 1:]:
+            child_stripped = child.strip()
+            if not child_stripped:
+                continue
+            if not child.startswith((" ", "\t")):
+                break
+            if child_stripped.startswith("-"):
+                targets.append(strip_scalar(child_stripped[1:]))
+        break
+    return targets or [DEFAULT_TARGET]
 
 
 def candidate_projects(component_dir):

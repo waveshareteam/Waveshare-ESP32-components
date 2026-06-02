@@ -6,8 +6,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import yaml
-
 
 REPO = Path.cwd()
 SEMVER_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$")
@@ -21,28 +19,109 @@ def run_git(*args, check=True):
     return result.stdout
 
 
-def load_yaml_text(text, source):
-    try:
-        return yaml.safe_load(text) or {}
-    except yaml.YAMLError as exc:
-        raise RuntimeError(f"{source}: invalid YAML: {exc}") from exc
+def strip_scalar(value):
+    value = value.strip()
+    if not value:
+        return ""
+    if (value[0] == value[-1]) and value[0] in ("'", '"'):
+        return value[1:-1]
+    return value
 
 
-def load_yaml_file(path):
-    return load_yaml_text(path.read_text(encoding="utf-8"), str(path))
+def parse_manifest_text(text, source):
+    data = {}
+    lines = text.splitlines()
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or line.startswith((" ", "\t")):
+            i += 1
+            continue
+
+        if stripped.startswith("version:"):
+            data["version"] = strip_scalar(stripped.split(":", 1)[1])
+        elif stripped == "targets:":
+            targets = []
+            i += 1
+            while i < len(lines):
+                child = lines[i]
+                child_stripped = child.strip()
+                if not child_stripped:
+                    i += 1
+                    continue
+                if not child.startswith((" ", "\t")):
+                    i -= 1
+                    break
+                if child_stripped.startswith("-"):
+                    targets.append(strip_scalar(child_stripped[1:]))
+                i += 1
+            data["targets"] = targets
+        elif stripped == "dependencies:":
+            dependencies = {}
+            i += 1
+            while i < len(lines):
+                dep_line = lines[i]
+                dep_stripped = dep_line.strip()
+                if not dep_stripped:
+                    i += 1
+                    continue
+                if not dep_line.startswith((" ", "\t")):
+                    i -= 1
+                    break
+                if dep_line.startswith("  ") and not dep_line.startswith("    ") and ":" in dep_stripped:
+                    dep_name, dep_value = dep_stripped.split(":", 1)
+                    dep_value = dep_value.strip()
+                    if dep_value:
+                        dependencies[dep_name] = strip_scalar(dep_value)
+                    else:
+                        nested = {}
+                        i += 1
+                        while i < len(lines):
+                            nested_line = lines[i]
+                            nested_stripped = nested_line.strip()
+                            if not nested_stripped:
+                                i += 1
+                                continue
+                            if not nested_line.startswith("    "):
+                                i -= 1
+                                break
+                            if ":" in nested_stripped:
+                                nested_key, nested_value = nested_stripped.split(":", 1)
+                                nested[nested_key] = strip_scalar(nested_value)
+                            i += 1
+                        dependencies[dep_name] = nested
+                i += 1
+            data["dependencies"] = dependencies
+        i += 1
+
+    if "version" not in data and "dependencies" not in data:
+        raise RuntimeError(f"{source}: could not parse expected manifest fields")
+    return data
+
+
+def load_manifest_file(path):
+    return parse_manifest_text(path.read_text(encoding="utf-8"), str(path))
 
 
 def parse_upload_dirs():
-    workflow = load_yaml_file(REPO / ".github" / "workflows" / "upload_component.yml")
-    steps = workflow["jobs"]["upload_components"]["steps"]
-    directories = None
-    for step in steps:
-        if "with" in step and "directories" in step["with"]:
-            directories = step["with"]["directories"]
-            break
+    workflow_lines = (REPO / ".github" / "workflows" / "upload_component.yml").read_text(encoding="utf-8").splitlines()
+    directories = []
+    for line_number, line in enumerate(workflow_lines):
+        if line.strip() != "directories: >":
+            continue
+        indent = len(line) - len(line.lstrip())
+        for child in workflow_lines[line_number + 1:]:
+            child_stripped = child.strip()
+            child_indent = len(child) - len(child.lstrip())
+            if child_stripped and child_indent <= indent:
+                break
+            if child_stripped:
+                directories.append(child_stripped)
+        break
     if not directories:
         raise RuntimeError("upload_component.yml does not define component directories")
-    return {item.strip() for item in directories.split(";") if item.strip()}
+    return {item.strip() for item in "\n".join(directories).split(";") if item.strip()}
 
 
 def is_test_manifest(path):
@@ -101,7 +180,7 @@ def manifest_at(ref, component_dir):
     )
     if result.returncode != 0:
         return None
-    return load_yaml_text(result.stdout, f"{ref}:{manifest_path}")
+    return parse_manifest_text(result.stdout, f"{ref}:{manifest_path}")
 
 
 def semver_tuple(value, source):
@@ -116,7 +195,7 @@ def check_version_bumps(base_ref, components):
     errors = []
     for component_dir in components:
         manifest_path = REPO / component_dir / "idf_component.yml"
-        current = load_yaml_file(manifest_path)
+        current = load_manifest_file(manifest_path)
         current_version = current.get("version")
         if current_version is None:
             errors.append(f"{component_dir}: missing top-level version")
@@ -152,7 +231,7 @@ def check_version_bumps(base_ref, components):
 def check_bsp_codec_dependency():
     errors = []
     for manifest_path in sorted((REPO / "bsp").glob("*/idf_component.yml")):
-        manifest = load_yaml_file(manifest_path)
+        manifest = load_manifest_file(manifest_path)
         dependencies = manifest.get("dependencies") or {}
         codec_dep = dependencies.get("esp_codec_dev")
         if codec_dep is None:
