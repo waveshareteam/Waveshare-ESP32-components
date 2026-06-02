@@ -1,16 +1,23 @@
 name: Push components to Espressif Component Service
 
 on:
-  push:
+  workflow_run:
+    workflows:
+      - Component self check
+    types:
+      - completed
     branches:
       - master
+  workflow_dispatch:
 
 jobs:
   upload_components:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
           submodules: 'recursive'
       - name: Upload components to component service
         uses: espressif/upload-components-ci-action@v1

@@ -1,7 +1,7 @@
 dependencies:
   esp_codec_dev:
     public: true
-    version: ~1.3.1
+    version: "~1.5"
   esp_io_expander_tca95xx_16bit:
     public: true
     version: "*"
@@ -29,4 +29,4 @@ tags:
 targets:
 - esp32s3
 url: https://github.com/waveshareteam/Waveshare-ESP32-components
-version: 1.0.1
+version: 1.0.2

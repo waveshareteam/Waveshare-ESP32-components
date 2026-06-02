@@ -1,7 +1,7 @@
 dependencies:
   esp_codec_dev:
     public: true
-    version: 1.2.*
+    version: "~1.5"
   esp_lcd_touch_gt911: ^1
   espressif/esp_lvgl_port:
     public: true
@@ -16,4 +16,4 @@ tags:
 targets:
 - esp32p4
 url: https://www.waveshare.com/esp32-p4-wifi6-touch-lcd-3.4c.htm
-version: 1.0.1
+version: 1.0.2
