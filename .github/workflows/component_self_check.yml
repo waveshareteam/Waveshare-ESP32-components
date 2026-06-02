@@ -47,4 +47,7 @@ jobs:
       - name: Build changed component with ESP-IDF v5.5
         env:
           COMPONENT_DIR: ${{ matrix.component }}
-        run: python .github/scripts/build_changed_component.py
+        shell: bash
+        run: |
+          . "$IDF_PATH/export.sh"
+          python .github/scripts/build_changed_component.py
