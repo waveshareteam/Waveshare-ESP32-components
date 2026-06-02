@@ -10,6 +10,19 @@ REPO = Path.cwd()
 DEFAULT_TARGET = "esp32s3"
 
 
+def idf_command():
+    found = shutil.which("idf.py")
+    if found:
+        return [found]
+    idf_path = os.environ.get("IDF_PATH")
+    if idf_path:
+        fallback = Path(idf_path) / "tools" / "idf.py"
+        if fallback.exists():
+            return [sys.executable, str(fallback)]
+    print("idf.py was not found in PATH or $IDF_PATH/tools", file=sys.stderr)
+    sys.exit(1)
+
+
 def strip_scalar(value):
     value = value.strip()
     if not value:
@@ -47,9 +60,9 @@ def candidate_projects(component_dir):
     return projects
 
 
-def write_generated_project(component_dir):
+def write_generated_project(component_dir, component_slug):
     component_name = component_dir.name
-    project_dir = REPO / ".component_self_check" / component_dir.as_posix().replace("/", "__")
+    project_dir = REPO / ".component_self_check" / component_slug
     if project_dir.exists():
         shutil.rmtree(project_dir)
     (project_dir / "main").mkdir(parents=True)
@@ -83,7 +96,7 @@ def write_generated_project(component_dir):
 def run_build(project_dir, target, build_root):
     build_dir = build_root / project_dir.name / target
     command = [
-        "idf.py",
+        *idf_command(),
         "-C",
         str(project_dir),
         "-B",
@@ -109,7 +122,7 @@ def main():
 
     projects = candidate_projects(component_dir)
     if not projects:
-        projects = [write_generated_project(component_dir)]
+        projects = [write_generated_project(component_dir, component.replace("/", "__"))]
 
     build_root = REPO / ".component_self_check_build"
     for target in component_targets(component_dir):
