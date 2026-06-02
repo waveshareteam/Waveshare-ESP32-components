@@ -1,5 +1,10 @@
 menu "Board Support Package"
 
+    config BSP_ESP32_S3_LR1121_OLED_1_54_NAV_BUTTONS
+        bool
+        default y
+        select ESP_LVGL_ADAPTER_ENABLE_BUTTON
+
     config BSP_ERROR_CHECK
         bool "Enable error check in BSP"
         default y

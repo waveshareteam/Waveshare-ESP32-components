@@ -1,0 +1,53 @@
+name: Component self check
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  manifest-check:
+    runs-on: ubuntu-latest
+    outputs:
+      components: ${{ steps.check.outputs.components }}
+      count: ${{ steps.check.outputs.count }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Check component manifests
+        id: check
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+        run: python .github/scripts/component_self_check.py
+
+  build-changed-components:
+    needs: manifest-check
+    if: needs.manifest-check.outputs.count != '0'
+    runs-on: ubuntu-latest
+    container: espressif/idf:release-v5.5
+    strategy:
+      fail-fast: false
+      matrix:
+        component: ${{ fromJson(needs.manifest-check.outputs.components) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build changed component with ESP-IDF v5.5
+        env:
+          COMPONENT_DIR: ${{ matrix.component }}
+        shell: bash
+        run: |
+          . "$IDF_PATH/export.sh"
+          python .github/scripts/build_changed_component.py

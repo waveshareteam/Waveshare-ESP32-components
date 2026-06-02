@@ -1,7 +1,7 @@
 dependencies:
   esp_codec_dev:
     public: true
-    version: 1.2.*
+    version: "~1.5"
   esp_lcd_touch_gt911: ^1
   espressif/esp_lvgl_port:
     public: true
@@ -19,10 +19,10 @@ description: a small size and highly integrated development board designed by wa
 repository: git://github.com/WaveshareCloud/Waveshare-ESP32-components.git
 repository_info:
   commit_sha: fc3d951247e362c7e6bb1c637a1784ddf1987aa8
-  path: esp32_p4_nano
+  path: bsp/esp32_p4_nano
 tags:
 - bsp
 targets:
 - esp32p4
 url: https://www.waveshare.com/esp32-p4-nano.htm
-version: 1.2.0
+version: 1.2.1

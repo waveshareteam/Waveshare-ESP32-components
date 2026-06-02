@@ -434,7 +434,7 @@ esp_codec_dev_handle_t bsp_audio_codec_microphone_init(uint32_t sample_rate)
     es7210_codec_cfg_t es7210_cfg = {
         .ctrl_if = i2c_ctrl_if,
     };
-    es7210_cfg.mic_selected = ES7120_SEL_MIC1 | ES7120_SEL_MIC2 | ES7120_SEL_MIC3 | ES7120_SEL_MIC4;    
+    es7210_cfg.mic_selected = ES7210_SEL_MIC1 | ES7210_SEL_MIC2 | ES7210_SEL_MIC3 | ES7210_SEL_MIC4;
     const audio_codec_if_t *es7210_dev = es7210_codec_new(&es7210_cfg);
     BSP_NULL_CHECK(es7210_dev, NULL);
 
@@ -565,9 +565,17 @@ esp_err_t bsp_buttons_new(const bsp_display_cfg_t *cfg, esp_buttons_handle_t *re
         return ret;
     }
     ret = iot_button_new_gpio_device(&btn_cfg, &bsp_button_config[2], &enter_btn_handle);
+    if (ret != ESP_OK) {
+        return ret;
+    }
+    if (ret_buttons) {
+        ret_buttons->prev = prev_btn_handle;
+        ret_buttons->next = next_btn_handle;
+        ret_buttons->enter = enter_btn_handle;
+    }
     
     ESP_LOGI(TAG, "Registering buttons");
-    return ret;
+    return ESP_OK;
 }
 
 static lv_indev_t *bsp_display_indev_init(const bsp_display_cfg_t *cfg, lv_display_t *disp)
