@@ -50,7 +50,7 @@ def parse_manifest_text(text, source):
                 if not child_stripped:
                     i += 1
                     continue
-                if not child.startswith((" ", "\t")):
+                if not child.startswith((" ", "\t")) and not child_stripped.startswith("-"):
                     i -= 1
                     break
                 if child_stripped.startswith("-"):

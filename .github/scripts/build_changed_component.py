@@ -43,7 +43,7 @@ def component_targets(component_dir):
             child_stripped = child.strip()
             if not child_stripped:
                 continue
-            if not child.startswith((" ", "\t")):
+            if not child.startswith((" ", "\t")) and not child_stripped.startswith("-"):
                 break
             if child_stripped.startswith("-"):
                 targets.append(strip_scalar(child_stripped[1:]))
@@ -69,25 +69,19 @@ def write_generated_project(component_dir, component_slug):
 
     (project_dir / "CMakeLists.txt").write_text(
         "cmake_minimum_required(VERSION 3.16)\n"
+        f'set(EXTRA_COMPONENT_DIRS "{component_dir.resolve().as_posix()}")\n'
         "include($ENV{IDF_PATH}/tools/cmake/project.cmake)\n"
         "project(component_self_check)\n",
         encoding="utf-8",
     )
     (project_dir / "main" / "CMakeLists.txt").write_text(
-        'idf_component_register(SRCS "main.c")\n',
+        f'idf_component_register(SRCS "main.c" REQUIRES {component_name})\n',
         encoding="utf-8",
     )
     (project_dir / "main" / "main.c").write_text(
         "void app_main(void)\n"
         "{\n"
         "}\n",
-        encoding="utf-8",
-    )
-    (project_dir / "main" / "idf_component.yml").write_text(
-        "dependencies:\n"
-        f"  {component_name}:\n"
-        '    version: "*"\n'
-        f'    override_path: "{component_dir.resolve().as_posix()}"\n',
         encoding="utf-8",
     )
     return project_dir
