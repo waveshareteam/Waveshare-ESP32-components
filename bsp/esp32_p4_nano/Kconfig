@@ -125,16 +125,18 @@ menu "Board Support Package(ESP32-P4)"
 
         choice BSP_LCD_TYPE
             prompt "Select LCD type"
-            default BSP_LCD_TYPE_800_1280_10_1_INCH if ESP_REV_MIN_FULL >= 300
-            default BSP_LCD_TYPE_800_1280_10_1_INCH_A
+            default BSP_LCD_TYPE_800_1280_10_1_INCH
             help
                 Select the LCD. DSI-TOUCH-A/B displays match the esp32_p4_platform
                 compatibility list and support ESP32-P4 rev v1.3 and rev v3.x.
+                The 101M-8001280-IPS-CT-K display is the predecessor of the
+                10.1-DSI-TOUCH-A display and also supports ESP32-P4 rev v1.3
+                and rev v3.x.
                 Displays marked "ESP32-P4 rev 3.x only" require ESP32-P4 rev v3.0
                 or later hardware and CONFIG_ESP_REV_MIN_FULL=300 or higher.
 
             config BSP_LCD_TYPE_800_1280_10_1_INCH
-                bool "Waveshare 101M-8001280-IPS-CT-K Display (ESP32-P4 rev 3.x only)"
+                bool "Waveshare 101M-8001280-IPS-CT-K Display"
             config BSP_LCD_TYPE_800_1280_10_1_INCH_A
                 bool "Waveshare 10.1-DSI-TOUCH-A Display"
             config BSP_LCD_TYPE_800_1280_8_INCH_A
@@ -179,7 +181,6 @@ menu "Board Support Package(ESP32-P4)"
 
         config BSP_LCD_REQUIRES_ESP32P4_REV3
             bool
-            default y if BSP_LCD_TYPE_800_1280_10_1_INCH
             default y if BSP_LCD_TYPE_480_640_2_8_INCH
             default y if BSP_LCD_TYPE_800_800_3_4_INCH_C
             default y if BSP_LCD_TYPE_720_720_4_INCH_C
