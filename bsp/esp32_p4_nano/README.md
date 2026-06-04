@@ -12,7 +12,7 @@ ESP32-P4-NANO is a small size and highly integrated development board designed b
 Configuration in `menuconfig`.
 
 Selection LCD display `Board Support Package(ESP32-P4) --> Display --> Select LCD type`
-- Waveshare 101M-8001280-IPS-CT-K Display (default only when ESP32-P4 minimum chip revision is v3.0 or later; ESP32-P4 rev 3.x only)
+- Waveshare 101M-8001280-IPS-CT-K Display
 - Waveshare 10.1-DSI-TOUCH-A Display 
 - Waveshare 8-DSI-TOUCH-A Display
 - Waveshare 7-DSI-TOUCH-A Display
@@ -43,7 +43,7 @@ Change MIPI DSI lane bitrate `Board Support Package(ESP32-P4) --> Display --> MI
 
 ## ESP32-P4 chip revision compatibility
 
-The DSI-TOUCH-A/B displays shared with `esp32_p4_platform` support ESP32-P4 chip rev v1.3 and rev v3.x. The additional Raspberry Pi adapter displays in this BSP, and the 101M-8001280-IPS-CT-K display, require ESP32-P4 chip rev v3.0 or later.
+The DSI-TOUCH-A/B displays shared with `esp32_p4_platform` support ESP32-P4 chip rev v1.3 and rev v3.x. The 101M-8001280-IPS-CT-K display is the predecessor of `10.1-DSI-TOUCH-A` and also supports ESP32-P4 chip rev v1.3 and rev v3.x. The additional Raspberry Pi adapter displays in this BSP require ESP32-P4 chip rev v3.0 or later.
 
 When selecting an ESP32-P4 rev 3.x-only display:
 - Use ESP32-P4 rev v3.0 or later hardware. Rev v1.3 hardware is not supported for these LCDs.
@@ -58,7 +58,7 @@ When selecting an ESP32-P4 rev 3.x-only display:
 | Product ID                                                                                                                                                                                                                                                                                               | Dependency                                                            | ESP32-P4 chip rev | tested |
 |----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------|-------------------|--------|
 | [10.1-DSI-TOUCH-A](https://www.waveshare.com/10.1-dsi-touch-a.htm) <br/><img style="width: 150px; height: auto; display: block; margin: 0 auto;" src="https://www.waveshare.com/media/catalog/product/cache/1/image/800x800/9df78eab33525d08d6e5fb8d27136e95/1/0/10.1-dsi-touch-a-1.jpg">                | [~~waveshare/esp_lcd_jd9365_10_1~~](display/lcd/esp_lcd_jd9365_10_1)<br/>[waveshare/esp_lcd_jd9365](display/lcd/esp_lcd_jd9365) | v1.3 / v3.x       | ✅      |
-| [101M-8001280-IPS-CT-K](https://www.waveshare.com/101m-8001280-ips-ct-k.htm) <br/><img style="width: 150px; height: auto; display: block; margin: 0 auto;" src="https://www.waveshare.com/media/catalog/product/cache/1/image/800x800/9df78eab33525d08d6e5fb8d27136e95/1/0/101m-8001280-ips-ct-k-1.jpg"> | [~~waveshare/esp_lcd_jd9365_10_1~~](display/lcd/esp_lcd_jd9365_10_1)<br/>[waveshare/esp_lcd_jd9365](display/lcd/esp_lcd_jd9365)      | v3.x only         | ✅      |
+| [101M-8001280-IPS-CT-K](https://www.waveshare.com/101m-8001280-ips-ct-k.htm) <br/><img style="width: 150px; height: auto; display: block; margin: 0 auto;" src="https://www.waveshare.com/media/catalog/product/cache/1/image/800x800/9df78eab33525d08d6e5fb8d27136e95/1/0/101m-8001280-ips-ct-k-1.jpg"> | [~~waveshare/esp_lcd_jd9365_10_1~~](display/lcd/esp_lcd_jd9365_10_1)<br/>[waveshare/esp_lcd_jd9365](display/lcd/esp_lcd_jd9365)      | v1.3 / v3.x       | ✅      |
 | [8-DSI-TOUCH-A](https://www.waveshare.com/8-dsi-touch-a.htm) <br/><img style="width: 150px; height: auto; display: block; margin: 0 auto;" src="https://www.waveshare.com/media/catalog/product/cache/1/image/800x800/9df78eab33525d08d6e5fb8d27136e95/8/-/8-dsi-touch-a-1.jpg">                         | [~~waveshare/esp_lcd_jd9365_8~~](display/lcd/esp_lcd_ili9881c)<br/>[waveshare/esp_lcd_jd9365](display/lcd/esp_lcd_jd9365)            | v1.3 / v3.x       | ✅      |
 | [7-DSI-TOUCH-A](https://www.waveshare.com/7-dsi-touch-a.htm) <br/><img style="width: 150px; height: auto; display: block; margin: 0 auto;" src="https://www.waveshare.com/media/catalog/product/cache/1/image/800x800/9df78eab33525d08d6e5fb8d27136e95/7/-/7-dsi-touch-a-1.jpg">                         | [waveshare/esp_lcd_ili9881c](display/lcd/esp_lcd_ili9881c)            | v1.3 / v3.x       | ✅      |
 | [5-DSI-TOUCH-A](https://www.waveshare.com/5-dsi-touch-a.htm) <br/><img style="width: 150px; height: auto; display: block; margin: 0 auto;" src="https://www.waveshare.com/media/catalog/product/cache/1/image/800x800/9df78eab33525d08d6e5fb8d27136e95/5/-/5-dsi-touch-a-1_1.jpg">                       | [waveshare/esp_lcd_hx8394](display/lcd/esp_lcd_hx8394)                | v1.3 / v3.x       | ✅      |
