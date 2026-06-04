@@ -1,4 +1,5 @@
 #include "sdkconfig.h"
+#include <inttypes.h>
 #include "driver/gpio.h"
 #include "driver/ledc.h"
 #include "esp_err.h"
@@ -9,6 +10,7 @@
 #include "esp_lcd_mipi_dsi.h"
 #include "esp_ldo_regulator.h"
 #include "esp_vfs_fat.h"
+#include "hal/efuse_hal.h"
 #include "usb/usb_host.h"
 #include "sd_pwr_ctrl_by_on_chip_ldo.h"
 
@@ -44,6 +46,21 @@ static i2c_master_bus_handle_t i2c_handle = NULL;  // I2C Handle
 static i2s_chan_handle_t i2s_tx_chan = NULL;
 static i2s_chan_handle_t i2s_rx_chan = NULL;
 static const audio_codec_data_if_t *i2s_data_if = NULL;  /* Codec data interface */
+
+static esp_err_t bsp_lcd_check_chip_revision(void)
+{
+#if BSP_LCD_REQUIRES_ESP32P4_REV3
+    uint32_t chip_rev = efuse_hal_chip_revision();
+
+    if (chip_rev < BSP_ESP32P4_REV3_MIN_FULL) {
+        ESP_LOGE(TAG, "Selected LCD requires ESP32-P4 rev v3.0 or later, detected v%" PRIu32 ".%" PRIu32,
+                 chip_rev / 100, chip_rev % 100);
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+#endif
+
+    return ESP_OK;
+}
 
 /* Can be used for `i2s_std_gpio_config_t` and/or `i2s_std_config_t` initialization */
 #define BSP_I2S_GPIO_CFG       \
@@ -411,6 +428,7 @@ esp_err_t bsp_display_new_with_handles(const bsp_display_config_t *config, bsp_l
 {
     esp_err_t ret = ESP_OK;
 
+    ESP_RETURN_ON_ERROR(bsp_lcd_check_chip_revision(), TAG, "LCD chip revision check failed");
     ESP_RETURN_ON_ERROR(bsp_display_brightness_init(), TAG, "Brightness init failed");
     ESP_RETURN_ON_ERROR(bsp_enable_dsi_phy_power(), TAG, "DSI PHY power failed");
 
@@ -646,6 +664,8 @@ err:
 
 esp_err_t bsp_touch_new(const bsp_touch_config_t *config, esp_lcd_touch_handle_t *ret_touch)
 {
+    ESP_RETURN_ON_ERROR(bsp_lcd_check_chip_revision(), TAG, "LCD chip revision check failed");
+
     /* Initilize I2C */
     BSP_ERROR_CHECK_RETURN_ERR(bsp_i2c_init());
 
