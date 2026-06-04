@@ -3,6 +3,18 @@
 #include "esp_lcd_mipi_dsi.h"
 #include "sdkconfig.h"
 
+#define BSP_ESP32P4_REV3_MIN_FULL (300)
+
+#if CONFIG_BSP_LCD_REQUIRES_ESP32P4_REV3
+#define BSP_LCD_REQUIRES_ESP32P4_REV3 (1)
+#else
+#define BSP_LCD_REQUIRES_ESP32P4_REV3 (0)
+#endif
+
+#if BSP_LCD_REQUIRES_ESP32P4_REV3 && (CONFIG_ESP_REV_MIN_FULL < BSP_ESP32P4_REV3_MIN_FULL)
+#error "This LCD selection requires ESP32-P4 rev v3.0 or later. Set CONFIG_ESP_REV_MIN_FULL=300 or choose a rev v1.3-compatible LCD."
+#endif
+
 /* LCD color formats */
 #define ESP_LCD_COLOR_FORMAT_RGB565    (1)
 #define ESP_LCD_COLOR_FORMAT_RGB888    (2)

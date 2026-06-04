@@ -25,4 +25,4 @@ tags:
 targets:
 - esp32p4
 url: https://www.waveshare.com/esp32-p4-nano.htm
-version: 1.2.1
+version: 1.2.2
