@@ -348,11 +348,9 @@ esp_err_t bsp_display_brightness_set(int brightness_percent)
         brightness_percent = 0;
     }
 
-    int actual_percent = 47 + (brightness_percent * (100 - 47)) / 100;
-
     ESP_LOGI(TAG, "Setting LCD backlight: %d%%", brightness_percent);
 
-    uint32_t duty_cycle = (1023 * actual_percent) / 100;
+    uint32_t duty_cycle = (1023 * brightness_percent) / 100;
     BSP_ERROR_CHECK_RETURN_ERR(ledc_set_duty(LEDC_LOW_SPEED_MODE, LCD_LEDC_CH, duty_cycle));
     BSP_ERROR_CHECK_RETURN_ERR(ledc_update_duty(LEDC_LOW_SPEED_MODE, LCD_LEDC_CH));
 
