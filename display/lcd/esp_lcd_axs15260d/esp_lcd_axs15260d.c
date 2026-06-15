@@ -1,0 +1,306 @@
+#include <stdint.h>
+#include <stdio.h>
+#include "esp_lcd_axs15260d.h"
+
+/*
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "soc/soc_caps.h"
+
+#if SOC_MIPI_DSI_SUPPORTED
+#include "esp_check.h"
+#include "esp_log.h"
+#include "esp_lcd_panel_commands.h"
+#include "esp_lcd_panel_interface.h"
+#include "esp_lcd_panel_io.h"
+#include "esp_lcd_mipi_dsi.h"
+#include "esp_lcd_panel_vendor.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "driver/gpio.h"
+#include "esp_lcd_axs15260d.h"
+
+#define AXS15260D_CMD_SHLR_BIT       (1 << 0)
+#define AXS15260D_CMD_UPDN_BIT       (1 << 1)
+
+typedef struct {
+    esp_lcd_panel_io_handle_t io;
+    int reset_gpio_num;
+    uint8_t madctl_val; // save current value of LCD_CMD_MADCTL register
+    uint8_t colmod_val; // save surrent value of LCD_CMD_COLMOD register
+    const axs15260d_lcd_init_cmd_t *init_cmds;
+    uint16_t init_cmds_size;
+    struct {
+        unsigned int reset_level: 1;
+    } flags;
+    // To save the original functions of MIPI DPI panel
+    esp_err_t (*del)(esp_lcd_panel_t *panel);
+    esp_err_t (*init)(esp_lcd_panel_t *panel);
+} axs15260d_panel_t;
+
+static const char *TAG = "axs15260d";
+
+static esp_err_t panel_axs15260d_del(esp_lcd_panel_t *panel);
+static esp_err_t panel_axs15260d_init(esp_lcd_panel_t *panel);
+static esp_err_t panel_axs15260d_reset(esp_lcd_panel_t *panel);
+static esp_err_t panel_axs15260d_invert_color(esp_lcd_panel_t *panel, bool invert_color_data);
+static esp_err_t panel_axs15260d_disp_on_off(esp_lcd_panel_t *panel, bool on_off);
+static esp_err_t panel_axs15260_sleep(esp_lcd_panel_t *panel, bool sleep);
+
+esp_err_t esp_lcd_new_panel_axs15260d(const esp_lcd_panel_io_handle_t io, const esp_lcd_panel_dev_config_t *panel_dev_config,
+                                   esp_lcd_panel_handle_t *ret_panel)
+{
+    ESP_LOGI(TAG, "version: %d.%d.%d", ESP_LCD_AXS15260D_VER_MAJOR, ESP_LCD_AXS15260D_VER_MINOR,
+             ESP_LCD_AXS15260D_VER_PATCH);
+    ESP_RETURN_ON_FALSE(io && panel_dev_config && ret_panel, ESP_ERR_INVALID_ARG, TAG, "invalid arguments");
+    axs15260d_vendor_config_t *vendor_config = (axs15260d_vendor_config_t *)panel_dev_config->vendor_config;
+    ESP_RETURN_ON_FALSE(vendor_config && vendor_config->mipi_config.dpi_config && vendor_config->mipi_config.dsi_bus, ESP_ERR_INVALID_ARG, TAG,
+                        "invalid vendor config");
+
+    esp_err_t ret = ESP_OK;
+    axs15260d_panel_t *axs15260d = (axs15260d_panel_t *)calloc(1, sizeof(axs15260d_panel_t));
+    ESP_RETURN_ON_FALSE(axs15260d, ESP_ERR_NO_MEM, TAG, "no mem for axs15260d panel");
+
+    if (panel_dev_config->reset_gpio_num >= 0) {
+        gpio_config_t io_conf = {
+            .mode = GPIO_MODE_OUTPUT,
+            .pin_bit_mask = 1ULL << panel_dev_config->reset_gpio_num,
+        };
+        ESP_GOTO_ON_ERROR(gpio_config(&io_conf), err, TAG, "configure GPIO for RST line failed");
+    }
+
+    switch (panel_dev_config->bits_per_pixel) {
+        case 16:
+            axs15260d->colmod_val = 0x55;  // RGB565
+            break;
+        case 18:
+            axs15260d->colmod_val = 0x66;  // RGB666
+            break;
+        case 24:
+        default:
+            axs15260d->colmod_val = 0x77;  // RGB888
+            break;
+    }
+
+    switch (panel_dev_config->rgb_ele_order) {
+    case LCD_RGB_ELEMENT_ORDER_RGB:
+        axs15260d->madctl_val = 0;
+        break;
+    case LCD_RGB_ELEMENT_ORDER_BGR:
+        axs15260d->madctl_val |= LCD_CMD_BGR_BIT;
+        break;
+    default:
+        ESP_GOTO_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, err, TAG, "unsupported color space");
+        break;
+    }
+
+    axs15260d->io = io;
+    axs15260d->init_cmds = vendor_config->init_cmds;
+    axs15260d->init_cmds_size = vendor_config->init_cmds_size;
+    axs15260d->reset_gpio_num = panel_dev_config->reset_gpio_num;
+    axs15260d->flags.reset_level = panel_dev_config->flags.reset_active_high;
+
+    // Create MIPI DPI panel
+    esp_lcd_panel_handle_t panel_handle = NULL;
+    ESP_GOTO_ON_ERROR(esp_lcd_new_panel_dpi(vendor_config->mipi_config.dsi_bus, vendor_config->mipi_config.dpi_config, &panel_handle), err, TAG,
+                      "create MIPI DPI panel failed");
+    ESP_LOGD(TAG, "new MIPI DPI panel @%p", panel_handle);
+
+    // Save the original functions of MIPI DPI panel
+    axs15260d->del = panel_handle->del;
+    axs15260d->init = panel_handle->init;
+    // Overwrite the functions of MIPI DPI panel
+    panel_handle->del = panel_axs15260d_del;
+    panel_handle->init = panel_axs15260d_init;
+    panel_handle->reset = panel_axs15260d_reset;
+    panel_handle->invert_color = panel_axs15260d_invert_color;
+    panel_handle->disp_on_off = panel_axs15260d_disp_on_off;
+    panel_handle->disp_sleep = panel_axs15260_sleep;
+    panel_handle->user_data = axs15260d;
+    *ret_panel = panel_handle;
+    ESP_LOGD(TAG, "new axs15260d panel @%p", axs15260d);
+
+    return ESP_OK;
+
+err:
+    if (axs15260d) {
+        if (panel_dev_config->reset_gpio_num >= 0) {
+            gpio_reset_pin(panel_dev_config->reset_gpio_num);
+        }
+        free(axs15260d);
+    }
+    return ret;
+}
+
+static const axs15260d_lcd_init_cmd_t vendor_specific_init_default[] = {
+    // {cmd, data_ptr, data_size, delay_ms}
+    {0xBB, (uint8_t[]){0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x5a, 0xa5}, 8, 1},
+    {0xF8, (uint8_t[]){0x21, 0xA0}, 2, 1},
+    {0xA0, (uint8_t[]){0x00, 0x10, 0x2C, 0x02, 0x00, 0x00, 0x09, 0xFF, 0x00, 0x05, 0x3a, 0x3a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0E}, 29, 1},
+    {0xA1, (uint8_t[]){0x8f, 0xE5, 0x11, 0xaa, 0x55, 0x00, 0x02, 0x00, 0x00, 0x00, 0x01, 0x26, 0x26, 0x32, 0x92, 0x93, 0x13, 0x92, 0x90, 0x90, 0x90, 0x84}, 22, 1},
+    {0xA2, (uint8_t[]){0x00, 0x32, 0x0A, 0x0A, 0x5A, 0xFA, 0x5A, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0x80, 0x43, 0x88, 0x88, 0xff, 0xff, 0x20, 0x90, 0x00, 0x20, 0x90, 0x00, 0xE0, 0x01, 0x7F, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0xE7, 0xFF, 0xFF, 0x00}, 38, 1},
+    {0xA4, (uint8_t[]){0x85, 0x85, 0x92, 0x82, 0xAF, 0xAD, 0xAD, 0x80, 0x10, 0x30, 0x40, 0x40, 0x20, 0x50, 0x60, 0x53}, 16, 1},
+    {0xB8, (uint8_t[]){0x03, 0x08, 0x08, 0x20, 0x00, 0x02, 0x50, 0x5e, 0x1f, 0x8f, 0x40, 0x00, 0x03, 0x00, 0x83, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90}, 28, 1},
+    {0xB9, (uint8_t[]){0x64, 0x34, 0x78, 0x32, 0xAA, 0x55, 0xAA, 0x00, 0x00, 0x00, 0xF0, 0x00, 0x13, 0xC8, 0x00, 0x10, 0x27, 0xC8, 0x00, 0x64, 0x10, 0xFF, 0x14, 0x07, 0x1E, 0x0A, 0x00, 0x00, 0x00, 0x00}, 30, 1},
+    {0xBA, (uint8_t[]){0x40, 0x80, 0x0E, 0x10, 0x0E, 0x17, 0x90, 0x13, 0x03, 0xff, 0x04, 0x22, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30}, 22, 1},
+    {0xC1, (uint8_t[]){0x72, 0x04, 0x02, 0x02, 0x71, 0x05, 0x18, 0x00, 0x02, 0x00, 0x01, 0x01, 0x43, 0xff, 0xff, 0x7f, 0x4f, 0x52, 0x00, 0x4f, 0x52, 0x00, 0x54, 0x3b, 0x0b, 0x04, 0x06, 0xff, 0xff, 0x00}, 30, 1},
+    {0xC3, (uint8_t[]){0x00, 0xc0}, 2, 1},
+    {0xC4, (uint8_t[]){0x02, 0x02, 0xc0, 0x83, 0x00, 0x63, 0x00, 0x0c, 0x03, 0x0c, 0x01, 0x01, 0x03, 0x10, 0x3e, 0x06, 0x9d, 0x05, 0x03, 0x80, 0xfe, 0x10, 0x10, 0x00, 0x0a, 0x0a, 0x48, 0x48, 0x84, 0xCD}, 30, 1},
+    {0xC5, (uint8_t[]){0x19, 0x19, 0x00, 0x48, 0x50, 0x48, 0xa0, 0x55, 0x30, 0x10, 0x88, 0x19, 0x19, 0x19, 0x19, 0x19, 0x19, 0x6B, 0x03, 0x10, 0x10, 0x10, 0x00}, 23, 1},
+    {0xC6, (uint8_t[]){0x05, 0x0a, 0x05, 0x0A, 0xc0, 0xe0, 0x2e, 0x03, 0x12, 0x22, 0x12, 0x22, 0x01, 0x00, 0x00, 0x02, 0xC8, 0x22, 0xFA, 0xE8, 0x30, 0x64, 0x00, 0x08, 0x00, 0x09, 0xF0, 0x00, 0x00, 0xF0, 0x01}, 31, 1},
+    {0xC7, (uint8_t[]){0x50, 0x10, 0x28, 0x00, 0xa2, 0x00, 0x4f, 0x00, 0x00, 0xFF, 0xa8, 0x99, 0x9C, 0x60, 0x07, 0x04, 0x0c, 0x0d, 0x0e, 0x0f, 0x01, 0x01, 0x01, 0x01, 0x30, 0x10, 0x19, 0xff, 0xff, 0xff, 0xff, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, 41, 1},
+    {0xCF, (uint8_t[]){0x3C, 0x1E, 0x88, 0x50, 0xFF, 0x18, 0x16, 0x18, 0x16, 0x0A, 0x8C, 0x3C, 0x6B, 0x0C, 0x6E, 0x88, 0x0C, 0x0F, 0x22, 0x88, 0xAA, 0x55, 0x04, 0x04, 0x91, 0xA0, 0x30, 0x24, 0xBB, 0x01, 0x00}, 31, 1},
+    {0xD0, (uint8_t[]){0x00, 0x00, 0x01, 0x24, 0x08, 0x05, 0x30, 0x01, 0xff, 0x11, 0xc3, 0xc2, 0x22, 0x22, 0x00, 0x03, 0x10, 0x12, 0x40, 0x10, 0x1e, 0x51, 0x15, 0x00, 0x20, 0x20, 0x00, 0x03, 0x0d, 0x26, 0xa2, 0x28, 0x28, 0x28, 0x28, 0x28, 0x28, 0x00, 0x3f, 0xff, 0x0d, 0x02, 0x13, 0x12}, 44, 1},
+    {0xD5, (uint8_t[]){0x37, 0x3C, 0x93, 0x00, 0x4C, 0x08, 0x6C, 0x74, 0x00, 0x67, 0x85, 0x0A, 0x08, 0x01, 0x00, 0x4B, 0x37, 0x3C, 0x37, 0x15, 0x85, 0x01, 0x03, 0x00, 0x00, 0x55, 0x7B, 0x37, 0x3C, 0x00, 0x37, 0x3C, 0x04, 0x00, 0x21, 0x5A, 0x1f, 0x30, 0x30}, 39, 1},
+    {0xD6, (uint8_t[]){0x10, 0x32, 0x54, 0x76, 0x98, 0xBA, 0xDC, 0xFE, 0x6D, 0x00, 0x01, 0x83, 0x86, 0x66, 0xA0, 0x86, 0x66, 0xA0, 0x17, 0x3C, 0x1B, 0x3C, 0x37, 0x3C, 0x00, 0x88, 0x08, 0x28, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x12, 0x00, 0x00, 0x00, 0x00, 0x20}, 43, 1},
+    {0xD7, (uint8_t[]){0x1B, 0x1C, 0x01, 0x17, 0x15, 0x13, 0x11, 0x0F, 0x0D, 0x0B, 0x09, 0x19, 0x1A, 0x1F, 0x1F, 0x1F, 0x1F}, 17, 1},
+    {0xD8, (uint8_t[]){0x1B, 0x18, 0x00, 0x16, 0x14, 0x12, 0x10, 0x0E, 0x0C, 0x0A, 0x08, 0x19, 0x1A, 0x1F, 0x1F, 0x1F, 0x1F}, 17, 1},
+    {0xDF, (uint8_t[]){0x00, 0x00, 0x5b, 0xab, 0xbb, 0x2b, 0x28}, 7, 1},
+    {0xE0, (uint8_t[]){0x00, 0x01, 0x03, 0x07, 0x09, 0x0A, 0x0D, 0x0C, 0x17, 0x2A, 0x3B, 0x3D, 0x4B, 0x61, 0x6C, 0x78, 0x90, 0xA0, 0xA1, 0xB7, 0xC0, 0x60, 0x5F, 0x63, 0x68, 0x6C, 0x6E, 0x75, 0x7F, 0x33, 0x35, 0x03}, 32, 1},
+    {0xE1, (uint8_t[]){0x00, 0x01, 0x03, 0x07, 0x09, 0x0A, 0x0D, 0x0C, 0x17, 0x2A, 0x3B, 0x3D, 0x4B, 0x61, 0x6C, 0x78, 0x90, 0xA0, 0xA1, 0xB7, 0xC0, 0x60, 0x5F, 0x63, 0x68, 0x6C, 0x6E, 0x75, 0x7F, 0x33, 0x35, 0xd8, 0x33}, 33, 1},
+    {0xE7, (uint8_t[]){0x00, 0x05, 0xC4, 0x01, 0x00, 0x05, 0xC4, 0x01, 0x00, 0x10, 0x00, 0x08, 0xE0, 0x07}, 14, 1},
+    {0xE8, (uint8_t[]){0xE9, 0x05, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x02, 0x30, 0x0D, 0x00, 0xCF, 0x20, 0x00, 0xFF, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00}, 22, 1},
+    {0xE9, (uint8_t[]){0x00, 0x2B, 0x02, 0x00, 0x02, 0x03, 0x00, 0xb2, 0x10, 0x0e, 0x60, 0x14, 0x05, 0x81, 0x01, 0x06, 0x05, 0x00, 0x80, 0x07, 0x08, 0x07}, 22, 1},
+    {0xBB, (uint8_t[]){0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, 8, 50},
+    {0x3A, (uint8_t[]){0x77}, 1, 10},
+    {0x11, (uint8_t[]){0x00}, 0, 200},
+    {0x13, (uint8_t[]){0x00}, 0, 1},
+    {0x29, (uint8_t[]){0x00}, 0, 200},
+};
+
+static esp_err_t panel_axs15260d_del(esp_lcd_panel_t *panel)
+{
+    axs15260d_panel_t *axs15260d = (axs15260d_panel_t *)panel->user_data;
+
+    // Delete MIPI DPI panel
+    ESP_RETURN_ON_ERROR(axs15260d->del(panel), TAG, "del axs15260d panel failed");
+    if (axs15260d->reset_gpio_num >= 0) {
+        gpio_reset_pin(axs15260d->reset_gpio_num);
+    }
+    ESP_LOGD(TAG, "del axs15260d panel @%p", axs15260d);
+    free(axs15260d);
+
+    return ESP_OK;
+}
+
+static esp_err_t panel_axs15260d_init(esp_lcd_panel_t *panel)
+{
+    axs15260d_panel_t *axs15260d = (axs15260d_panel_t *)panel->user_data;
+    esp_lcd_panel_io_handle_t io = axs15260d->io;
+    const axs15260d_lcd_init_cmd_t *init_cmds = NULL;
+    uint16_t init_cmds_size = 0;
+    bool is_cmd_overwritten = false;
+
+    // vendor specific initialization, it can be different between manufacturers
+    // should consult the LCD supplier for initialization sequence code
+    if (axs15260d->init_cmds) {
+        init_cmds = axs15260d->init_cmds;
+        init_cmds_size = axs15260d->init_cmds_size;
+    } else {
+        init_cmds = vendor_specific_init_default;
+        init_cmds_size = sizeof(vendor_specific_init_default) / sizeof(axs15260d_lcd_init_cmd_t);
+    }
+
+    for (int i = 0; i < init_cmds_size; i++) {
+        // Check if the command has been used or conflicts with the internal
+        if (init_cmds[i].data_bytes > 0) {
+            switch (init_cmds[i].cmd) {
+            case LCD_CMD_COLMOD:
+                is_cmd_overwritten = true;
+                 ((uint8_t *)init_cmds[i].data)[0] = axs15260d->colmod_val;
+                break;
+            default:
+                is_cmd_overwritten = false;
+                break;
+            }
+
+            if (is_cmd_overwritten) {
+                is_cmd_overwritten = false;
+                ESP_LOGW(TAG, "The %02Xh command has been used and will be overwritten by external initialization sequence",
+                         init_cmds[i].cmd);
+            }
+        }
+
+        // Send command
+        ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, init_cmds[i].cmd, init_cmds[i].data, init_cmds[i].data_bytes), TAG, "send command failed");
+        vTaskDelay(pdMS_TO_TICKS(init_cmds[i].delay_ms));
+    }
+
+    ESP_RETURN_ON_ERROR(axs15260d->init(panel), TAG, "init MIPI DPI panel failed");
+
+    return ESP_OK;
+}
+
+static esp_err_t panel_axs15260d_reset(esp_lcd_panel_t *panel)
+{
+    axs15260d_panel_t *axs15260d = (axs15260d_panel_t *)panel->user_data;
+    esp_lcd_panel_io_handle_t io = axs15260d->io;
+
+    // Perform hardware reset
+    if (axs15260d->reset_gpio_num >= 0) {
+        gpio_set_level(axs15260d->reset_gpio_num, !axs15260d->flags.reset_level);
+        vTaskDelay(pdMS_TO_TICKS(5));
+        gpio_set_level(axs15260d->reset_gpio_num, axs15260d->flags.reset_level);
+        vTaskDelay(pdMS_TO_TICKS(10));
+        gpio_set_level(axs15260d->reset_gpio_num, !axs15260d->flags.reset_level);
+        vTaskDelay(pdMS_TO_TICKS(120));
+    } else if (io) { // Perform software reset
+        ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, LCD_CMD_SWRESET, NULL, 0), TAG, "send command failed");
+        vTaskDelay(pdMS_TO_TICKS(120));
+    }
+
+    return ESP_OK;
+}
+
+static esp_err_t panel_axs15260d_invert_color(esp_lcd_panel_t *panel, bool invert_color_data)
+{
+    axs15260d_panel_t *axs15260d = (axs15260d_panel_t *)panel->user_data;
+    esp_lcd_panel_io_handle_t io = axs15260d->io;
+    uint8_t command = 0;
+
+    ESP_RETURN_ON_FALSE(io, ESP_ERR_INVALID_STATE, TAG, "invalid panel IO");
+
+    if (invert_color_data) {
+        command = LCD_CMD_INVON;
+    } else {
+        command = LCD_CMD_INVOFF;
+    }
+    ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, command, NULL, 0), TAG, "send command failed");
+
+    return ESP_OK;
+}
+
+static esp_err_t panel_axs15260d_disp_on_off(esp_lcd_panel_t *panel, bool on_off)
+{
+    axs15260d_panel_t *axs15260d = (axs15260d_panel_t *)panel->user_data;
+    esp_lcd_panel_io_handle_t io = axs15260d->io;
+    int command = 0;
+
+    if (on_off) {
+        command = LCD_CMD_DISPON;
+    } else {
+        command = LCD_CMD_DISPOFF;
+    }
+    ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, command, NULL, 0), TAG, "send command failed");
+    return ESP_OK;
+}
+
+static esp_err_t panel_axs15260_sleep(esp_lcd_panel_t *panel, bool sleep)
+{
+    axs15260d_panel_t *axs15260d = (axs15260d_panel_t *)panel->user_data;
+    esp_lcd_panel_io_handle_t io = axs15260d->io;
+    int command = 0;
+
+    if (sleep) {
+        command = LCD_CMD_SLPIN;
+    } else {
+        command = LCD_CMD_SLPOUT;
+    }
+    ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, command, NULL, 0), TAG, "send command failed");
+    return ESP_OK;
+}
+
+#endif

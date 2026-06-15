@@ -23,16 +23,19 @@ jobs:
         uses: espressif/upload-components-ci-action@v1
         with:
           directories: >
+            display/lcd/esp_lcd_axs15260d;
+            display/lcd/esp_lcd_dsi;
+            display/lcd/esp_lcd_hi8561;
+            display/lcd/esp_lcd_hx8394;
+            display/lcd/esp_lcd_ili9881c;
             display/lcd/esp_lcd_jd9165;
             display/lcd/esp_lcd_jd9365;
-            display/lcd/esp_lcd_hx8394;
-            display/lcd/esp_lcd_dsi;
-            display/lcd/esp_lcd_sh8601;
-            display/lcd/esp_lcd_ili9881c;
-            display/lcd/esp_lcd_st7703;
             display/lcd/esp_lcd_jd9365_10_1;
             display/lcd/esp_lcd_jd9365_8;
             display/lcd/esp_lcd_ota7290b;
+            display/lcd/esp_lcd_sd5207;
+            display/lcd/esp_lcd_sh8601;
+            display/lcd/esp_lcd_st7703;
             display/lcd/esp_lcd_st7735;
             display/oled/esp_oled_ssd1315;
             bsp/esp32_p4_nano;
@@ -42,8 +45,11 @@ jobs:
             bsp/esp32_s3_touch_amoled_1_75;
             bsp/esp32_p4_wifi6_touch_lcd_x;
             bsp/esp32_p4_wifi6_touch_lcd_xc;
-            display/touch/esp_lcd_touch_cst9217;
+            display/touch/esp_lcd_touch_axs15260d;
             display/touch/esp_lcd_touch_cst328;
+            display/touch/esp_lcd_touch_cst3530;
+            display/touch/esp_lcd_touch_cst9217;
+            display/touch/esp_lcd_touch_hi8561;
             bsp/esp32_p4_wifi6_touch_lcd_4b;
             bsp/esp32_s3_touch_amoled_2_06;
             bsp/esp32_s3_touch_amoled_2_16;
