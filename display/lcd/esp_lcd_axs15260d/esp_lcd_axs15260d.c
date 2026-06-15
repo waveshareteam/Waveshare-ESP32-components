@@ -2,10 +2,6 @@
 #include <stdio.h>
 #include "esp_lcd_axs15260d.h"
 
-void func(void)
-{
-
-}
 /*
  * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *

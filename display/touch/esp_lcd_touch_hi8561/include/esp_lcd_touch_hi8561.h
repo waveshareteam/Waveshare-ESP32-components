@@ -41,6 +41,8 @@ typedef struct {
     uint32_t touch_info_start_address;
 } esp_lcd_touch_io_hi8561_config_t;
 
+#define ESP_LCD_TOUCH_IO_I2C_HI8561_ADDRESS             (0x68)
+
 /**
  * @brief Touch IO configuration structure
  *

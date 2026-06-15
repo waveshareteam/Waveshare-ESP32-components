@@ -1,17 +1,8 @@
-## IDF Component Manager Manifest File
 dependencies:
-  ## Required IDF version
-  idf:
-    version: '>=4.1.0'
-  # # Put list of dependencies here
-  # # For components maintained by Espressif:
-  # component: "~1.0.0"
-  # # For 3rd party components:
-  # username/component: ">=1.0.0,<2.0.0"
-  # username2/component2:
-  #   version: "~1.0.0"
-  #   # For transient dependencies `public` flag can be set.
-  #   # `public` flag doesn't have an effect dependencies of the `main` component.
-  #   # All dependencies of `main` are public by default.
-  #   public: true
-  espressif/esp_lcd_touch: ^1.2.1
+  esp_lcd_touch:
+    public: true
+    version: "^1.1.0"
+  idf: '>=4.4.2'
+description: "ESP LCD Touch HI8561 -The touch controller HI8561 is adapted by waveshare"
+url: "https://github.com/waveshareteam/Waveshare-ESP32-components/tree/master/display/touch/esp_lcd_touch_hi8561"
+version: "0.0.1"
