@@ -2,31 +2,31 @@ dependencies:
   esp_codec_dev:
     public: true
     version: ~1.3.1
-  espressif/esp_lvgl_adapter: "*"
+  espressif/bq27220:
+    public: true
+    version: '*'
+  espressif/esp_lvgl_adapter: '*'
   espressif/i2c_bus:
     public: true
-    version: 1.4.*  
-  waveshare/esp_oled_ssd1309: 
-    version: "*"
+    version: 1.4.*
+  idf: '>=5.3'
+  waveshare/esp_lora_1121:
     public: true
+    version: '*'
+  waveshare/esp_oled_ssd1309:
+    public: true
+    version: ~1.0.2
   waveshare/pcf85063a:
     public: true
     version: '*'
-  waveshare/esp_lora_1121:
-    public: true
-    version: '*'  
-  espressif/bq27220:
-    public: true
-    version: '*'  
-  idf: '>=5.3'
 description: Board Support Package (BSP) for Waveshare ESP32-S3-LR1121-OLED-1.54
 repository: git://github.com/waveshareteam/Waveshare-ESP32-components.git
 repository_info:
-  commit_sha: c878e3e56f23f7cdd67ac36e13ec549705f0a5d4
+  commit_sha: 6318c4d765af1a2e92e682e7db4b498da793fc43
   path: bsp/esp32_s3_lr1121_oled_1_54
 tags:
 - bsp
 targets:
 - esp32s3
 url: https://github.com/waveshareteam/Waveshare-ESP32-components
-version: 1.0.2
+version: 1.0.5
