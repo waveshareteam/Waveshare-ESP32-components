@@ -10,9 +10,6 @@ dependencies:
     public: true
     version: 1.4.*
   idf: '>=5.3'
-  waveshare/esp_lora_1121:
-    public: true
-    version: '*'
   waveshare/esp_oled_ssd1309:
     public: true
     version: ~1.0.2
@@ -29,4 +26,4 @@ tags:
 targets:
 - esp32s3
 url: https://github.com/waveshareteam/Waveshare-ESP32-components
-version: 1.0.5
+version: 1.1.0
