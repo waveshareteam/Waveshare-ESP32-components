@@ -5,8 +5,11 @@
  */
 
 #include "esp_err.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "driver/gpio.h"
 #include "driver/spi_master.h"
+#include "esp_heap_caps.h"
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_vendor.h"
 #include "esp_lcd_panel_ops.h"
@@ -141,7 +144,7 @@ esp_err_t lcd_init(void)
     ESP_LOGD(TAG, "Install ST7735 panel driver");
     const esp_lcd_panel_dev_config_t panel_config = {
         .reset_gpio_num = LCD_GPIO_RST,
-        .color_space = LCD_RGB_ELEMENT_ORDER_BGR,
+        .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_BGR,
         .bits_per_pixel = LCD_BITS_PER_PIXEL,
         // .vendor_config =&vendor_config,
     };

@@ -16,6 +16,26 @@
 #if SOC_MIPI_DSI_SUPPORTED
 #include "esp_lcd_panel_vendor.h"
 #include "esp_lcd_mipi_dsi.h"
+#include "esp_idf_version.h"
+
+#ifndef WAVESHARE_LCD_DPI_CONFIG_COLOR_FORMAT
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(6, 0, 0)
+#ifndef LCD_COLOR_PIXEL_FORMAT_RGB565
+#define LCD_COLOR_PIXEL_FORMAT_RGB565 LCD_COLOR_FMT_RGB565
+#endif
+#ifndef LCD_COLOR_PIXEL_FORMAT_RGB666
+#define LCD_COLOR_PIXEL_FORMAT_RGB666 LCD_COLOR_FMT_RGB888
+#endif
+#ifndef LCD_COLOR_PIXEL_FORMAT_RGB888
+#define LCD_COLOR_PIXEL_FORMAT_RGB888 LCD_COLOR_FMT_RGB888
+#endif
+#define WAVESHARE_LCD_DPI_CONFIG_COLOR_FORMAT(px_format) .in_color_format = px_format
+#define WAVESHARE_LCD_DPI_CONFIG_DMA2D
+#else
+#define WAVESHARE_LCD_DPI_CONFIG_COLOR_FORMAT(px_format) .pixel_format = px_format
+#define WAVESHARE_LCD_DPI_CONFIG_DMA2D .flags.use_dma2d = true,
+#endif
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -104,7 +124,7 @@ esp_err_t esp_lcd_new_panel_ili9881c(const esp_lcd_panel_io_handle_t io, const e
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,       \
         .dpi_clock_freq_mhz = 80,                          \
         .virtual_channel = 0,                              \
-        .pixel_format = px_format,                         \
+        WAVESHARE_LCD_DPI_CONFIG_COLOR_FORMAT(px_format),                         \
         .num_fbs = 1,                                      \
         .video_timing = {                                  \
             .h_size = 720,                                 \
@@ -116,7 +136,7 @@ esp_err_t esp_lcd_new_panel_ili9881c(const esp_lcd_panel_io_handle_t io, const e
             .vsync_pulse_width = 30,                        \
             .vsync_front_porch = 2,                       \
         },                                                 \
-        .flags.use_dma2d = true,                           \
+        WAVESHARE_LCD_DPI_CONFIG_DMA2D                           \
     }
 #endif
 

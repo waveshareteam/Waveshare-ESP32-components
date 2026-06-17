@@ -1,4 +1,9 @@
 dependencies:
+  usb:
+    version: "^1.0.0"
+    public: true
+    rules:
+     - if: "idf_version >=6.0"
   esp_codec_dev:
     version: "~1.5"
     public: true
@@ -15,4 +20,4 @@ tags:
 targets:
 - esp32s3
 url: https://github.com/waveshareteam/Waveshare-ESP32-components
-version: 1.0.5
+version: 2.0.0

@@ -18,6 +18,7 @@
 #include "freertos/task.h"
 #include "driver/gpio.h"
 #include "esp_lcd_ili9881c.h"
+#include "esp_idf_version.h"
 
 #include "i2c_bus.h"
 
@@ -152,6 +153,9 @@ esp_err_t esp_lcd_new_panel_ili9881c(const esp_lcd_panel_io_handle_t io, const e
     // Create MIPI DPI panel
     ESP_GOTO_ON_ERROR(esp_lcd_new_panel_dpi(vendor_config->mipi_config.dsi_bus, vendor_config->mipi_config.dpi_config, ret_panel), err, TAG,
                       "create MIPI DPI panel failed");
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(6, 0, 0)
+    ESP_GOTO_ON_ERROR(esp_lcd_dpi_panel_enable_dma2d(*ret_panel), err, TAG, "enable MIPI DPI DMA2D failed");
+#endif
     ESP_LOGD(TAG, "new MIPI DPI panel @%p", *ret_panel);
 
     // Save the original functions of MIPI DPI panel

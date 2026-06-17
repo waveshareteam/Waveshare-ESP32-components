@@ -4,6 +4,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_check.h"
+#include "esp_idf_version.h"
 #include "esp_spiffs.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_mipi_dsi.h"
@@ -1129,10 +1130,16 @@ esp_err_t bsp_display_new_with_handles(const bsp_display_config_t *config, bsp_l
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,       
         .dpi_clock_freq_mhz = 80,                          
         .virtual_channel = 0,                  
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(6, 0, 0)
 #if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
-        .pixel_format = LCD_COLOR_PIXEL_FORMAT_RGB888,                   
+        .in_color_format = LCD_COLOR_FMT_RGB888,
 #else
-        .pixel_format = LCD_COLOR_PIXEL_FORMAT_RGB565,                   
+        .in_color_format = LCD_COLOR_FMT_RGB565,
+#endif
+#elif CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
+        .pixel_format = LCD_COLOR_PIXEL_FORMAT_RGB888,
+#else
+        .pixel_format = LCD_COLOR_PIXEL_FORMAT_RGB565,
 #endif
         .num_fbs = CONFIG_BSP_LCD_DPI_BUFFER_NUMS,                                      
         .video_timing = {                                  

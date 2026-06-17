@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include "esp_lora_1121.h"
 
 
@@ -47,7 +48,7 @@ void lora_init_irq(const void *context, gpio_isr_t handler)
     gpio_install_isr_service(0); // Pass 0 for default ISR flags
 
     // Register the interrupt handler for the specified pin
-    gpio_isr_handler_add(((lr1121_t *)context)->irq, handler, (void *)((lr1121_t *)context)->irq);
+    gpio_isr_handler_add(((lr1121_t *)context)->irq, handler, (void *)(intptr_t)((lr1121_t *)context)->irq);
 }
 
 void lora_spi_init(const void* context, spi_device_handle_t spi)

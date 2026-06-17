@@ -127,7 +127,7 @@ const smtc_shield_lr11xx_lfclk_cfg_t* smtc_shield_lr11xx_common_get_lfclk_cfg( v
 const smtc_shield_lr11xx_pa_pwr_cfg_t* smtc_shield_lr1121mb1gis_get_pa_pwr_cfg( const uint32_t rf_freq_in_hz,
     int8_t expected_output_pwr_in_dbm );
 
-const uint8_t smtc_shield_lr11xx_common_compute_lora_ldro( const lr11xx_radio_lora_sf_t sf, const lr11xx_radio_lora_bw_t bw );
+uint8_t smtc_shield_lr11xx_common_compute_lora_ldro( const lr11xx_radio_lora_sf_t sf, const lr11xx_radio_lora_bw_t bw );
 
 /*!
  * \brief Given the length of a BPSK frame, in bits, calculate the space necessary to hold the frame after differential

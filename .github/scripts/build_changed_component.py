@@ -8,6 +8,7 @@ from pathlib import Path
 
 REPO = Path.cwd()
 DEFAULT_TARGET = "esp32s3"
+LOCAL_COMPONENT_ROOTS = ("display/lcd", "display/oled", "display/touch", "sensor", "lora")
 
 
 def idf_command():
@@ -51,6 +52,48 @@ def component_targets(component_dir):
     return targets or [DEFAULT_TARGET]
 
 
+def component_dependencies(component_dir):
+    manifest = component_dir / "idf_component.yml"
+    lines = manifest.read_text(encoding="utf-8").splitlines()
+    dependencies = []
+    for line_number, line in enumerate(lines):
+        if line.strip() != "dependencies:" or line.startswith((" ", "\t")):
+            continue
+        for child in lines[line_number + 1:]:
+            child_stripped = child.strip()
+            if not child_stripped or child_stripped.startswith("#"):
+                continue
+            if not child.startswith((" ", "\t")):
+                break
+            if child.startswith("  ") and not child.startswith("    ") and ":" in child_stripped:
+                dependencies.append(child_stripped.split(":", 1)[0])
+        break
+    return dependencies
+
+
+def local_component_index():
+    index = {}
+    for root in LOCAL_COMPONENT_ROOTS:
+        root_path = REPO / root
+        if not root_path.exists():
+            continue
+        for manifest in root_path.glob("*/idf_component.yml"):
+            component_dir = manifest.parent
+            component_name = component_dir.name
+            for key in (component_name, f"waveshare/{component_name}", f"espressif/{component_name}"):
+                index.setdefault(key, component_dir)
+    return index
+
+
+def local_dependency_overrides(component_dir):
+    index = local_component_index()
+    overrides = {}
+    for dependency in component_dependencies(component_dir):
+        if dependency in index:
+            overrides[dependency] = index[dependency]
+    return overrides
+
+
 def candidate_projects(component_dir):
     projects = []
     for name in ("test_app", "test_apps"):
@@ -66,10 +109,18 @@ def write_generated_project(component_dir, component_slug):
     if project_dir.exists():
         shutil.rmtree(project_dir)
     (project_dir / "main").mkdir(parents=True)
+    extra_component_dirs = [component_dir.resolve()]
+    local_overrides = local_dependency_overrides(component_dir)
+    for dependency_dir in local_overrides.values():
+        if dependency_dir.resolve() not in extra_component_dirs:
+            extra_component_dirs.append(dependency_dir.resolve())
+    extra_component_dir_lines = "\n".join(f'    "{path.as_posix()}"' for path in extra_component_dirs)
 
     (project_dir / "CMakeLists.txt").write_text(
         "cmake_minimum_required(VERSION 3.16)\n"
-        f'set(EXTRA_COMPONENT_DIRS "{component_dir.resolve().as_posix()}")\n'
+        "set(EXTRA_COMPONENT_DIRS\n"
+        f"{extra_component_dir_lines}\n"
+        ")\n"
         "include($ENV{IDF_PATH}/tools/cmake/project.cmake)\n"
         "project(component_self_check)\n",
         encoding="utf-8",
@@ -84,6 +135,15 @@ def write_generated_project(component_dir, component_slug):
         "}\n",
         encoding="utf-8",
     )
+    if local_overrides:
+        manifest_lines = ["dependencies:"]
+        for dependency, dependency_dir in sorted(local_overrides.items()):
+            relative_path = os.path.relpath(dependency_dir, project_dir / "main").replace(os.sep, "/")
+            manifest_lines.extend((f"  {dependency}:", f'    path: "{relative_path}"'))
+        (project_dir / "main" / "idf_component.yml").write_text(
+            "\n".join(manifest_lines) + "\n",
+            encoding="utf-8",
+        )
     return project_dir
 
 

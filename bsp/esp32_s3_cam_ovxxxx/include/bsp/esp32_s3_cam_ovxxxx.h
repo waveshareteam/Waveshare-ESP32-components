@@ -39,7 +39,7 @@
  *  @brief BSP Board Name
  *  @{
  */
-#define ESP32-S3-CAM-XXXX
+#define ESP32_S3_CAM_OVXXXX
 /** @} */ // end of boardname
 
 /**************************************************************************************************

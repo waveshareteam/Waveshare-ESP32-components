@@ -1,12 +1,15 @@
 #include "esp_lcd_touch_cst328.h"
 
-#include "lcd_driver.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "driver/i2c_master.h"
-#include "lcd_driver.h"
 #include "esp_log.h"
+#include "esp_lcd_panel_ops.h"
 
 
 // Pinout配置（保持原定义）
+#define EXAMPLE_LCD_H_RES  240
+#define EXAMPLE_LCD_V_RES  320
 #define I2C_MASTER_SCL_IO   1          /*!< I2C时钟引脚 */
 #define I2C_MASTER_SDA_IO   0          /*!< I2C数据引脚 */
 #define I2C_MASTER_NUM      I2C_NUM_0   /*!< I2C端口号 */
@@ -20,6 +23,7 @@ static const char *TAG = "Touch Example";
 esp_lcd_touch_handle_t tp_handle = NULL;
 esp_lcd_panel_io_handle_t tp_io_handle = NULL;
 i2c_master_bus_handle_t i2c_handle = NULL;
+static esp_lcd_panel_handle_t panel_handle = NULL;
 bool touch_test_done = false;
 
 
@@ -39,8 +43,7 @@ void touch_init(void)
     }
     ESP_LOGI(TAG, "I2C bus sucessfull");
 
-        i2c_master_bus_handle_t i2c_handle;
-    i2c_master_get_bus_handle(0,&i2c_handle);
+    i2c_master_get_bus_handle(0, &i2c_handle);
     esp_lcd_touch_config_t tp_cfg = {
         .x_max = EXAMPLE_LCD_H_RES,
         .y_max = EXAMPLE_LCD_V_RES,
@@ -101,7 +104,7 @@ void touch_test(void)
 
 }
 
-void void app_main(void)
+void app_main(void)
 {
     touch_init();
     //lcd _init();

@@ -12,7 +12,6 @@
 #include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "driver/i2c.h"
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
 #include "esp_heap_caps.h"
@@ -259,9 +258,9 @@ void app_main(void)
 	 */
     printf("  _   _   ___    ___    ____     __     _ \r\n");
     printf(" | | | | |_ _|  ( _ )  | ___|   / /_   / |\r\n");
-    printf(" | |_| |  | |   / _ \  |___ \  | '_ \  | |\r\n");
+    printf(" | |_| |  | |   / _ \\  |___ \\  | '_ \\  | |\r\n");
     printf(" |  _  |  | |  | (_) |  ___) | | (_) | | |\r\n");
-    printf(" |_| |_| |___|  \___/  |____/   \___/  |_|\r\n");
+    printf(" |_| |_| |___|  \\___/  |____/   \\___/  |_|\r\n");
     unity_run_menu();
 }
 #endif

@@ -8,7 +8,12 @@ dependencies:
     version: ^2
   idf: '>=5.4'
   lvgl/lvgl: '>=8,<10'
-  waveshare/esp_lcd_st7703: '*'
+  usb:
+    version: "^1.0.0"
+    public: true
+    rules:
+      - if: "idf_version >=6.0"
+  waveshare/esp_lcd_st7703: "^2.0.0"
 description: Based on ESP32-P4 chip, waveshare electronics designed a 3.4-inch, 4-inch circular screen, highly integrated development board
 repository: git://github.com/WaveshareCloud/Waveshare-ESP32-components.git
 tags:
@@ -16,4 +21,4 @@ tags:
 targets:
 - esp32p4
 url: https://www.waveshare.com/esp32-p4-wifi6-touch-lcd-3.4c.htm
-version: 1.0.4
+version: 2.0.0

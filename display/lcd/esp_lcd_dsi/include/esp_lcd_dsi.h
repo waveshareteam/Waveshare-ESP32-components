@@ -6,6 +6,26 @@
 #if SOC_MIPI_DSI_SUPPORTED
 #include "esp_lcd_panel_vendor.h"
 #include "esp_lcd_mipi_dsi.h"
+#include "esp_idf_version.h"
+
+#ifndef WAVESHARE_LCD_DPI_CONFIG_COLOR_FORMAT
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(6, 0, 0)
+#ifndef LCD_COLOR_PIXEL_FORMAT_RGB565
+#define LCD_COLOR_PIXEL_FORMAT_RGB565 LCD_COLOR_FMT_RGB565
+#endif
+#ifndef LCD_COLOR_PIXEL_FORMAT_RGB666
+#define LCD_COLOR_PIXEL_FORMAT_RGB666 LCD_COLOR_FMT_RGB888
+#endif
+#ifndef LCD_COLOR_PIXEL_FORMAT_RGB888
+#define LCD_COLOR_PIXEL_FORMAT_RGB888 LCD_COLOR_FMT_RGB888
+#endif
+#define WAVESHARE_LCD_DPI_CONFIG_COLOR_FORMAT(px_format) .in_color_format = px_format
+#define WAVESHARE_LCD_DPI_CONFIG_DMA2D
+#else
+#define WAVESHARE_LCD_DPI_CONFIG_COLOR_FORMAT(px_format) .pixel_format = px_format
+#define WAVESHARE_LCD_DPI_CONFIG_DMA2D .flags.use_dma2d = true,
+#endif
+#endif
 
 #ifdef __cplusplus
 extern "C"
@@ -100,7 +120,7 @@ extern "C"
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
         .dpi_clock_freq_mhz = 48,                        \
         .virtual_channel = 0,                            \
-        .pixel_format = px_format,                       \
+        WAVESHARE_LCD_DPI_CONFIG_COLOR_FORMAT(px_format), \
         .num_fbs = 1,                                    \
         .video_timing = {                                \
             .h_size = 480,                               \
@@ -112,14 +132,14 @@ extern "C"
             .vsync_pulse_width = 150,                    \
             .vsync_front_porch = 150,                    \
         },                                               \
-        .flags.use_dma2d = true,                         \
+        WAVESHARE_LCD_DPI_CONFIG_DMA2D                   \
     }
 #define DSI_PANEL_DPI_3_4_INCH_C_CONFIG(px_format) \
     {                                                    \
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
         .dpi_clock_freq_mhz = 48,                        \
         .virtual_channel = 0,                            \
-        .pixel_format = px_format,                       \
+        WAVESHARE_LCD_DPI_CONFIG_COLOR_FORMAT(px_format), \
         .num_fbs = 1,                                    \
         .video_timing = {                                \
             .h_size = 800,                               \
@@ -131,14 +151,14 @@ extern "C"
             .vsync_pulse_width = 4,                      \
             .vsync_front_porch = 16,                     \
         },                                               \
-        .flags.use_dma2d = true,                         \
+        WAVESHARE_LCD_DPI_CONFIG_DMA2D                   \
     }
 #define DSI_PANEL_DPI_4_INCH_C_CONFIG(px_format) \
     {                                                    \
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
         .dpi_clock_freq_mhz = 48,                        \
         .virtual_channel = 0,                            \
-        .pixel_format = px_format,                       \
+        WAVESHARE_LCD_DPI_CONFIG_COLOR_FORMAT(px_format), \
         .num_fbs = 1,                                    \
         .video_timing = {                                \
             .h_size = 720,                               \
@@ -150,14 +170,14 @@ extern "C"
             .vsync_pulse_width = 16,                     \
             .vsync_front_porch = 8,                      \
         },                                               \
-        .flags.use_dma2d = true,                         \
+        WAVESHARE_LCD_DPI_CONFIG_DMA2D                   \
     }
 #define DSI_PANEL_DPI_4_INCH_CONFIG(px_format) \
     {                                                    \
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
         .dpi_clock_freq_mhz = 48.6,                      \
         .virtual_channel = 0,                            \
-        .pixel_format = px_format,                       \
+        WAVESHARE_LCD_DPI_CONFIG_COLOR_FORMAT(px_format), \
         .num_fbs = 1,                                    \
         .video_timing = {                                \
             .h_size = 480,                               \
@@ -169,14 +189,14 @@ extern "C"
             .vsync_pulse_width = 100,                    \
             .vsync_front_porch = 20,                     \
         },                                               \
-        .flags.use_dma2d = true,                         \
+        WAVESHARE_LCD_DPI_CONFIG_DMA2D                   \
     }
 #define DSI_PANEL_DPI_5_INCH_D_CONFIG(px_format) \
     {                                                    \
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
         .dpi_clock_freq_mhz = 80,                        \
         .virtual_channel = 0,                            \
-        .pixel_format = px_format,                       \
+        WAVESHARE_LCD_DPI_CONFIG_COLOR_FORMAT(px_format), \
         .num_fbs = 1,                                    \
         .video_timing = {                                \
             .h_size = 720,                               \
@@ -188,14 +208,14 @@ extern "C"
             .vsync_pulse_width = 20,                     \
             .vsync_front_porch = 20,                     \
         },                                               \
-        .flags.use_dma2d = true,                         \
+        WAVESHARE_LCD_DPI_CONFIG_DMA2D                   \
     }
 #define DSI_PANEL_DPI_6_25_INCH_CONFIG(px_format) \
     {                                                    \
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
         .dpi_clock_freq_mhz = 48,                        \
         .virtual_channel = 0,                            \
-        .pixel_format = px_format,                       \
+        WAVESHARE_LCD_DPI_CONFIG_COLOR_FORMAT(px_format), \
         .num_fbs = 1,                                    \
         .video_timing = {                                \
             .h_size = 720,                               \
@@ -207,14 +227,14 @@ extern "C"
             .vsync_pulse_width = 20,                     \
             .vsync_front_porch = 20,                     \
         },                                               \
-        .flags.use_dma2d = true,                         \
+        WAVESHARE_LCD_DPI_CONFIG_DMA2D                   \
     }
 #define DSI_PANEL_DPI_5_INCH_C_CONFIG(px_format) \
     {                                                    \
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
         .dpi_clock_freq_mhz = 48,                        \
         .virtual_channel = 0,                            \
-        .pixel_format = px_format,                       \
+        WAVESHARE_LCD_DPI_CONFIG_COLOR_FORMAT(px_format), \
         .num_fbs = 1,                                    \
         .video_timing = {                                \
             .h_size = 1024,                              \
@@ -226,14 +246,14 @@ extern "C"
             .vsync_pulse_width = 10,                     \
             .vsync_front_porch = 10,                     \
         },                                               \
-        .flags.use_dma2d = true,                         \
+        WAVESHARE_LCD_DPI_CONFIG_DMA2D                   \
     }
 #define DSI_PANEL_DPI_7_INCH_C_CONFIG(px_format) \
     {                                                    \
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
         .dpi_clock_freq_mhz = 48,                        \
         .virtual_channel = 0,                            \
-        .pixel_format = px_format,                       \
+        WAVESHARE_LCD_DPI_CONFIG_COLOR_FORMAT(px_format), \
         .num_fbs = 1,                                    \
         .video_timing = {                                \
             .h_size = 1024,                              \
@@ -245,14 +265,14 @@ extern "C"
             .vsync_pulse_width = 10,                     \
             .vsync_front_porch = 10,                     \
         },                                               \
-        .flags.use_dma2d = true,                         \
+        WAVESHARE_LCD_DPI_CONFIG_DMA2D                   \
     }
 #define DSI_PANEL_DPI_7_9_INCH_CONFIG(px_format) \
     {                                                    \
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
         .dpi_clock_freq_mhz = 48,                        \
         .virtual_channel = 0,                            \
-        .pixel_format = px_format,                       \
+        WAVESHARE_LCD_DPI_CONFIG_COLOR_FORMAT(px_format), \
         .num_fbs = 1,                                    \
         .video_timing = {                                \
             .h_size = 400,                               \
@@ -264,14 +284,14 @@ extern "C"
             .vsync_pulse_width = 10,                     \
             .vsync_front_porch = 20,                     \
         },                                               \
-        .flags.use_dma2d = true,                         \
+        WAVESHARE_LCD_DPI_CONFIG_DMA2D                   \
     }
 #define DSI_PANEL_DPI_7_INCH_E_CONFIG(px_format) \
     {                                                    \
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
         .dpi_clock_freq_mhz = 80,                        \
         .virtual_channel = 0,                            \
-        .pixel_format = px_format,                       \
+        WAVESHARE_LCD_DPI_CONFIG_COLOR_FORMAT(px_format), \
         .num_fbs = 1,                                    \
         .video_timing = {                                \
             .h_size = 1280,                              \
@@ -283,14 +303,14 @@ extern "C"
             .vsync_pulse_width = 40,                     \
             .vsync_front_porch = 40,                     \
         },                                               \
-        .flags.use_dma2d = true,                         \
+        WAVESHARE_LCD_DPI_CONFIG_DMA2D                   \
     }
 #define DSI_PANEL_DPI_7_INCH_H_CONFIG(px_format) \
     {                                                    \
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
         .dpi_clock_freq_mhz = 80,                        \
         .virtual_channel = 0,                            \
-        .pixel_format = px_format,                       \
+        WAVESHARE_LCD_DPI_CONFIG_COLOR_FORMAT(px_format), \
         .num_fbs = 1,                                    \
         .video_timing = {                                \
             .h_size = 1280,                              \
@@ -302,14 +322,14 @@ extern "C"
             .vsync_pulse_width = 64,                     \
             .vsync_front_porch = 64,                     \
         },                                               \
-        .flags.use_dma2d = true,                         \
+        WAVESHARE_LCD_DPI_CONFIG_DMA2D                   \
     }
 #define DSI_PANEL_DPI_8_INCH_C_CONFIG(px_format) \
     {                                                    \
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
         .dpi_clock_freq_mhz = 80,                        \
         .virtual_channel = 0,                            \
-        .pixel_format = px_format,                       \
+        WAVESHARE_LCD_DPI_CONFIG_COLOR_FORMAT(px_format), \
         .num_fbs = 1,                                    \
         .video_timing = {                                \
             .h_size = 1280,                              \
@@ -321,14 +341,14 @@ extern "C"
             .vsync_pulse_width = 40,                     \
             .vsync_front_porch = 40,                     \
         },                                               \
-        .flags.use_dma2d = true,                         \
+        WAVESHARE_LCD_DPI_CONFIG_DMA2D                   \
     }
 #define DSI_PANEL_DPI_10_1_INCH_C_CONFIG(px_format) \
     {                                                    \
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
         .dpi_clock_freq_mhz = 80,                        \
         .virtual_channel = 0,                            \
-        .pixel_format = px_format,                       \
+        WAVESHARE_LCD_DPI_CONFIG_COLOR_FORMAT(px_format), \
         .num_fbs = 1,                                    \
         .video_timing = {                                \
             .h_size = 1280,                              \
@@ -340,14 +360,14 @@ extern "C"
             .vsync_pulse_width = 40,                     \
             .vsync_front_porch = 40,                     \
         },                                               \
-        .flags.use_dma2d = true,                         \
+        WAVESHARE_LCD_DPI_CONFIG_DMA2D                   \
     }
 #define DSI_PANEL_DPI_8_8_INCH_CONFIG(px_format) \
     {                                                    \
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
         .dpi_clock_freq_mhz = 48,                        \
         .virtual_channel = 0,                            \
-        .pixel_format = px_format,                       \
+        WAVESHARE_LCD_DPI_CONFIG_COLOR_FORMAT(px_format), \
         .num_fbs = 1,                                    \
         .video_timing = {                                \
             .h_size = 480,                               \
@@ -359,14 +379,14 @@ extern "C"
             .vsync_pulse_width = 20,                     \
             .vsync_front_porch = 20,                     \
         },                                               \
-        .flags.use_dma2d = true,                         \
+        WAVESHARE_LCD_DPI_CONFIG_DMA2D                   \
     }
 #define DSI_PANEL_DPI_11_9_INCH_CONFIG(px_format) \
     {                                                    \
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,     \
         .dpi_clock_freq_mhz = 48,                        \
         .virtual_channel = 0,                            \
-        .pixel_format = px_format,                       \
+        WAVESHARE_LCD_DPI_CONFIG_COLOR_FORMAT(px_format), \
         .num_fbs = 1,                                    \
         .video_timing = {                                \
             .h_size = 320,                               \
@@ -378,7 +398,7 @@ extern "C"
             .vsync_pulse_width = 60,                     \
             .vsync_front_porch = 60,                     \
         },                                               \
-        .flags.use_dma2d = true,                         \
+        WAVESHARE_LCD_DPI_CONFIG_DMA2D                   \
     }
 #endif
 

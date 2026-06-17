@@ -4,6 +4,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_check.h"
+#include "esp_idf_version.h"
 #include "esp_spiffs.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_mipi_dsi.h"
@@ -668,7 +669,13 @@ esp_err_t bsp_display_new_with_handles(const bsp_display_config_t *config, bsp_l
         }
         i2c_master_bus_rm_device(dev_handle);
     }
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(6, 0, 0)
 #if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
+    esp_lcd_dpi_panel_config_t dpi_config = EK79007_1024_600_PANEL_60HZ_CONFIG_CF(LCD_COLOR_FMT_RGB888);
+#else
+    esp_lcd_dpi_panel_config_t dpi_config = EK79007_1024_600_PANEL_60HZ_CONFIG_CF(LCD_COLOR_FMT_RGB565);
+#endif
+#elif CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
     esp_lcd_dpi_panel_config_t dpi_config = EK79007_1024_600_PANEL_60HZ_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB888);
 #else
     esp_lcd_dpi_panel_config_t dpi_config = EK79007_1024_600_PANEL_60HZ_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
@@ -746,7 +753,13 @@ esp_err_t bsp_display_new_with_handles(const bsp_display_config_t *config, bsp_l
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,  
         .dpi_clock_freq_mhz = 30,                     
         .virtual_channel = 0,               
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(6, 0, 0)
 #if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
+        .in_color_format = LCD_COLOR_FMT_RGB888,
+#else
+        .in_color_format = LCD_COLOR_FMT_RGB565,
+#endif
+#elif CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
         .pixel_format = LCD_COLOR_PIXEL_FORMAT_RGB888,                    
 #else
         .pixel_format = LCD_COLOR_PIXEL_FORMAT_RGB565,                    
@@ -762,7 +775,9 @@ esp_err_t bsp_display_new_with_handles(const bsp_display_config_t *config, bsp_l
             .vsync_pulse_width = 8,                   
             .vsync_front_porch = 60,                  
         },                                            
-        .flags.use_dma2d = true,                      
+#if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(6, 0, 0)
+        .flags.use_dma2d = true,
+#endif
     };
     dpi_config.num_fbs = CONFIG_BSP_LCD_DPI_BUFFER_NUMS;
 

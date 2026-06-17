@@ -3,7 +3,13 @@ if(CONFIG_SOC_MIPI_DSI_SUPPORTED)
     list(APPEND srcs "esp_lcd_ili9881c.c")
 endif()
 
+if("${IDF_VERSION_MAJOR}.${IDF_VERSION_MINOR}" VERSION_GREATER_EQUAL "5.5")
+    set(PRIV_REQ esp_driver_gpio)
+else()
+    set(PRIV_REQ driver)
+endif()
+
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS "include"
                        REQUIRES "esp_lcd"
-                       PRIV_REQUIRES "esp_driver_gpio")
+                       PRIV_REQUIRES ${PRIV_REQ})

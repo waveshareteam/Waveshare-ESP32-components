@@ -5,11 +5,16 @@ dependencies:
   esp_lcd_touch_gt911: ^1
   espressif/esp_lvgl_adapter:
     public: true
-    version: "0.1.*"
+    version: "^0.5.1"
   idf: '>=5.5'
   lvgl/lvgl: '>=8,<10'
-  esp_lcd_jd9365: '*'
-  esp_lcd_ili9881c: '*'
+  usb:
+    version: "^1.0.0"
+    public: true
+    rules:
+      - if: "idf_version >=6.0"
+  esp_lcd_jd9365: "^2.0.0"
+  esp_lcd_ili9881c: "^2.0.0"
 description: ESP32-P4 HMI Touch All-in-One Machine
 repository: git://github.com/WaveshareCloud/Waveshare-ESP32-components.git
 tags:
@@ -17,4 +22,4 @@ tags:
 targets:
 - esp32p4
 url: https://github.com/waveshareteam/Waveshare-ESP32-components
-version: 1.0.2
+version: 2.0.0

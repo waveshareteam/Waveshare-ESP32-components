@@ -148,6 +148,19 @@ esp_err_t esp_lcd_new_panel_axs15260d(const esp_lcd_panel_io_handle_t io, const 
         },                                                       \
     }
 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(6, 0, 0)
+#ifndef LCD_COLOR_PIXEL_FORMAT_RGB565
+#define LCD_COLOR_PIXEL_FORMAT_RGB565 LCD_COLOR_FMT_RGB565
+#endif
+#ifndef LCD_COLOR_PIXEL_FORMAT_RGB666
+#define LCD_COLOR_PIXEL_FORMAT_RGB666 LCD_COLOR_FMT_RGB888
+#endif
+#ifndef LCD_COLOR_PIXEL_FORMAT_RGB888
+#define LCD_COLOR_PIXEL_FORMAT_RGB888 LCD_COLOR_FMT_RGB888
+#endif
+#define AXS15260D_452_1280_PANEL_60HZ_DPI_CONFIG(color_format) AXS15260D_452_1280_PANEL_60HZ_DPI_CONFIG_CF(color_format)
+#endif
+
 #ifdef __cplusplus
 }
 #endif

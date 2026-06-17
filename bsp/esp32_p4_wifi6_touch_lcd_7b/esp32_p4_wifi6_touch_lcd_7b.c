@@ -10,6 +10,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_check.h"
+#include "esp_idf_version.h"
 #include "esp_spiffs.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_mipi_dsi.h"
@@ -440,7 +441,13 @@ esp_err_t bsp_display_new_with_handles(const bsp_display_config_t *config, bsp_l
     // create EK79007 control panel
     ESP_LOGI(TAG, "Install EK79007 LCD control panel");
 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(6, 0, 0)
 #if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
+    esp_lcd_dpi_panel_config_t dpi_config = EK79007_1024_600_PANEL_60HZ_CONFIG_CF(LCD_COLOR_FMT_RGB888);
+#else
+    esp_lcd_dpi_panel_config_t dpi_config = EK79007_1024_600_PANEL_60HZ_CONFIG_CF(LCD_COLOR_FMT_RGB565);
+#endif
+#elif CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
     esp_lcd_dpi_panel_config_t dpi_config = EK79007_1024_600_PANEL_60HZ_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB888);
 #else
     esp_lcd_dpi_panel_config_t dpi_config = EK79007_1024_600_PANEL_60HZ_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
@@ -454,7 +461,11 @@ esp_err_t bsp_display_new_with_handles(const bsp_display_config_t *config, bsp_l
         },
     };
     esp_lcd_panel_dev_config_t lcd_dev_config = {
+#if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
+        .bits_per_pixel = 24,
+#else
         .bits_per_pixel = 16,
+#endif
         .rgb_ele_order = BSP_LCD_COLOR_SPACE,
         .reset_gpio_num = BSP_LCD_RST,
         .vendor_config = &vendor_config,

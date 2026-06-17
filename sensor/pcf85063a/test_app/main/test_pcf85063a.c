@@ -96,7 +96,7 @@ static void pcf85063a_test_task(void *arg) {
         pcf85063a_get_time_date(&dev, &Now_time);
 
         // Format current time as a string
-        pcf85063a_datetime_to_str(datetime_str, Now_time);
+        pcf85063a_datetime_to_str(datetime_str, sizeof(datetime_str), Now_time);
         ESP_LOGI(TAG, "Now_time is %s", datetime_str);
 
         // Poll external IO pin for alarm (low level = alarm triggered)
