@@ -297,19 +297,18 @@ esp_err_t bsp_display_new(const bsp_display_config_t *config, esp_lcd_panel_hand
     return ret;
 }
 
-static lv_display_t *bsp_display_lcd_init()
+static lv_display_t *bsp_display_lcd_init(const bsp_display_cfg_t *cfg)
 {
+    assert(cfg != NULL);
     bsp_display_config_t disp_config = {0};
 
     BSP_ERROR_CHECK_RETURN_NULL(bsp_display_new(&disp_config, &panel_handle, &io_handle));
 
-    int buffer_size = 0;
-    buffer_size = BSP_LCD_H_RES * CONFIG_BSP_DISPLAY_LVGL_BUF_HEIGHT;
-
     const lvgl_port_display_cfg_t disp_cfg = {
         .io_handle = io_handle,
         .panel_handle = panel_handle,
-        .buffer_size = buffer_size,
+        .buffer_size = cfg->buffer_size,
+        .double_buffer = cfg->double_buffer,
 
         .monochrome = false,
         .hres = BSP_LCD_H_RES,
@@ -325,8 +324,8 @@ static lv_display_t *bsp_display_lcd_init()
         },
         .flags = {
             .sw_rotate = true,
-            .buff_dma = false,
-            .buff_spiram = false,
+            .buff_dma = cfg->flags.buff_dma,
+            .buff_spiram = cfg->flags.buff_spiram,
             .full_refresh = 0,
             .direct_mode = 0,
 #if LVGL_VERSION_MAJOR >= 9
