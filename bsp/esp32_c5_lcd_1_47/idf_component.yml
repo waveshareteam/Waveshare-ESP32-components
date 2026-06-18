@@ -5,7 +5,7 @@ dependencies:
   espressif/esp_lvgl_port:
     public: true
     version: ^2
-  lvgl/lvgl: '>=8,<10' 
+  lvgl/lvgl: '>=8,<10'
   idf: '>=5.3'
 description: Board Support Package (BSP) for ESP32-C5-LCD-1.47
 repository: git://github.com/espressif/esp-bsp.git

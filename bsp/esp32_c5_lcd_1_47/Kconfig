@@ -12,7 +12,7 @@ menu "Board Support Package"
             default 1
             range 0 1
             help
-                ESP32S3 has two I2C peripherals, pick the one you want to use.
+                Select the I2C peripheral used by the BSP I2C helper APIs.
 
         config BSP_I2C_FAST_MODE
             bool "Enable I2C fast mode"
@@ -57,7 +57,7 @@ menu "Board Support Package"
             bool "Format uSD card if mounting fails"
             default n
             help
-                The SDMMC host will format (FAT) the uSD card if it fails to mount the filesystem.
+                Format the microSD card with FAT if mounting fails.
 
         config BSP_SD_MOUNT_POINT
             string "uSD card mount point"
@@ -69,10 +69,10 @@ menu "Board Support Package"
 
     menu "Display"
         config BSP_LCD_RGB_BOUNCE_BUFFER_HEIGHT
-            int "RGB Bounce buffer height"
+            int "LCD draw buffer height"
             default 20
             help
-                Height of bounce buffer. The width of the buffer is the same as that of the LCD.
+                Height of the LCD draw buffer. The width of the buffer is the same as the LCD width.
 
         config BSP_DISPLAY_BRIGHTNESS_LEDC_CH
             int "LEDC channel index"
@@ -80,7 +80,7 @@ menu "Board Support Package"
             range 0 7
             help
                 LEDC channel is used to generate PWM signal that controls display brightness.
-                Set LEDC index that should be used.
+                Select the LEDC channel used for the LCD backlight PWM signal.
 
         config BSP_DISPLAY_LVGL_BUF_HEIGHT
             depends on !BSP_DISPLAY_LVGL_AVOID_TEAR

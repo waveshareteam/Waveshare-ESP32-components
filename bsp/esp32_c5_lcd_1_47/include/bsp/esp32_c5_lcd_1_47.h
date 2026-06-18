@@ -72,7 +72,7 @@
  *  @{
  */
 /* Display */
-#define BSP_LCD_CS   (GPIO_NUM_23) 
+#define BSP_LCD_CS   (GPIO_NUM_23)
 #define BSP_LCD_CLK  (GPIO_NUM_7)
 #define BSP_LCD_DATA (GPIO_NUM_6)
 #define BSP_LCD_DC   (GPIO_NUM_24)
