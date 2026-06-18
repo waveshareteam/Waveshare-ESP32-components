@@ -149,6 +149,19 @@ esp_err_t esp_lcd_new_panel_sd5207(const esp_lcd_panel_io_handle_t io, const esp
         },                                               \
     }
 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(6, 0, 0)
+#ifndef LCD_COLOR_PIXEL_FORMAT_RGB565
+#define LCD_COLOR_PIXEL_FORMAT_RGB565 LCD_COLOR_FMT_RGB565
+#endif
+#ifndef LCD_COLOR_PIXEL_FORMAT_RGB666
+#define LCD_COLOR_PIXEL_FORMAT_RGB666 LCD_COLOR_FMT_RGB888
+#endif
+#ifndef LCD_COLOR_PIXEL_FORMAT_RGB888
+#define LCD_COLOR_PIXEL_FORMAT_RGB888 LCD_COLOR_FMT_RGB888
+#endif
+#define SD5207_568_1210_PANEL_60HZ_DPI_CONFIG(color_format) SD5207_568_1210_PANEL_60HZ_DPI_CONFIG_CF(color_format)
+#endif
+
 #ifdef __cplusplus
 }
 #endif

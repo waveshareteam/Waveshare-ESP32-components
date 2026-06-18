@@ -28,23 +28,28 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PUSH_BEFORE_SHA: ${{ github.event.before }}
+          BUILD_COMPONENT_SCOPE: all
         run: python .github/scripts/component_self_check.py
 
-  build-changed-components:
+  build-components:
     needs: manifest-check
     if: needs.manifest-check.outputs.count != '0'
     runs-on: ubuntu-latest
-    container: espressif/idf:release-v5.5
+    container:
+      image: espressif/idf:${{ matrix.idf_version }}
     strategy:
       fail-fast: false
       matrix:
         component: ${{ fromJson(needs.manifest-check.outputs.components) }}
+        idf_version:
+          - release-v5.5
+          - release-v6.0
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Build changed component with ESP-IDF v5.5
+      - name: Build component with ESP-IDF ${{ matrix.idf_version }}
         env:
           COMPONENT_DIR: ${{ matrix.component }}
         shell: bash

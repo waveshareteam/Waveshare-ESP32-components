@@ -766,7 +766,7 @@ const smtc_shield_lr11xx_pa_pwr_cfg_t* smtc_shield_lr1121mb1gis_get_pa_pwr_cfg( 
  * @param [in] sf  LoRa Spreading Factor
  * @param [in] bw  LoRa Bandwidth
  */
-const uint8_t smtc_shield_lr11xx_common_compute_lora_ldro( const lr11xx_radio_lora_sf_t sf, const lr11xx_radio_lora_bw_t bw )
+uint8_t smtc_shield_lr11xx_common_compute_lora_ldro( const lr11xx_radio_lora_sf_t sf, const lr11xx_radio_lora_bw_t bw )
 {
     switch( bw )
     {

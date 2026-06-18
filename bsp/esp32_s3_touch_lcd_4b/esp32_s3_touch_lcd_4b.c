@@ -5,6 +5,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_check.h"
+#include "esp_idf_version.h"
 #include "esp_vfs_fat.h"
 #include "esp_spiffs.h"
 #include "driver/gpio.h"
@@ -419,9 +420,17 @@ esp_err_t bsp_display_new(const bsp_display_config_t *config, esp_lcd_panel_hand
 
     esp_lcd_rgb_panel_config_t rgb_config = {
            .clk_src = LCD_CLK_SRC_DEFAULT,
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(6, 0, 0)
+           .in_color_format = LCD_COLOR_FMT_RGB565,
+           .out_color_format = LCD_COLOR_FMT_RGB565,
+           .dma_burst_size = 64,
+#else
            .psram_trans_align = 64,
+#endif
            .data_width = BSP_RGB_DATA_WIDTH,
+#if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(6, 0, 0)
            .bits_per_pixel = BSP_LCD_BITS_PER_PIXEL,
+#endif
            .de_gpio_num = BSP_LCD_DE,
            .pclk_gpio_num = BSP_LCD_PCLK,
            .vsync_gpio_num = BSP_LCD_VSYNC,

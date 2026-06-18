@@ -1,4 +1,9 @@
 dependencies:
+  usb:
+    version: "^1.0.0"
+    public: true
+    rules:
+     - if: "idf_version >=6.0"
   esp_lcd_touch_cst816s: "*"
   espressif/esp_lvgl_port:
     public: true
@@ -12,4 +17,4 @@ tags:
 targets:
 - esp32s3
 url: https://github.com/waveshareteam/Waveshare-ESP32-components
-version: 1.0.4
+version: 2.0.0

@@ -5,7 +5,6 @@
  */
 
 #include "esp_err.h"
-#include "freertos/projdefs.h"
 #include "soc/soc_caps.h"
 #include <stdint.h>
 

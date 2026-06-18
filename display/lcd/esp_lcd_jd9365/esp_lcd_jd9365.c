@@ -18,6 +18,7 @@
 #include "freertos/task.h"
 #include "driver/gpio.h"
 #include "esp_lcd_jd9365.h"
+#include "esp_idf_version.h"
 #include "i2c_bus.h"
 
 #define JD9365_CMD_PAGE (0xE0)
@@ -82,7 +83,7 @@ esp_err_t esp_lcd_new_panel_jd9365(const esp_lcd_panel_io_handle_t io, const esp
         ESP_GOTO_ON_ERROR(gpio_config(&io_conf), err, TAG, "configure GPIO for RST line failed");
     }
 
-    switch (panel_dev_config->color_space)
+    switch (panel_dev_config->rgb_ele_order)
     {
     case LCD_RGB_ELEMENT_ORDER_RGB:
         jd9365->madctl_val = 0;
@@ -149,6 +150,9 @@ esp_err_t esp_lcd_new_panel_jd9365(const esp_lcd_panel_io_handle_t io, const esp
     esp_lcd_panel_handle_t panel_handle = NULL;
     ESP_GOTO_ON_ERROR(esp_lcd_new_panel_dpi(vendor_config->mipi_config.dsi_bus, vendor_config->mipi_config.dpi_config, &panel_handle), err, TAG,
                       "create MIPI DPI panel failed");
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(6, 0, 0)
+    ESP_GOTO_ON_ERROR(esp_lcd_dpi_panel_enable_dma2d(panel_handle), err, TAG, "enable MIPI DPI DMA2D failed");
+#endif
     ESP_LOGD(TAG, "new MIPI DPI panel @%p", panel_handle);
 
     // Save the original functions of MIPI DPI panel

@@ -13,6 +13,7 @@
 #include "driver/gpio.h"
 #include "esp_heap_caps.h"
 #include "esp_log.h"
+#include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_io_interface.h"
 #include "esp_lcd_panel_ops.h"
 #include "unity.h"
@@ -198,11 +199,5 @@ void app_main(void)
     printf("\\ \\  / /_/ / _ \\| '_ \\| | | | |\r\n");
     printf("_\\ \\/ __  / (_) | (_) | |_| | |\r\n");
     printf("\\__/\\/ /_/ \\___/ \\___/ \\___/|_|\r\n");
-    // unity_run_menu();
-
-    ESP_LOGI(TAG, "Initialize LCD device");
-    test_init_lcd();
-
-    ESP_LOGI(TAG, "Show color bar pattern drawn by hardware");
-    TEST_ESP_OK(esp_lcd_dpi_panel_set_pattern(panel_handle, MIPI_DSI_PATTERN_BAR_VERTICAL));
+    unity_run_menu();
 }

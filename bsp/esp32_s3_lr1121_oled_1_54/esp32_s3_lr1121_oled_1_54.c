@@ -692,7 +692,7 @@ esp_err_t bsp_enable_rtc_alarm()
 
 esp_err_t bsp_datetime_to_str(char *datetime_str, pcf85063a_datetime_t time)
 {
-    pcf85063a_datetime_to_str(datetime_str, time);
+    pcf85063a_datetime_to_str(datetime_str, 32, time);
     return ESP_OK;
 }
 

@@ -170,6 +170,15 @@ def changed_components(files, component_dirs):
     return sorted(changed)
 
 
+def build_components(changed, component_dirs, upload_dirs):
+    scope = os.environ.get("BUILD_COMPONENT_SCOPE", "changed").strip().lower()
+    if scope in ("all", "full"):
+        return sorted(component_dirs)
+    if scope in ("changed", ""):
+        return list(changed)
+    raise RuntimeError(f"BUILD_COMPONENT_SCOPE must be 'changed' or 'all', got {scope!r}")
+
+
 def manifest_at(ref, component_dir):
     manifest_path = f"{component_dir}/idf_component.yml"
     result = subprocess.run(
@@ -257,20 +266,27 @@ def main():
     base_ref = resolve_base_ref()
     files = changed_files(base_ref)
     components = changed_components(files, component_dirs)
+    output_components = build_components(components, component_dirs, upload_dirs)
 
     unlisted = sorted(set(components) - upload_dirs)
+    output_unlisted = sorted(set(output_components) - upload_dirs)
     errors = []
     if unlisted:
         errors.extend(f"{item}: component is not listed in upload_component.yml" for item in unlisted)
+    if output_unlisted:
+        errors.extend(f"{item}: build component is not listed in upload_component.yml" for item in output_unlisted)
 
     errors.extend(check_version_bumps(base_ref, components))
     errors.extend(check_bsp_codec_dependency())
-    write_outputs(components)
+    write_outputs(output_components)
 
     print(f"Base ref: {base_ref}")
     print(f"Changed files: {len(files)}")
     print(f"Changed components: {len(components)}")
     for component in components:
+        print(f"  - {component}")
+    print(f"Build components: {len(output_components)}")
+    for component in output_components:
         print(f"  - {component}")
 
     if errors:

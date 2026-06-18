@@ -1,4 +1,9 @@
 dependencies:
+  usb:
+    version: "^1.0.0"
+    public: true
+    rules:
+     - if: "idf_version >=6.0"
   esp_codec_dev:
     version: "~1.5"
     public: true
@@ -20,4 +25,4 @@ tags:
 targets:
 - esp32s3
 url: https://www.waveshare.com/esp32-s3-touch-amoled-1.8.htm
-version: 1.1.4
+version: 2.0.0

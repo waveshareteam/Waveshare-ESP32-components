@@ -17,4 +17,4 @@ tags:
 targets:
 - esp32s3
 url: https://www.waveshare.com/esp32-s3-touch-lcd-4.htm
-version: 2.0.0
+version: 3.0.0

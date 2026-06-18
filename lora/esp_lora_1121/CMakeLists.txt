@@ -18,3 +18,7 @@ idf_component_register(
     INCLUDE_DIRS ${INCLUDE_DIRS}
     REQUIRES esp_timer esp_driver_i2c esp_driver_spi esp_driver_gpio
 )
+
+if(${IDF_VERSION_MAJOR} GREATER_EQUAL 6)
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE LR11XX_DISABLE_WARNINGS)
+endif()
