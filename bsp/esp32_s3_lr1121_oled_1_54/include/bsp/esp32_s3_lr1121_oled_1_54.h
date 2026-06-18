@@ -98,6 +98,8 @@
 
 #define LVGL_BUFFER_HEIGHT      (CONFIG_BSP_DISPLAY_LVGL_BUF_HEIGHT)
 
+#define BQ27220_CHARGE_CURRENT_MA       0
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -360,7 +362,7 @@ lv_indev_t *bsp_display_get_input_dev(void);
  * @return true  Mutex was taken
  * @return false Mutex was NOT taken
  */
-bool bsp_display_lock(uint32_t timeout_ms);
+bool bsp_display_lock(int32_t timeout_ms);
 
 /**
  * @brief Give LVGL mutex
@@ -497,10 +499,12 @@ typedef struct {
     uint16_t cycles;    // 循环次数（cycle count）
     uint16_t soh;       // 健康度（State of Health %）
     uint16_t tc;        // 温度（°C）
+    bool charging;      // 电池当前是否有充电电流
 } bsp_bat_info_t;
 
 esp_err_t bsp_bat_init(uint16_t mah);
 esp_err_t bsp_get_bat_info(bsp_bat_info_t *bat_info);
+esp_err_t bsp_update_bat_charge_status(bsp_bat_info_t *bat_info);
 
 #endif // BSP_CONFIG_NO_GRAPHIC_LIB == 0
 
