@@ -501,6 +501,8 @@ esp_err_t bsp_display_new(const bsp_display_config_t *config, esp_lcd_panel_hand
 
     ESP_ERROR_CHECK(esp_lcd_panel_init(panel_handle));
     ESP_ERROR_CHECK(esp_lcd_panel_invert_color(panel_handle,false));
+    static const uint8_t blank_buffer[BSP_LCD_H_RES * BSP_LCD_V_RES / 8] = {0};
+    ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, BSP_LCD_H_RES, BSP_LCD_V_RES, blank_buffer));
     ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel_handle, true));
 
     if (ret_panel) {
@@ -635,9 +637,9 @@ void bsp_display_rotate(lv_display_t *disp, lv_display_rotation_t rotation)
     lv_disp_set_rotation(disp, rotation);
 }
 
-bool bsp_display_lock(uint32_t timeout_ms)
+bool bsp_display_lock(int32_t timeout_ms)
 {
-    return esp_lv_adapter_lock(timeout_ms);
+    return esp_lv_adapter_lock(timeout_ms) == ESP_OK;
 }
 
 void bsp_display_unlock(void)
@@ -713,29 +715,29 @@ esp_err_t bsp_bat_init(uint16_t mah)
         .full_charge_cap = 650,
         .design_cap = 650,
         .reserve_cap = 0,
-        .near_full = 97,
-        .self_discharge_rate = 10,
-        .EDV0 = 3000,
-        .EDV1 = 3150,
-        .EDV2 = 3300,
-        .EMF = 3750,
-        .C0 = 140,
-        .R0 = 1200,
-        .T0 = 4200,
-        .R1 = 5200,
+        .near_full = 200,
+        .self_discharge_rate = 20,
+        .EDV0 = 3490,
+        .EDV1 = 3511,
+        .EDV2 = 3535,
+        .EMF = 3670,
+        .C0 = 115,
+        .R0 = 968,
+        .T0 = 4547,
+        .R1 = 4764,
         .TC = 11,
         .C1 = 0,
-        .DOD0   = 4200,
-        .DOD10  = 4100,
-        .DOD20  = 4000,
-        .DOD30  = 3920,
-        .DOD40  = 3850,
-        .DOD50  = 3800,
-        .DOD60  = 3750,
-        .DOD70  = 3700,
-        .DOD80  = 3600,
-        .DOD90  = 3400,
-        .DOD100 = 3000,
+        .DOD0 = 4147,
+        .DOD10 = 4002,
+        .DOD20 = 3969,
+        .DOD30 = 3938,
+        .DOD40 = 3880,
+        .DOD50 = 3824,
+        .DOD60 = 3794,
+        .DOD70 = 3753,
+        .DOD80 = 3677,
+        .DOD90 = 3574,
+        .DOD100 = 3490,
     };
     default_cedv.full_charge_cap = mah;
     default_cedv.design_cap = mah;
@@ -764,7 +766,7 @@ esp_err_t bsp_bat_init(uint16_t mah)
 esp_err_t bsp_get_bat_info(bsp_bat_info_t *bat_info)
 {
     bat_info->mv  = bq27220_get_voltage(bq27220);
-    bat_info->ma  = bq27220_get_current(bq27220);
+    BSP_ERROR_CHECK_RETURN_ERR(bsp_update_bat_charge_status(bat_info));
     bat_info->mah_rem = bq27220_get_remaining_capacity(bq27220);
     bat_info->mah_fcc = bq27220_get_full_charge_capacity(bq27220);
     bat_info->tc = bq27220_get_temperature(bq27220) / 10 - 273; // Convert from 0.1K to Celsius
@@ -781,6 +783,25 @@ esp_err_t bsp_get_bat_info(bsp_bat_info_t *bat_info)
 
     return ESP_OK;
 }
+
+esp_err_t bsp_update_bat_charge_status(bsp_bat_info_t *bat_info)
+{
+    ESP_RETURN_ON_FALSE(bat_info && bq27220, ESP_ERR_INVALID_ARG, TAG, "Invalid battery handle");
+
+    int16_t current_ma = bq27220_get_current(bq27220);
+    bat_info->ma = current_ma;
+    bat_info->charging = current_ma >= BQ27220_CHARGE_CURRENT_MA;
+
+    static TickType_t last_log_tick = 0;
+    TickType_t now = xTaskGetTickCount();
+    if (now - last_log_tick >= pdMS_TO_TICKS(1000)) {
+        last_log_tick = now;
+        // ESP_LOGI(TAG, "BQ27220 current: %dmA, charging: %d", current_ma, bat_info->charging);
+    }
+
+    return ESP_OK;
+}
+
  /**************************************************************************************************
  *
  * Other Function
