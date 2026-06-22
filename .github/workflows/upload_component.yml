@@ -69,6 +69,7 @@ jobs:
             lora/esp_lora_1121;
             bsp/esp32_s3_lr1121_oled_1_54;
             display/oled/esp_oled_ssd1309;
+            bsp/esp32_c5_lcd_1_47;
             
           namespace: "waveshare"
           api_token: ${{ secrets.IDF_COMPONENT_API_TOKEN }}
