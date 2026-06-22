@@ -12,7 +12,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include "esp_lcd_sh8601.h"
+#include "esp_lcd_co5300.h"
+#include "esp_lcd_touch_cst816s.h"
 #include "esp_lcd_touch_ft5x06.h"
 
 #include "esp_codec_dev_defaults.h"
@@ -50,16 +51,18 @@ static const audio_codec_data_if_t *i2s_data_if = NULL; /* Codec data interface 
         },                     \
     }
 
-static const sh8601_lcd_init_cmd_t lcd_init_cmds[] = {
-    {0x11, (uint8_t[]){0x00}, 0, 120},
-    {0x44, (uint8_t[]){0x01, 0xD1}, 2, 0},
+static const co5300_lcd_init_cmd_t lcd_init_cmds[] = {
+    {0xFE, (uint8_t[]){0x00}, 1, 0},
+    {0xC4, (uint8_t[]){0x80}, 1, 0},
+    {0x3A, (uint8_t[]){0x55}, 1, 0},
     {0x35, (uint8_t[]){0x00}, 1, 0},
-    {0x53, (uint8_t[]){0x20}, 1, 10},
+    {0x53, (uint8_t[]){0x20}, 1, 0},
+    {0x51, (uint8_t[]){0xFF}, 1, 0},
+    {0x63, (uint8_t[]){0xFF}, 1, 0},
     {0x2A, (uint8_t[]){0x00, 0x00, 0x01, 0x6F}, 4, 0},
     {0x2B, (uint8_t[]){0x00, 0x00, 0x01, 0xBF}, 4, 0},
-    {0x51, (uint8_t[]){0x00}, 1, 10},
-    {0x29, (uint8_t[]){0x00}, 0, 10},
-    {0x51, (uint8_t[]){0xFF}, 1, 0},
+    {0x11, (uint8_t[]){0x00}, 0, 100},
+    {0x29, (uint8_t[]){0x00}, 0, 0},
 };
 
 #define BSP_I2S_DUPLEX_MONO_CFG(_sample_rate)                                                         \
@@ -106,6 +109,11 @@ i2c_master_bus_handle_t bsp_i2c_get_handle(void)
 {
     bsp_i2c_init();
     return i2c_handle;
+}
+
+static esp_err_t bsp_i2c_device_probe(uint8_t addr)
+{
+    return i2c_master_probe(i2c_handle, addr, 100);
 }
 
 esp_err_t bsp_spiffs_mount(void)
@@ -374,12 +382,42 @@ esp_err_t bsp_display_backlight_on(void)
     return bsp_display_brightness_set(100);
 }
 
+#if LVGL_VERSION_MAJOR >= 9
+static void rounder_event_cb(lv_event_t *e)
+{
+    lv_area_t *area = (lv_area_t *)lv_event_get_param(e);
+    uint16_t x1 = area->x1;
+    uint16_t x2 = area->x2;
+
+    uint16_t y1 = area->y1;
+    uint16_t y2 = area->y2;
+
+    area->x1 = (x1 >> 1) << 1;
+    area->y1 = (y1 >> 1) << 1;
+    area->x2 = ((x2 >> 1) << 1) + 1;
+    area->y2 = ((y2 >> 1) << 1) + 1;
+}
+#else
+static void bsp_lvgl_rounder_cb(lv_disp_drv_t *disp_drv, lv_area_t *area)
+{
+    uint16_t x1 = area->x1;
+    uint16_t x2 = area->x2;
+
+    uint16_t y1 = area->y1;
+    uint16_t y2 = area->y2;
+
+    area->x1 = (x1 >> 1) << 1;
+    area->y1 = (y1 >> 1) << 1;
+    area->x2 = ((x2 >> 1) << 1) + 1;
+    area->y2 = ((y2 >> 1) << 1) + 1;
+}
+#endif
 esp_err_t bsp_display_new(const bsp_display_config_t *config, esp_lcd_panel_handle_t *ret_panel, esp_lcd_panel_io_handle_t *ret_io)
 {
     esp_err_t ret = ESP_OK;
 
     ESP_LOGI(TAG, "Initialize SPI bus");
-    const spi_bus_config_t buscfg = SH8601_PANEL_BUS_QSPI_CONFIG(BSP_LCD_PCLK,
+    const spi_bus_config_t buscfg = CO5300_PANEL_BUS_QSPI_CONFIG(BSP_LCD_PCLK,
                                                                  BSP_LCD_DATA0,
                                                                  BSP_LCD_DATA1,
                                                                  BSP_LCD_DATA2,
@@ -387,9 +425,9 @@ esp_err_t bsp_display_new(const bsp_display_config_t *config, esp_lcd_panel_hand
                                                                  BSP_LCD_H_RES * BSP_LCD_V_RES * BSP_LCD_BITS_PER_PIXEL / 8);
     ESP_ERROR_CHECK(spi_bus_initialize(BSP_LCD_SPI_NUM, &buscfg, SPI_DMA_CH_AUTO));
 
-    const esp_lcd_panel_io_spi_config_t io_config = SH8601_PANEL_IO_QSPI_CONFIG(BSP_LCD_CS, NULL, NULL);
+    const esp_lcd_panel_io_spi_config_t io_config = CO5300_PANEL_IO_QSPI_CONFIG(BSP_LCD_CS, NULL, NULL);
 
-    sh8601_vendor_config_t vendor_config = {
+    co5300_vendor_config_t vendor_config = {
         .init_cmds = lcd_init_cmds,
         .init_cmds_size = sizeof(lcd_init_cmds) / sizeof(lcd_init_cmds[0]),
         .flags = {
@@ -403,7 +441,7 @@ esp_err_t bsp_display_new(const bsp_display_config_t *config, esp_lcd_panel_hand
         .bits_per_pixel = BSP_LCD_BITS_PER_PIXEL,
         .vendor_config = &vendor_config,
     };
-    ESP_ERROR_CHECK(esp_lcd_new_panel_sh8601(io_handle, &panel_config, &panel_handle));
+    ESP_ERROR_CHECK(esp_lcd_new_panel_co5300(io_handle, &panel_config, &panel_handle));
     esp_lcd_panel_reset(panel_handle);
     esp_lcd_panel_init(panel_handle);
     esp_lcd_panel_disp_on_off(panel_handle, true);
@@ -440,11 +478,31 @@ esp_err_t bsp_touch_new(const bsp_touch_config_t *config, esp_lcd_touch_handle_t
             .mirror_y = 0,
         },
     };
+
     esp_lcd_panel_io_handle_t tp_io_handle = NULL;
-    esp_lcd_panel_io_i2c_config_t tp_io_config = ESP_LCD_TOUCH_IO_I2C_FT5x06_CONFIG();
+    esp_lcd_panel_io_i2c_config_t tp_io_config;
+    esp_err_t (*touch_new)(const esp_lcd_panel_io_handle_t io, const esp_lcd_touch_config_t *config, esp_lcd_touch_handle_t *out_touch) = NULL;
+
+    esp_lcd_panel_io_i2c_config_t cst816s_config = ESP_LCD_TOUCH_IO_I2C_CST816S_CONFIG();
+    if (ESP_OK == bsp_i2c_device_probe(cst816s_config.dev_addr)) {
+        ESP_LOGI(TAG, "Touch CST816S 0x%02X found", cst816s_config.dev_addr);
+        tp_io_config = cst816s_config;
+        touch_new = esp_lcd_touch_new_i2c_cst816s;
+    } else {
+        esp_lcd_panel_io_i2c_config_t ft5x06_config = ESP_LCD_TOUCH_IO_I2C_FT5x06_CONFIG();
+        if (ESP_OK == bsp_i2c_device_probe(ft5x06_config.dev_addr)) {
+            ESP_LOGI(TAG, "Touch FT5x06 0x%02X found", ft5x06_config.dev_addr);
+            tp_io_config = ft5x06_config;
+            touch_new = esp_lcd_touch_new_i2c_ft5x06;
+        } else {
+            ESP_LOGE(TAG, "Touch not found");
+            return ESP_ERR_NOT_FOUND;
+        }
+    }
+
     tp_io_config.scl_speed_hz = CONFIG_BSP_I2C_CLK_SPEED_HZ;
     ESP_RETURN_ON_ERROR(esp_lcd_new_panel_io_i2c(i2c_handle, &tp_io_config, &tp_io_handle), TAG, "");
-    return esp_lcd_touch_new_i2c_ft5x06(tp_io_handle, &tp_cfg, ret_touch);
+    return touch_new(tp_io_handle, &tp_cfg, ret_touch);
 }
 
 /**************************************************************************************************
@@ -525,7 +583,23 @@ static lv_display_t *bsp_display_lcd_init()
     ESP_LOGW(TAG, "CONFIG_BSP_LCD_RGB_BOUNCE_BUFFER_MODE");
 #endif
 
-    return lvgl_port_add_disp_rgb(&disp_cfg, &rgb_cfg);
+    lv_display_t *disp = lvgl_port_add_disp_rgb(&disp_cfg, &rgb_cfg);
+    if (!disp)
+    {
+        return NULL;
+    }
+
+#if LVGL_VERSION_MAJOR >= 9
+    lv_display_add_event_cb(disp, rounder_event_cb, LV_EVENT_INVALIDATE_AREA, NULL);
+#else
+    lv_disp_t *disp_v8 = (lv_disp_t *)disp;
+    if (disp_v8 && disp_v8->driver)
+    {
+        disp_v8->driver->rounder_cb = bsp_lvgl_rounder_cb;
+    }
+#endif
+
+    return disp;
 }
 
 static lv_indev_t *bsp_display_indev_init(lv_display_t *disp)
