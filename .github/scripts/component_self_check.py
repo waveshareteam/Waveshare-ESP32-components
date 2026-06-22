@@ -160,23 +160,29 @@ def changed_files(base_ref):
     return [line.strip() for line in output.splitlines() if line.strip()]
 
 
-def changed_components(files, component_dirs):
+def split_changed_files(files, component_dirs):
     changed = set()
+    global_files = []
+    sorted_component_dirs = sorted(component_dirs)
     for file_name in files:
-        for component_dir in component_dirs:
+        for component_dir in sorted_component_dirs:
             if file_name == component_dir or file_name.startswith(component_dir + "/"):
                 changed.add(component_dir)
                 break
-    return sorted(changed)
+        else:
+            global_files.append(file_name)
+    return sorted(changed), global_files
 
 
-def build_components(changed, component_dirs, upload_dirs):
-    scope = os.environ.get("BUILD_COMPONENT_SCOPE", "changed").strip().lower()
+def build_components(changed, component_dirs, global_files):
+    scope = os.environ.get("BUILD_COMPONENT_SCOPE", "auto").strip().lower()
     if scope in ("all", "full"):
         return sorted(component_dirs)
+    if scope == "auto":
+        return sorted(component_dirs) if global_files else list(changed)
     if scope in ("changed", ""):
         return list(changed)
-    raise RuntimeError(f"BUILD_COMPONENT_SCOPE must be 'changed' or 'all', got {scope!r}")
+    raise RuntimeError(f"BUILD_COMPONENT_SCOPE must be 'auto', 'changed', or 'all', got {scope!r}")
 
 
 def manifest_at(ref, component_dir):
@@ -237,9 +243,13 @@ def check_version_bumps(base_ref, components):
     return errors
 
 
-def check_bsp_codec_dependency():
+def check_bsp_codec_dependency(components):
     errors = []
-    for manifest_path in sorted((REPO / "bsp").glob("*/idf_component.yml")):
+    manifests = []
+    for component_dir in components:
+        if component_dir.startswith("bsp/"):
+            manifests.append(REPO / component_dir / "idf_component.yml")
+    for manifest_path in sorted(manifests):
         manifest = load_manifest_file(manifest_path)
         dependencies = manifest.get("dependencies") or {}
         codec_dep = dependencies.get("esp_codec_dev")
@@ -265,8 +275,8 @@ def main():
     component_dirs = discover_component_dirs()
     base_ref = resolve_base_ref()
     files = changed_files(base_ref)
-    components = changed_components(files, component_dirs)
-    output_components = build_components(components, component_dirs, upload_dirs)
+    components, global_files = split_changed_files(files, component_dirs)
+    output_components = build_components(components, component_dirs, global_files)
 
     unlisted = sorted(set(components) - upload_dirs)
     output_unlisted = sorted(set(output_components) - upload_dirs)
@@ -277,7 +287,7 @@ def main():
         errors.extend(f"{item}: build component is not listed in upload_component.yml" for item in output_unlisted)
 
     errors.extend(check_version_bumps(base_ref, components))
-    errors.extend(check_bsp_codec_dependency())
+    errors.extend(check_bsp_codec_dependency(output_components))
     write_outputs(output_components)
 
     print(f"Base ref: {base_ref}")
@@ -285,6 +295,9 @@ def main():
     print(f"Changed components: {len(components)}")
     for component in components:
         print(f"  - {component}")
+    print(f"Global changed files: {len(global_files)}")
+    for file_name in global_files:
+        print(f"  - {file_name}")
     print(f"Build components: {len(output_components)}")
     for component in output_components:
         print(f"  - {component}")

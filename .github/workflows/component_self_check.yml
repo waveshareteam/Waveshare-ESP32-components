@@ -28,7 +28,7 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PUSH_BEFORE_SHA: ${{ github.event.before }}
-          BUILD_COMPONENT_SCOPE: all
+          BUILD_COMPONENT_SCOPE: auto
         run: python .github/scripts/component_self_check.py
 
   build-components:
