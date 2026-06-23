@@ -7,8 +7,9 @@ dependencies:
   esp_codec_dev:
     version: "~1.5"
     public: true
-  waveshare/esp_lcd_sh8601: "*"
-  esp_lcd_touch_ft5x06: "*"
+  espressif/esp_lcd_co5300: "^2.0.3"
+  espressif/esp_lcd_touch_cst816s: "^1.1.1~1"
+  espressif/esp_lcd_touch_ft5x06: "^1.1.0~1"
   espressif/esp_lvgl_port:
     public: true
     version: ^2
@@ -25,4 +26,4 @@ tags:
 targets:
 - esp32s3
 url: https://www.waveshare.com/esp32-s3-touch-amoled-1.8.htm
-version: 2.0.0
+version: 2.0.1
