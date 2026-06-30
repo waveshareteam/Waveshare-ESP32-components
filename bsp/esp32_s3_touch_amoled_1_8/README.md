@@ -4,7 +4,7 @@
 
 The ESP32-S3-Touch-AMOLED-1.8 is a 1.8-inch 368×448 capacitive touch development board designed by waveshare electronics.
 
-BSP v2.0.2 keeps the FT5x06 panel offset unchanged and applies the CO5300 0x16 X offset when CST816S touch is detected.
+BSP v2.0.3 keeps the FT5x06 panel offset unchanged and applies the CO5300 0x10 X offset when CST816S touch is detected.
 
 |                           HW version                            | BSP Version |
 |:---------------------------------------------------------------:| :---------: |

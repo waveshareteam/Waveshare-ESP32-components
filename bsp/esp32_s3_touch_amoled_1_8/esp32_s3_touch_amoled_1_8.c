@@ -24,7 +24,7 @@
 
 static const char *TAG = "ESP32-S3-Touch-AMOLED-1.8";
 
-#define BSP_LCD_CST816S_X_GAP (0x16)
+#define BSP_LCD_CST816S_X_GAP (0x10)
 
 static i2c_master_bus_handle_t i2c_handle = NULL; // I2C Handle
 static bool i2c_initialized = false;
