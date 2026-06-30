@@ -24,6 +24,8 @@
 
 static const char *TAG = "ESP32-S3-Touch-AMOLED-1.8";
 
+#define BSP_LCD_CST816S_X_GAP (0x16)
+
 static i2c_master_bus_handle_t i2c_handle = NULL; // I2C Handle
 static bool i2c_initialized = false;
 static esp_io_expander_handle_t io_expander = NULL; // IO expander tca9554 handle
@@ -32,6 +34,7 @@ sdmmc_card_t *bsp_sdcard = NULL; // Global uSD card handler
 static esp_lcd_touch_handle_t tp = NULL;
 static esp_lcd_panel_handle_t panel_handle = NULL; // LCD panel handle
 static esp_lcd_panel_io_handle_t io_handle = NULL;
+static uint16_t panel_x_gap = 0;
 
 static i2s_chan_handle_t i2s_tx_chan = NULL;
 static i2s_chan_handle_t i2s_rx_chan = NULL;
@@ -412,6 +415,17 @@ static void bsp_lvgl_rounder_cb(lv_disp_drv_t *disp_drv, lv_area_t *area)
     area->y2 = ((y2 >> 1) << 1) + 1;
 }
 #endif
+
+static esp_err_t bsp_display_set_x_gap(uint16_t x_gap)
+{
+    panel_x_gap = x_gap;
+    if (panel_handle != NULL) {
+        return esp_lcd_panel_set_gap(panel_handle, panel_x_gap, 0);
+    }
+
+    return ESP_OK;
+}
+
 esp_err_t bsp_display_new(const bsp_display_config_t *config, esp_lcd_panel_handle_t *ret_panel, esp_lcd_panel_io_handle_t *ret_io)
 {
     esp_err_t ret = ESP_OK;
@@ -444,6 +458,7 @@ esp_err_t bsp_display_new(const bsp_display_config_t *config, esp_lcd_panel_hand
     ESP_ERROR_CHECK(esp_lcd_new_panel_co5300(io_handle, &panel_config, &panel_handle));
     esp_lcd_panel_reset(panel_handle);
     esp_lcd_panel_init(panel_handle);
+    ESP_ERROR_CHECK(esp_lcd_panel_set_gap(panel_handle, panel_x_gap, 0));
     esp_lcd_panel_disp_on_off(panel_handle, true);
 
     if (ret_panel)
@@ -482,12 +497,14 @@ esp_err_t bsp_touch_new(const bsp_touch_config_t *config, esp_lcd_touch_handle_t
     esp_lcd_panel_io_handle_t tp_io_handle = NULL;
     esp_lcd_panel_io_i2c_config_t tp_io_config;
     esp_err_t (*touch_new)(const esp_lcd_panel_io_handle_t io, const esp_lcd_touch_config_t *config, esp_lcd_touch_handle_t *out_touch) = NULL;
+    uint16_t x_gap = 0;
 
     esp_lcd_panel_io_i2c_config_t cst816s_config = ESP_LCD_TOUCH_IO_I2C_CST816S_CONFIG();
     if (ESP_OK == bsp_i2c_device_probe(cst816s_config.dev_addr)) {
         ESP_LOGI(TAG, "Touch CST816S 0x%02X found", cst816s_config.dev_addr);
         tp_io_config = cst816s_config;
         touch_new = esp_lcd_touch_new_i2c_cst816s;
+        x_gap = BSP_LCD_CST816S_X_GAP;
     } else {
         esp_lcd_panel_io_i2c_config_t ft5x06_config = ESP_LCD_TOUCH_IO_I2C_FT5x06_CONFIG();
         if (ESP_OK == bsp_i2c_device_probe(ft5x06_config.dev_addr)) {
@@ -502,6 +519,7 @@ esp_err_t bsp_touch_new(const bsp_touch_config_t *config, esp_lcd_touch_handle_t
 
     tp_io_config.scl_speed_hz = CONFIG_BSP_I2C_CLK_SPEED_HZ;
     ESP_RETURN_ON_ERROR(esp_lcd_new_panel_io_i2c(i2c_handle, &tp_io_config, &tp_io_handle), TAG, "");
+    ESP_RETURN_ON_ERROR(bsp_display_set_x_gap(x_gap), TAG, "");
     return touch_new(tp_io_handle, &tp_cfg, ret_touch);
 }
 
