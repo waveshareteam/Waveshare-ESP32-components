@@ -17,8 +17,14 @@ dependencies:
   waveshare/esp_lcd_ili9881c: "^2.0.0"
   waveshare/esp_lcd_dsi: "^2.0.0"
   waveshare/esp_lcd_hx8394: "^2.0.0"
+  waveshare/esp_lcd_hi8561: "^2.0.1"
+  waveshare/esp_lcd_axs15260d: "^2.0.1"
   espressif/esp_lcd_st7701: '*'
   waveshare/esp_lcd_ota7290b: "^2.0.0"
+  waveshare/esp_lcd_sd5207: "^2.0.1"
+  waveshare/esp_lcd_touch_axs15260d: "^1.0.1"
+  waveshare/esp_lcd_touch_cst3530: "^1.0.1"
+  waveshare/esp_lcd_touch_hi8561: "^1.0.1"
   esp_lcd_ek79007: "^2.0.2~1"
 description: a small size and highly integrated development board designed by waveshare
   electronics based on ESP32-P4 chip
@@ -28,4 +34,4 @@ tags:
 targets:
 - esp32p4
 url: https://github.com/waveshareteam/Waveshare-ESP32-components
-version: 2.0.0
+version: 2.0.1

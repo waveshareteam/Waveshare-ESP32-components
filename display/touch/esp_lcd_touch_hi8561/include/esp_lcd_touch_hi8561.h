@@ -20,7 +20,8 @@ extern "C" {
 /**
  * @brief Create a new HI8561 touch driver
  *
- * @note The I2C communication should be initialized before use this function.
+ * @note The I2C bus should be initialized before use this function.
+ * @note Pass the I2C bus handle in `config->driver_data`.
  *
  * @param io LCD/Touch panel IO handle
  * @param config: Touch configuration

@@ -117,8 +117,14 @@ menu "Board Support Package(ESP32-P4)"
                 bool "Waveshare 4-DSI-TOUCH-A Display"
             config BSP_LCD_TYPE_480_800_4_3_INCH_A
                 bool "Waveshare 4.3-DSI-TOUCH-A Display"
+            config BSP_LCD_TYPE_540_1168_4_05_INCH
+                bool "Waveshare 4.05-DSI-TOUCH Display"
+            config BSP_LCD_TYPE_568_1210_4_45_INCH
+                bool "Waveshare 4.45-inch Display"
             config BSP_LCD_TYPE_720_1280_5_INCH_A
                 bool "Waveshare 5-DSI-TOUCH-A Display"
+            config BSP_LCD_TYPE_452_1280_6_2_INCH
+                bool "Waveshare 6.2-DSI-TOUCH Display"
             config BSP_LCD_TYPE_720_1280_7_INCH_A
                 bool "Waveshare 7-DSI-TOUCH-A Display"
             config BSP_LCD_TYPE_1024_600_7_INCH_C
