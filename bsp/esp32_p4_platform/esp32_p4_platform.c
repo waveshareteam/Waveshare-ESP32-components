@@ -25,12 +25,28 @@
 #include "esp_lcd_hx8394.h"
 #elif CONFIG_BSP_LCD_TYPE_480_800_4_INCH_A || CONFIG_BSP_LCD_TYPE_480_800_4_3_INCH_A
 #include "esp_lcd_st7701.h"
+#elif CONFIG_BSP_LCD_TYPE_540_1168_4_05_INCH
+#include "esp_lcd_hi8561.h"
+#elif CONFIG_BSP_LCD_TYPE_452_1280_6_2_INCH
+#include "esp_lcd_axs15260d.h"
+#elif CONFIG_BSP_LCD_TYPE_568_1210_4_45_INCH
+#include "esp_lcd_sd5207.h"
 #endif
 
 #include "bsp/esp32_p4_platform.h"
 #include "bsp/display.h"
 #include "bsp/touch.h"
+
+#if CONFIG_BSP_LCD_TYPE_540_1168_4_05_INCH
+#include "esp_lcd_touch_hi8561.h"
+#elif CONFIG_BSP_LCD_TYPE_452_1280_6_2_INCH
+#include "esp_lcd_touch_axs15260d.h"
+#elif CONFIG_BSP_LCD_TYPE_568_1210_4_45_INCH
+#include "esp_lcd_touch_cst3530.h"
+#else
 #include "esp_lcd_touch_gt911.h"
+#endif
+
 #include "bsp_err_check.h"
 #include "esp_codec_dev_defaults.h"
 
@@ -806,6 +822,91 @@ esp_err_t bsp_display_new_with_handles(const bsp_display_config_t *config, bsp_l
     ESP_GOTO_ON_ERROR(esp_lcd_panel_reset(disp_panel), err, TAG, "LCD panel reset failed");
     ESP_GOTO_ON_ERROR(esp_lcd_panel_init(disp_panel), err, TAG, "LCD panel init failed");
     ESP_GOTO_ON_ERROR(esp_lcd_panel_disp_on_off(disp_panel, true), err, TAG, "LCD panel ON failed");
+#elif CONFIG_BSP_LCD_TYPE_540_1168_4_05_INCH
+    ESP_LOGI(TAG, "Install Waveshare 4.05-DSI-TOUCH (HI8561) LCD control panel");
+#if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
+    esp_lcd_dpi_panel_config_t dpi_config = HI8561_540_1168_PANEL_60HZ_DPI_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB888);
+#else
+    esp_lcd_dpi_panel_config_t dpi_config = HI8561_540_1168_PANEL_60HZ_DPI_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
+#endif
+    dpi_config.num_fbs = CONFIG_BSP_LCD_DPI_BUFFER_NUMS;
+
+    hi8561_vendor_config_t vendor_config = {
+        .mipi_config = {
+            .dsi_bus = mipi_dsi_bus,
+            .dpi_config = &dpi_config,
+        },
+    };
+    esp_lcd_panel_dev_config_t lcd_dev_config = {
+#if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
+        .bits_per_pixel = 24,
+#else
+        .bits_per_pixel = 16,
+#endif
+        .rgb_ele_order = BSP_LCD_COLOR_SPACE,
+        .reset_gpio_num = BSP_LCD_RST,
+        .vendor_config = &vendor_config,
+    };
+    ESP_GOTO_ON_ERROR(esp_lcd_new_panel_hi8561(io, &lcd_dev_config, &disp_panel), err, TAG, "New LCD panel HI8561 failed");
+    ESP_GOTO_ON_ERROR(esp_lcd_panel_reset(disp_panel), err, TAG, "LCD panel reset failed");
+    ESP_GOTO_ON_ERROR(esp_lcd_panel_init(disp_panel), err, TAG, "LCD panel init failed");
+#elif CONFIG_BSP_LCD_TYPE_452_1280_6_2_INCH
+    ESP_LOGI(TAG, "Install Waveshare 6.2-DSI-TOUCH (AXS15260D) LCD control panel");
+#if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
+    esp_lcd_dpi_panel_config_t dpi_config = AXS15260D_452_1280_PANEL_60HZ_DPI_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB888);
+#else
+    esp_lcd_dpi_panel_config_t dpi_config = AXS15260D_452_1280_PANEL_60HZ_DPI_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
+    dpi_config.out_color_format = LCD_COLOR_PIXEL_FORMAT_RGB888;
+#endif
+    dpi_config.num_fbs = CONFIG_BSP_LCD_DPI_BUFFER_NUMS;
+
+    axs15260d_vendor_config_t vendor_config = {
+        .mipi_config = {
+            .dsi_bus = mipi_dsi_bus,
+            .dpi_config = &dpi_config,
+        },
+    };
+    esp_lcd_panel_dev_config_t lcd_dev_config = {
+#if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
+        .bits_per_pixel = 24,
+#else
+        .bits_per_pixel = 16,
+#endif
+        .rgb_ele_order = BSP_LCD_COLOR_SPACE,
+        .reset_gpio_num = BSP_LCD_RST,
+        .vendor_config = &vendor_config,
+    };
+    ESP_GOTO_ON_ERROR(esp_lcd_new_panel_axs15260d(io, &lcd_dev_config, &disp_panel), err, TAG, "New LCD panel AXS15260D failed");
+    ESP_GOTO_ON_ERROR(esp_lcd_panel_reset(disp_panel), err, TAG, "LCD panel reset failed");
+    ESP_GOTO_ON_ERROR(esp_lcd_panel_init(disp_panel), err, TAG, "LCD panel init failed");
+#elif CONFIG_BSP_LCD_TYPE_568_1210_4_45_INCH
+    ESP_LOGI(TAG, "Install Waveshare 4.45-inch SD5207 LCD control panel");
+#if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
+    esp_lcd_dpi_panel_config_t dpi_config = SD5207_568_1210_PANEL_60HZ_DPI_CONFIG(LCD_COLOR_FMT_RGB888);
+#else
+    esp_lcd_dpi_panel_config_t dpi_config = SD5207_568_1210_PANEL_60HZ_DPI_CONFIG(LCD_COLOR_FMT_RGB565);
+#endif
+    dpi_config.num_fbs = CONFIG_BSP_LCD_DPI_BUFFER_NUMS;
+    sd5207_vendor_config_t vendor_config = {
+        .mipi_config = {
+            .dsi_bus = mipi_dsi_bus,
+            .dpi_config = &dpi_config,
+        },
+    };
+    esp_lcd_panel_dev_config_t lcd_dev_config = {
+#if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
+        .bits_per_pixel = 24,
+#else
+        .bits_per_pixel = 16,
+#endif
+        .rgb_ele_order = BSP_LCD_COLOR_SPACE,
+        .reset_gpio_num = BSP_LCD_RST,
+        .vendor_config = &vendor_config,
+    };
+    ESP_GOTO_ON_ERROR(esp_lcd_new_panel_sd5207(io, &lcd_dev_config, &disp_panel), err, TAG, "New LCD panel SD5207 failed");
+    ESP_GOTO_ON_ERROR(esp_lcd_panel_reset(disp_panel), err, TAG, "LCD panel reset failed");
+    ESP_GOTO_ON_ERROR(esp_lcd_panel_init(disp_panel), err, TAG, "LCD panel init failed");
+    ESP_GOTO_ON_ERROR(esp_lcd_panel_disp_on_off(disp_panel, true), err, TAG, "LCD panel ON failed");
 #endif
 
     /* Return all handles */
@@ -857,6 +958,25 @@ esp_err_t bsp_touch_new(const bsp_display_cfg_t *cfg, esp_lcd_touch_handle_t *re
             .mirror_y = cfg->touch_flags.mirror_y,
         },
     };
+#if CONFIG_BSP_LCD_TYPE_540_1168_4_05_INCH
+    {
+        esp_lcd_touch_config_t hi8561_tp_cfg = tp_cfg;
+        hi8561_tp_cfg.driver_data = (void *)i2c_handle;
+        return esp_lcd_touch_new_i2c_hi8561(NULL, &hi8561_tp_cfg, ret_touch);
+    }
+#elif CONFIG_BSP_LCD_TYPE_452_1280_6_2_INCH
+    {
+        esp_lcd_touch_config_t axs15260d_tp_cfg = tp_cfg;
+        axs15260d_tp_cfg.driver_data = (void *)i2c_handle;
+        return esp_lcd_touch_new_i2c_axs15260d(NULL, &axs15260d_tp_cfg, ret_touch);
+    }
+#elif CONFIG_BSP_LCD_TYPE_568_1210_4_45_INCH
+    {
+        esp_lcd_touch_config_t cst3530_tp_cfg = tp_cfg;
+        cst3530_tp_cfg.driver_data = (void *)i2c_handle;
+        return esp_lcd_touch_new_i2c_cst3530(NULL, &cst3530_tp_cfg, ret_touch);
+    }
+#else
     esp_lcd_panel_io_handle_t tp_io_handle = NULL;
     esp_lcd_panel_io_i2c_config_t tp_io_config;
     if (ESP_OK == bsp_i2c_device_probe(ESP_LCD_TOUCH_IO_I2C_GT911_ADDRESS))
@@ -880,6 +1000,7 @@ esp_err_t bsp_touch_new(const bsp_display_cfg_t *cfg, esp_lcd_touch_handle_t *re
     tp_io_config.scl_speed_hz = CONFIG_BSP_I2C_CLK_SPEED_HZ;
     ESP_RETURN_ON_ERROR(esp_lcd_new_panel_io_i2c(i2c_handle, &tp_io_config, &tp_io_handle), TAG, "");
     return esp_lcd_touch_new_i2c_gt911(tp_io_handle, &tp_cfg, ret_touch);
+#endif
 }
 
 #if (BSP_CONFIG_NO_GRAPHIC_LIB == 0)

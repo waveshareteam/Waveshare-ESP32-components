@@ -30,6 +30,10 @@ static const char *TAG = "AXS15260D";
 // Touch the size of the data buffer area
 #define AXS15260_TOUCH_BUF_SIZE         ((5 * (AXS15260_TOUCH_POINT_SIZE)) + AXS15260_TOUCH_HEAD_PACKET) 
 
+typedef struct {
+    i2c_master_dev_handle_t dev_handle;
+} axs15260d_i2c_ctx_t;
+
 /*******************************************************************************
 * Function definitions
 *******************************************************************************/
@@ -40,7 +44,6 @@ static esp_err_t esp_lcd_touch_axs15260d_del(esp_lcd_touch_handle_t tp);
 
 /* I2C read/write */
 static esp_err_t touch_axs15260d_i2c_read(esp_lcd_touch_handle_t tp, uint8_t *data, uint8_t len);
-static esp_err_t touch_axs15260d_i2c_write(esp_lcd_touch_handle_t tp, uint16_t reg, uint8_t data);
 static esp_err_t touch_axs15260d_i2c_write_read(esp_lcd_touch_handle_t tp, uint8_t *cmd, uint8_t cmd_len, uint8_t *data, uint8_t data_len);
 
 /* AXS15260D reset */
@@ -57,7 +60,6 @@ esp_err_t esp_lcd_touch_new_i2c_axs15260d(const esp_lcd_panel_io_handle_t io, co
 {
     esp_err_t ret = ESP_OK;
 
-    ESP_RETURN_ON_FALSE(io != NULL, ESP_ERR_INVALID_ARG, TAG, "Touch controller io handle can't be NULL");
     ESP_RETURN_ON_FALSE(config != NULL, ESP_ERR_INVALID_ARG, TAG,
                         "Pointer to the touch controller configuration can't be NULL");
     ESP_RETURN_ON_FALSE(out_touch != NULL, ESP_ERR_INVALID_ARG, TAG,
@@ -66,9 +68,6 @@ esp_err_t esp_lcd_touch_new_i2c_axs15260d(const esp_lcd_panel_io_handle_t io, co
     /* Prepare main structure */
     esp_lcd_touch_handle_t esp_lcd_touch_axs15260d = heap_caps_calloc(1, sizeof(esp_lcd_touch_t), MALLOC_CAP_DEFAULT);
     ESP_GOTO_ON_FALSE(esp_lcd_touch_axs15260d, ESP_ERR_NO_MEM, err, TAG, "no mem for AXS15260D controller");
-
-    /* Communication interface */
-    esp_lcd_touch_axs15260d->io = io;
 
     /* Only supported callbacks are set */
     esp_lcd_touch_axs15260d->read_data = esp_lcd_touch_axs15260d_read_data;
@@ -80,6 +79,26 @@ esp_err_t esp_lcd_touch_new_i2c_axs15260d(const esp_lcd_panel_io_handle_t io, co
 
     /* Save config */
     memcpy(&esp_lcd_touch_axs15260d->config, config, sizeof(esp_lcd_touch_config_t));
+
+    i2c_master_bus_handle_t bus = (i2c_master_bus_handle_t)esp_lcd_touch_axs15260d->config.driver_data;
+
+    if (bus != NULL) {
+        axs15260d_i2c_ctx_t *ctx = (axs15260d_i2c_ctx_t *)heap_caps_calloc(1, sizeof(axs15260d_i2c_ctx_t), MALLOC_CAP_DEFAULT);
+        ESP_GOTO_ON_FALSE(ctx, ESP_ERR_NO_MEM, err, TAG, "no mem for I2C ctx");
+
+        i2c_device_config_t dev_cfg = {
+            .dev_addr_length = I2C_ADDR_BIT_LEN_7,
+            .device_address = ESP_LCD_TOUCH_IO_I2C_AXS15260D_ADDRESS,
+            .scl_speed_hz = 100000,
+        };
+        ESP_GOTO_ON_ERROR(i2c_master_bus_add_device(bus, &dev_cfg, &ctx->dev_handle), err, TAG, "add I2C dev failed");
+        esp_lcd_touch_axs15260d->config.driver_data = (void *)ctx;
+        ESP_LOGD(TAG, "I2C direct (addr=0x%02X)", ESP_LCD_TOUCH_IO_I2C_AXS15260D_ADDRESS);
+    } else {
+        ESP_LOGE(TAG, "No I2C bus handle in driver_data");
+        ret = ESP_ERR_INVALID_ARG;
+        goto err;
+    }
 
     /* Prepare pin for touch controller reset */
     if (esp_lcd_touch_axs15260d->config.rst_gpio_num != GPIO_NUM_NC) {
@@ -284,29 +303,21 @@ static esp_err_t touch_axs15260d_i2c_read(esp_lcd_touch_handle_t tp, uint8_t *da
     ESP_RETURN_ON_FALSE(tp != NULL, ESP_ERR_INVALID_ARG, TAG, "Touch controller handle can't be NULL");
     ESP_RETURN_ON_FALSE(data != NULL, ESP_ERR_INVALID_ARG, TAG, "Pointer to the data array can't be NULL");
 
-    i2c_master_dev_handle_t i2c_dev = (i2c_master_dev_handle_t)tp->config.user_data;
-
     /* Read data */
-    return i2c_master_receive(i2c_dev, data, len, 100);
+    axs15260d_i2c_ctx_t *ctx = (axs15260d_i2c_ctx_t *)tp->config.driver_data;
+    ESP_RETURN_ON_FALSE(ctx && ctx->dev_handle, ESP_ERR_INVALID_STATE, TAG, "I2C ctx not ready");
+
+    return i2c_master_receive(ctx->dev_handle, data, len, 100);
 }
 
 static esp_err_t touch_axs15260d_i2c_write_read(esp_lcd_touch_handle_t tp, uint8_t *cmd, uint8_t cmd_len, uint8_t *data, uint8_t data_len)
 {
-    ESP_RETURN_ON_FALSE(tp != NULL, ESP_ERR_INVALID_ARG, TAG, "Touch controller handle can't be NULL");
-    ESP_RETURN_ON_FALSE(data != NULL, ESP_ERR_INVALID_ARG, TAG, "Pointer to the data array can't be NULL");
+    ESP_RETURN_ON_FALSE(tp, ESP_ERR_INVALID_ARG, TAG, "bad args");
 
-    i2c_master_dev_handle_t i2c_dev = (i2c_master_dev_handle_t)tp->config.user_data;
+    axs15260d_i2c_ctx_t *ctx = (axs15260d_i2c_ctx_t *)tp->config.driver_data;
+    ESP_RETURN_ON_FALSE(ctx && ctx->dev_handle, ESP_ERR_INVALID_STATE, TAG, "I2C ctx not ready");
 
     /* Read data */
-    return i2c_master_transmit_receive(i2c_dev, cmd, cmd_len, data, data_len, 100);
+    return i2c_master_transmit_receive(ctx->dev_handle, cmd, cmd_len, data, data_len, -1);
 }
 
-static __unused esp_err_t touch_axs15260d_i2c_write(esp_lcd_touch_handle_t tp, uint16_t reg, uint8_t data)
-{
-    ESP_RETURN_ON_FALSE(tp != NULL, ESP_ERR_INVALID_ARG, TAG, "Touch controller handle can't be NULL");
-
-    // *INDENT-OFF*
-    /* Write data */
-    return esp_lcd_panel_io_tx_param(tp->io, reg, (uint8_t[]){data}, 1);
-    // *INDENT-ON*
-}

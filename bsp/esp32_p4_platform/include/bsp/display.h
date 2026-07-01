@@ -68,6 +68,18 @@
 #define BSP_LCD_H_RES              (480)
 #define BSP_LCD_V_RES              (1920)
 #define BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS (1300)
+#elif CONFIG_BSP_LCD_TYPE_540_1168_4_05_INCH
+#define BSP_LCD_H_RES              (540)
+#define BSP_LCD_V_RES              (1168)
+#define BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS (1000)
+#elif CONFIG_BSP_LCD_TYPE_452_1280_6_2_INCH
+#define BSP_LCD_H_RES              (452)
+#define BSP_LCD_V_RES              (1280)
+#define BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS (1100)
+#elif CONFIG_BSP_LCD_TYPE_568_1210_4_45_INCH
+#define BSP_LCD_H_RES              (568)
+#define BSP_LCD_V_RES              (1210)
+#define BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS (1500)
 #endif
 
 #define BSP_LCD_MIPI_DSI_LANE_NUM          (2)    // 2 data lanes
