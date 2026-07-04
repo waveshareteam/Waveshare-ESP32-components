@@ -1,4 +1,4 @@
-version: 3.0.0
+version: 3.0.1
 description: Board Support Package (BSP) for Waveshare ESP32-S3-Touch-AMOLED-1.75
 url: https://www.waveshare.com/esp32-s3-touch-amoled-1.75.htm
 
@@ -19,7 +19,7 @@ dependencies:
   esp_lcd_co5300: "*"
   waveshare/esp_lcd_touch_cst9217: "*"
   espressif/esp_lvgl_adapter:
-    version: "^0.1.*"
+    version: "~0.6"
     public: true
 
   esp_codec_dev:
