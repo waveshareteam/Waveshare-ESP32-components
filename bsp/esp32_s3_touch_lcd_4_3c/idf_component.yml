@@ -4,7 +4,7 @@ dependencies:
     version: "~1.5"
   esp_lcd_touch_gt911: '*'
   espressif/esp_lvgl_adapter:
-    version: "*"
+    version: "~0.6"
     public: true
   idf: '>=5.3'
   lvgl/lvgl: ~9.4.*
@@ -24,4 +24,4 @@ tags:
 targets:
 - esp32s3
 url: https://github.com/waveshareteam/Waveshare-ESP32-components
-version: 3.0.0
+version: 3.0.1
