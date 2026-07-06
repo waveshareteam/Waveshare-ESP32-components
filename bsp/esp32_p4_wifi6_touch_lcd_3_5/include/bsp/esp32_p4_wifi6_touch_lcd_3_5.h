@@ -12,7 +12,7 @@
 
 #if (BSP_CONFIG_NO_GRAPHIC_LIB == 0)
 #include "lvgl.h"
-#include "esp_lvgl_port.h"
+#include "esp_lv_adapter.h"
 #endif // BSP_CONFIG_NO_GRAPHIC_LIB == 0
 
 /**************************************************************************************************
@@ -256,14 +256,14 @@ esp_err_t bsp_sdcard_unmount(void);
  *
  */
 typedef struct {
-    lvgl_port_cfg_t lvgl_port_cfg;  /*!< LVGL port configuration */
-    uint32_t        buffer_size;    /*!< Size of the buffer for the screen in pixels */
-    bool            double_buffer;  /*!< True, if should be allocated two buffers */
+    esp_lv_adapter_config_t          lv_adapter_cfg;   /*!< LVGL adapter configuration */
+    esp_lv_adapter_rotation_t        rotation;         /*!< Display rotation */
+    esp_lv_adapter_tear_avoid_mode_t tear_avoid_mode;  /*!< Tearing avoidance mode */
     struct {
-        unsigned int buff_dma: 1;    /*!< Allocated LVGL buffer will be DMA capable */
-        unsigned int buff_spiram: 1; /*!< Allocated LVGL buffer will be in PSRAM */
-        unsigned int sw_rotate: 1;   /*!< Use software rotation */
-    } flags;
+        unsigned int swap_xy: 1;   /*!< Swap X and Y after reading touch coordinates */
+        unsigned int mirror_x: 1;  /*!< Mirror X after reading touch coordinates */
+        unsigned int mirror_y: 1;  /*!< Mirror Y after reading touch coordinates */
+    } touch_flags;
 } bsp_display_cfg_t;
 
 /**
@@ -286,7 +286,7 @@ lv_display_t *bsp_display_start(void);
  *
  * @return Pointer to LVGL display or NULL when error occurred
  */
-lv_display_t *bsp_display_start_with_config(const bsp_display_cfg_t *cfg);
+lv_display_t *bsp_display_start_with_config(bsp_display_cfg_t *cfg);
 
 /**
  * @brief Get pointer to input device (touch, buttons, ...)
