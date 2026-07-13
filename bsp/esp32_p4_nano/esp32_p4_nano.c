@@ -847,7 +847,7 @@ void bsp_display_rotate(lv_display_t *disp, lv_disp_rotation_t rotation)
     lv_disp_set_rotation(disp, rotation);
 }
 
-bool bsp_display_lock(uint32_t timeout_ms)
+bool bsp_display_lock(int32_t timeout_ms)
 {
     return esp_lv_adapter_lock(timeout_ms) == ESP_OK;
 }

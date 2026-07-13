@@ -292,11 +292,11 @@ lv_indev_t *bsp_display_get_input_dev(void);
 /**
  * @brief Take LVGL mutex
  *
- * @param timeout_ms Timeout in [ms]. 0 will block indefinitely.
+ * @param timeout_ms Timeout in [ms]. -1 will block indefinitely.
  * @return true  Mutex was taken
  * @return false Mutex was NOT taken
  */
-bool bsp_display_lock(uint32_t timeout_ms);
+bool bsp_display_lock(int32_t timeout_ms);
 
 /**
  * @brief Give LVGL mutex
