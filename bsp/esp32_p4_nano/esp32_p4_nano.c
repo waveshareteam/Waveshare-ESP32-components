@@ -666,24 +666,7 @@ esp_err_t bsp_touch_new(const bsp_touch_config_t *config, esp_lcd_touch_handle_t
 {
     ESP_RETURN_ON_ERROR(bsp_lcd_check_chip_revision(), TAG, "LCD chip revision check failed");
 
-    /* Initilize I2C */
-    BSP_ERROR_CHECK_RETURN_ERR(bsp_i2c_init());
-
-    /* Initialize touch */
-    const esp_lcd_touch_config_t tp_cfg = {
-#if CONFIG_BSP_LCD_TYPE_480_640_2_8_INCH || CONFIG_BSP_LCD_TYPE_480_800_4_INCH
-        .x_max = BSP_LCD_V_RES,
-        .y_max = BSP_LCD_H_RES,
-#else
-        .x_max = BSP_LCD_H_RES,
-        .y_max = BSP_LCD_V_RES,
-#endif
-        .rst_gpio_num = BSP_LCD_TOUCH_RST, // Shared with LCD reset
-        .int_gpio_num = BSP_LCD_TOUCH_INT,
-        .levels = {
-            .reset = 0,
-            .interrupt = 0,
-        },
+    const bsp_touch_config_t default_config = {
         .flags = {
 #if CONFIG_BSP_LCD_TYPE_800_1280_10_1_INCH || CONFIG_BSP_LCD_TYPE_800_1280_10_1_INCH_A || CONFIG_BSP_LCD_TYPE_720_1280_7_INCH_A || CONFIG_BSP_LCD_TYPE_720_1280_9_INCH_B || CONFIG_BSP_LCD_TYPE_720_1280_10_1_INCH_B
             .swap_xy = 0,
@@ -706,6 +689,34 @@ esp_err_t bsp_touch_new(const bsp_touch_config_t *config, esp_lcd_touch_handle_t
             .mirror_x = 0,
             .mirror_y = 0,
 #endif
+        },
+    };
+    if (config == NULL) {
+        config = &default_config;
+    }
+
+    /* Initilize I2C */
+    BSP_ERROR_CHECK_RETURN_ERR(bsp_i2c_init());
+
+    /* Initialize touch */
+    const esp_lcd_touch_config_t tp_cfg = {
+#if CONFIG_BSP_LCD_TYPE_480_640_2_8_INCH || CONFIG_BSP_LCD_TYPE_480_800_4_INCH
+        .x_max = BSP_LCD_V_RES,
+        .y_max = BSP_LCD_H_RES,
+#else
+        .x_max = BSP_LCD_H_RES,
+        .y_max = BSP_LCD_V_RES,
+#endif
+        .rst_gpio_num = BSP_LCD_TOUCH_RST, // Shared with LCD reset
+        .int_gpio_num = BSP_LCD_TOUCH_INT,
+        .levels = {
+            .reset = 0,
+            .interrupt = 0,
+        },
+        .flags = {
+            .swap_xy = config->flags.swap_xy,
+            .mirror_x = config->flags.mirror_x,
+            .mirror_y = config->flags.mirror_y,
         },
     };
     esp_lcd_panel_io_handle_t tp_io_handle = NULL;
@@ -736,106 +747,92 @@ static lv_display_t *bsp_display_lcd_init(const bsp_display_cfg_t *cfg)
 
     /* Add LCD screen */
     ESP_LOGD(TAG, "Add LCD screen");
-    const lvgl_port_display_cfg_t disp_cfg = {
-        .io_handle = lcd_panels.io,
-        .panel_handle = lcd_panels.panel,
-        .control_handle = lcd_panels.control,
-        .buffer_size = cfg->buffer_size,
-        .double_buffer = cfg->double_buffer,
-        .hres = BSP_LCD_H_RES,
-        .vres = BSP_LCD_V_RES,
-        .monochrome = false,
-        /* Rotation values must be same as used in esp_lcd for initial settings of the screen */
-        .rotation = {
-            .swap_xy = false,
-            .mirror_x = true,
-            .mirror_y = true,
+    const esp_lv_adapter_display_config_t disp_cfg = {
+        .panel = lcd_panels.panel,
+        .panel_io = lcd_panels.io,
+        .profile = {
+            .interface = ESP_LV_ADAPTER_PANEL_IF_MIPI_DSI,
+            .rotation = cfg->rotation,
+            .hor_res = BSP_LCD_H_RES,
+            .ver_res = BSP_LCD_V_RES,
+            .buffer_height = 50,
+            .use_psram = false,
+            .enable_ppa_accel = false,
+            .require_double_buffer = false,
         },
-#if LVGL_VERSION_MAJOR >= 9
-#if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
-        .color_format = LV_COLOR_FORMAT_RGB888,
-#else
-        .color_format = LV_COLOR_FORMAT_RGB565,
-#endif
-#endif
-        .flags = {
-            .buff_dma = cfg->flags.buff_dma,
-            .buff_spiram = cfg->flags.buff_spiram,
-#if LVGL_VERSION_MAJOR >= 9
-            .swap_bytes = (BSP_LCD_BIGENDIAN ? true : false),
-#endif
-#if CONFIG_BSP_DISPLAY_LVGL_AVOID_TEAR
-            .sw_rotate = false,                /* Avoid tearing is not supported for SW rotation */
-#else
-            .sw_rotate = cfg->flags.sw_rotate, /* Only SW rotation is supported for 90° and 270° */
-#endif
-#if CONFIG_BSP_DISPLAY_LVGL_FULL_REFRESH
-            .full_refresh = true,
-#elif CONFIG_BSP_DISPLAY_LVGL_DIRECT_MODE
-            .direct_mode = true,
-#endif
-        }
+        .tear_avoid_mode = cfg->tear_avoid_mode,
     };
 
-    const lvgl_port_display_dsi_cfg_t dpi_cfg = {
-        .flags = {
-#if CONFIG_BSP_DISPLAY_LVGL_AVOID_TEAR
-            .avoid_tearing = true,
-#else
-            .avoid_tearing = false,
-#endif
-        }
-    };
-
-    return lvgl_port_add_disp_dsi(&disp_cfg, &dpi_cfg);
+    return esp_lv_adapter_register_display(&disp_cfg);
 }
 
-static lv_indev_t *bsp_display_indev_init(lv_display_t *disp)
+static lv_indev_t *bsp_display_indev_init(const bsp_display_cfg_t *cfg, lv_display_t *disp)
 {
+    assert(cfg != NULL);
     esp_lcd_touch_handle_t tp;
-    BSP_ERROR_CHECK_RETURN_NULL(bsp_touch_new(NULL, &tp));
+    const bsp_touch_config_t touch_config = {
+        .flags = {
+            .swap_xy = cfg->touch_flags.swap_xy,
+            .mirror_x = cfg->touch_flags.mirror_x,
+            .mirror_y = cfg->touch_flags.mirror_y,
+        },
+    };
+    BSP_ERROR_CHECK_RETURN_NULL(bsp_touch_new(&touch_config, &tp));
     assert(tp);
 
     /* Add touch input (for selected screen) */
-    const lvgl_port_touch_cfg_t touch_cfg = {
-        .disp = disp,
-        .handle = tp,
-    };
+    const esp_lv_adapter_touch_config_t touch_cfg = ESP_LV_ADAPTER_TOUCH_DEFAULT_CONFIG(disp, tp);
 
-    return lvgl_port_add_touch(&touch_cfg);
+    return esp_lv_adapter_register_touch(&touch_cfg);
 }
 
 lv_display_t *bsp_display_start(void)
 {
     bsp_display_cfg_t cfg = {
-        .lvgl_port_cfg = ESP_LVGL_PORT_INIT_CONFIG(),
-        .buffer_size = BSP_LCD_DRAW_BUFF_SIZE,
-        .double_buffer = BSP_LCD_DRAW_BUFF_DOUBLE,
-        .flags = {
-#if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
-            .buff_dma = false,
+        .lv_adapter_cfg = ESP_LV_ADAPTER_DEFAULT_CONFIG(),
+        .rotation = ESP_LV_ADAPTER_ROTATE_180,
+        .tear_avoid_mode = ESP_LV_ADAPTER_TEAR_AVOID_MODE_TRIPLE_PARTIAL,
+        .touch_flags = {
+#if CONFIG_BSP_LCD_TYPE_800_1280_10_1_INCH || CONFIG_BSP_LCD_TYPE_800_1280_10_1_INCH_A || CONFIG_BSP_LCD_TYPE_720_1280_7_INCH_A || CONFIG_BSP_LCD_TYPE_720_1280_9_INCH_B || CONFIG_BSP_LCD_TYPE_720_1280_10_1_INCH_B
+            .swap_xy = 0,
+            .mirror_x = 1,
+            .mirror_y = 1,
+#elif CONFIG_BSP_LCD_TYPE_800_1280_8_INCH_A
+            .swap_xy = 0,
+            .mirror_x = 0,
+            .mirror_y = 0,
+#elif CONFIG_BSP_LCD_TYPE_480_640_2_8_INCH
+            .swap_xy = 1,
+            .mirror_x = 0,
+            .mirror_y = 1,
+#elif CONFIG_BSP_LCD_TYPE_480_800_4_INCH
+            .swap_xy = 1,
+            .mirror_x = 1,
+            .mirror_y = 0,
 #else
-            .buff_dma = true,
+            .swap_xy = 0,
+            .mirror_x = 0,
+            .mirror_y = 0,
 #endif
-            .buff_spiram = false,
-            .sw_rotate = true,
-        }
+        },
     };
     return bsp_display_start_with_config(&cfg);
 }
 
-lv_display_t *bsp_display_start_with_config(const bsp_display_cfg_t *cfg)
+lv_display_t *bsp_display_start_with_config(bsp_display_cfg_t *cfg)
 {
     lv_display_t *disp;
 
     assert(cfg != NULL);
-    BSP_ERROR_CHECK_RETURN_NULL(lvgl_port_init(&cfg->lvgl_port_cfg));
+    BSP_ERROR_CHECK_RETURN_NULL(esp_lv_adapter_init(&cfg->lv_adapter_cfg));
 
     BSP_ERROR_CHECK_RETURN_NULL(bsp_display_brightness_init());
 
     BSP_NULL_CHECK(disp = bsp_display_lcd_init(cfg), NULL);
 
-    BSP_NULL_CHECK(disp_indev = bsp_display_indev_init(disp), NULL);
+    BSP_NULL_CHECK(disp_indev = bsp_display_indev_init(cfg, disp), NULL);
+
+    ESP_ERROR_CHECK(esp_lv_adapter_start());
 
     return disp;
 }
@@ -852,12 +849,12 @@ void bsp_display_rotate(lv_display_t *disp, lv_disp_rotation_t rotation)
 
 bool bsp_display_lock(uint32_t timeout_ms)
 {
-    return lvgl_port_lock(timeout_ms);
+    return esp_lv_adapter_lock(timeout_ms) == ESP_OK;
 }
 
 void bsp_display_unlock(void)
 {
-    lvgl_port_unlock();
+    esp_lv_adapter_unlock();
 }
 
 #endif // (BSP_CONFIG_NO_GRAPHIC_LIB == 0)

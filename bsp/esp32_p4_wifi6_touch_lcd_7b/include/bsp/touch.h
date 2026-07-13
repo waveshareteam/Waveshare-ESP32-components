@@ -26,7 +26,11 @@ extern "C" {
  *
  */
 typedef struct {
-    void *dummy;    /*!< Prepared for future use. */
+    struct {
+        unsigned int swap_xy: 1;   /*!< Swap X and Y after reading coordinates */
+        unsigned int mirror_x: 1;  /*!< Mirror X after reading coordinates */
+        unsigned int mirror_y: 1;  /*!< Mirror Y after reading coordinates */
+    } flags;
 } bsp_touch_config_t;
 
 /**

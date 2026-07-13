@@ -4,10 +4,10 @@ dependencies:
     version: "~1.5"
   esp_lcd_ek79007: "^2.0.2~1"
   esp_lcd_touch_gt911: ^1
-  espressif/esp_lvgl_port:
+  espressif/esp_lvgl_adapter:
     public: true
-    version: ^2
-  idf: '>=5.3'
+    version: "~0.6"
+  idf: '>=5.5'
   lvgl/lvgl: '>=8,<10'
   usb:
     version: "^1.0.0"
@@ -21,4 +21,4 @@ tags:
 targets:
 - esp32p4
 url: https://www.waveshare.com/esp32-p4-wifi6-touch-lcd-7b.htm
-version: 2.0.0
+version: 3.0.0
