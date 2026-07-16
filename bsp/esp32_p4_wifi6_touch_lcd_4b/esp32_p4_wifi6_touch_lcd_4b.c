@@ -415,7 +415,7 @@ esp_err_t bsp_audio_init_voice_24k(void)
     tx_config.gpio_cfg.din = I2S_GPIO_UNUSED;
     rx_config.clk_cfg.mclk_multiple = I2S_MCLK_MULTIPLE_256;
     rx_config.clk_cfg.bclk_div = 8;
-    rx_config.slot_cfg.total_slot = 4;
+    rx_config.slot_cfg.total_slot = BSP_AUDIO_TDM_SLOT_COUNT;
     rx_config.gpio_cfg.dout = I2S_GPIO_UNUSED;
 
     return bsp_audio_init_tx_std_rx_tdm(&tx_config, &rx_config);
@@ -510,7 +510,7 @@ esp_codec_dev_handle_t bsp_audio_codec_microphone_init(void)
     es7210_codec_cfg_t es7210_cfg = {
         .ctrl_if = microphone_ctrl_if,
         .mic_selected = (audio_mode == BSP_AUDIO_MODE_TX_STD_RX_TDM) ?
-                        (ES7210_SEL_MIC1 | ES7210_SEL_MIC2 | ES7210_SEL_MIC3 | ES7210_SEL_MIC4) : 0,
+                        BSP_AUDIO_ES7210_CONNECTED_MIC_MASK : 0,
     };
     microphone_codec_if = es7210_codec_new(&es7210_cfg);
     if (microphone_codec_if == NULL) {
