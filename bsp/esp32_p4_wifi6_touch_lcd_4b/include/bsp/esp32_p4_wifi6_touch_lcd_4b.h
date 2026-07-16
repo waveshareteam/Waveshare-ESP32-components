@@ -5,6 +5,7 @@
 #include "driver/i2c_master.h"
 #include "driver/sdmmc_host.h"
 #include "driver/i2s_std.h"
+#include "driver/i2s_tdm.h"
 #include "bsp/config.h"
 #include "bsp/display.h"
 #include "esp_codec_dev.h"
@@ -105,47 +106,102 @@ i2c_master_bus_handle_t bsp_i2c_get_handle(void);
  * I2S audio interface
  *
  * There are two devices connected to the I2S peripheral:
- *  - Codec ES8311 for output(playback) and input(recording) path
+ *  - Codec ES8311 for output (playback)
+ *  - ADC ES7210 for input (recording)
  *
- * For speaker initialization use bsp_audio_codec_speaker_init() which is inside initialize I2S with bsp_audio_init().
- * For microphone initialization use bsp_audio_codec_microphone_init() which is inside initialize I2S with bsp_audio_init().
- * After speaker or microphone initialization, use functions from esp_codec_dev for play/record audio.
- * Example audio play:
- * \code{.c}
- * esp_codec_dev_set_out_vol(spk_codec_dev, DEFAULT_VOLUME);
- * esp_codec_dev_open(spk_codec_dev, &fs);
- * esp_codec_dev_write(spk_codec_dev, wav_bytes, bytes_read_from_spiffs);
- * esp_codec_dev_close(spk_codec_dev);
- * \endcode
+ * Codec device handles returned by this BSP are BSP-owned. Applications may open and close them,
+ * but must not call esp_codec_dev_delete(). bsp_audio_deinit() closes and deletes the codec devices,
+ * their interfaces, the shared data interface, and the I2S channels.
  **************************************************************************************************/
 
 /**
- * @brief Init audio
+ * @brief Initialize legacy STD TX and STD RX audio
  *
- * @note There is no deinit audio function. Users can free audio resources by calling i2s_del_channel()
- * @warning The type of i2s_config param is depending on IDF version.
- * @param[in]  i2s_config I2S configuration. Pass NULL to use default values (Mono, duplex, 16bit, 22050 Hz)
+ * Repeated calls return ESP_OK only while the existing audio mode is STD TX and STD RX.
+ *
+ * @param[in] i2s_config I2S STD configuration. Pass NULL to use mono, duplex, 16-bit, 22050 Hz.
  * @return
  *      - ESP_OK                On success
  *      - ESP_ERR_NOT_SUPPORTED The communication mode is not supported on the current chip
- *      - ESP_ERR_INVALID_ARG   NULL pointer or invalid configuration
+ *      - ESP_ERR_INVALID_ARG   Invalid configuration
  *      - ESP_ERR_NOT_FOUND     No available I2S channel found
  *      - ESP_ERR_NO_MEM        No memory for storing the channel information
- *      - ESP_ERR_INVALID_STATE This channel has not initialized or already started
+ *      - ESP_ERR_INVALID_STATE Audio is already initialized in another mode
  */
 esp_err_t bsp_audio_init(const i2s_std_config_t *i2s_config);
 
 /**
- * @brief Initialize speaker codec device
+ * @brief Initialize audio with STD TX and TDM RX
  *
- * @return Pointer to codec device handle or NULL when error occurred
+ * TX and RX share the physical clock signals and must use the same sample rate. This function must
+ * be called before creating codec devices. It returns ESP_ERR_INVALID_STATE if any audio mode is
+ * already initialized, including an earlier mixed-mode initialization.
+ *
+ * @param[in] tx_config Non-NULL I2S STD configuration for playback
+ * @param[in] rx_config Non-NULL I2S TDM configuration for recording
+ * @return
+ *      - ESP_OK                On success
+ *      - ESP_ERR_INVALID_ARG   NULL configuration or mismatched TX/RX sample rates
+ *      - ESP_ERR_INVALID_STATE Audio is already initialized
+ *      - other errors from the I2S driver
+ */
+esp_err_t bsp_audio_init_tx_std_rx_tdm(const i2s_std_config_t *tx_config,
+                                       const i2s_tdm_config_t *rx_config);
+
+/**
+ * @brief Initialize the 24 kHz voice audio bus profile
+ *
+ * The physical bus uses 24 kHz, 16-bit stereo STD for TX and 24 kHz, 16-bit TDM slots 0..3 for RX.
+ * RX uses four total slots, BCLK divider 8, and MCLK x256. The ES7210 codec interface enables MIC1
+ * through MIC4 so esp_codec_dev can retain the four-channel TDM frame.
+ *
+ * @note This configures the physical bus only. It does not select a record channel mask and does not
+ *       imply AEC or a reference channel. For single-microphone capture, open the record codec with
+ *       channel=4 and channel_mask=ESP_CODEC_DEV_MAKE_CHANNEL_MASK(0), then set gain for that mask.
+ *       Callers may choose another channel mask when their capture topology requires it.
+ *
+ * @return
+ *      - ESP_OK                On success
+ *      - ESP_ERR_INVALID_STATE Audio is already initialized
+ *      - other errors from bsp_audio_init_tx_std_rx_tdm()
+ */
+esp_err_t bsp_audio_init_voice_24k(void);
+
+/**
+ * @brief Deinitialize BSP-owned audio resources
+ *
+ * This function closes and deletes codec devices created by bsp_audio_codec_speaker_init() and
+ * bsp_audio_codec_microphone_init(), deletes their interfaces and the shared data interface,
+ * disables and deletes RX/TX channels, and clears all internal audio pointers.
+ *
+ * @warning Stop all tasks using the codec handles and close the devices before calling this function.
+ *          All codec handles returned by the BSP become invalid after this call.
+ * @note The shared I2C bus is not deinitialized.
+ *
+ * @return
+ *      - ESP_OK On success or when audio is already deinitialized
+ *      - ESP_FAIL If a codec interface could not be closed or deleted
+ *      - other errors from the I2S driver
+ */
+esp_err_t bsp_audio_deinit(void);
+
+/**
+ * @brief Initialize or get the BSP-owned speaker codec device
+ *
+ * If audio is not initialized, this function initializes the legacy STD/STD mode.
+ *
+ * @return BSP-owned codec device handle, or NULL when an error occurs
  */
 esp_codec_dev_handle_t bsp_audio_codec_speaker_init(void);
 
 /**
- * @brief Initialize microphone codec device
+ * @brief Initialize or get the BSP-owned microphone codec device
  *
- * @return Pointer to codec device handle or NULL when error occurred
+ * If audio is not initialized, this function initializes the legacy STD/STD mode. In mixed
+ * STD TX/TDM RX mode, the ES7210 enables MIC1 through MIC4; esp_codec_dev_open() still controls
+ * which packed TDM channels are returned through its channel_mask.
+ *
+ * @return BSP-owned codec device handle, or NULL when an error occurs
  */
 esp_codec_dev_handle_t bsp_audio_codec_microphone_init(void);
 
