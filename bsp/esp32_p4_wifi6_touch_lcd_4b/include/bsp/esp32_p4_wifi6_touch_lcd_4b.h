@@ -114,17 +114,17 @@ i2c_master_bus_handle_t bsp_i2c_get_handle(void);
 #define BSP_AUDIO_ES7210_CONNECTED_MIC_MASK    (BSP_AUDIO_ES7210_MIC_MASK_FL_FR | BSP_AUDIO_ES7210_MIC3_RE_MASK)
 
 /*
- * ES7210 serialized TDM order from esp_codec_dev: ch3, ch1, ch2, ch4.
+ * ES7210 serialized TDM order verified on hardware: ch1, ch3, ch2, ch4.
  * Use these slot masks only with esp_codec_dev_sample_info_t.channel_mask.
  * Do not reuse the physical MIC masks above as TDM slot masks.
  */
 #define BSP_AUDIO_TDM_SLOT_COUNT               (4U)
-#define BSP_AUDIO_TDM_SLOT_RE                  (0U)  /* slot0 = MIC3 = RE */
-#define BSP_AUDIO_TDM_SLOT_FL                  (1U)  /* slot1 = MIC1 = FL */
+#define BSP_AUDIO_TDM_SLOT_FL                  (0U)  /* slot0 = MIC1 = FL */
+#define BSP_AUDIO_TDM_SLOT_RE                  (1U)  /* slot1 = MIC3 = RE */
 #define BSP_AUDIO_TDM_SLOT_FR                  (2U)  /* slot2 = MIC2 = FR */
 #define BSP_AUDIO_TDM_SLOT_NA                  (3U)  /* slot3 = MIC4 = not connected */
-#define BSP_AUDIO_TDM_SLOT_MASK_RE             ESP_CODEC_DEV_MAKE_CHANNEL_MASK(BSP_AUDIO_TDM_SLOT_RE)
 #define BSP_AUDIO_TDM_SLOT_MASK_FL             ESP_CODEC_DEV_MAKE_CHANNEL_MASK(BSP_AUDIO_TDM_SLOT_FL)
+#define BSP_AUDIO_TDM_SLOT_MASK_RE             ESP_CODEC_DEV_MAKE_CHANNEL_MASK(BSP_AUDIO_TDM_SLOT_RE)
 #define BSP_AUDIO_TDM_SLOT_MASK_FR             ESP_CODEC_DEV_MAKE_CHANNEL_MASK(BSP_AUDIO_TDM_SLOT_FR)
 #define BSP_AUDIO_TDM_SLOT_MASK_NA             ESP_CODEC_DEV_MAKE_CHANNEL_MASK(BSP_AUDIO_TDM_SLOT_NA)
 #define BSP_AUDIO_TDM_SLOT_MASK_FL_FR          (BSP_AUDIO_TDM_SLOT_MASK_FL | BSP_AUDIO_TDM_SLOT_MASK_FR)
@@ -180,14 +180,15 @@ esp_err_t bsp_audio_init_tx_std_rx_tdm(const i2s_std_config_t *tx_config,
  * @brief Initialize the 24 kHz voice audio bus profile
  *
  * The physical bus uses 24 kHz, 16-bit stereo STD for TX and 24 kHz, 16-bit TDM slots 0..3 for RX.
- * RX keeps four total slots, BCLK divider 8, and MCLK x256. The ES7210 enables the connected MIC1,
- * MIC2, and MIC3 inputs; the unconnected MIC4 input remains disabled while slot3 stays in the frame.
+ * RX keeps four total slots, BCLK divider 8, and MCLK x256. The hardware-verified serialized order
+ * is slot0=MIC1/FL, slot1=MIC3/RE, slot2=MIC2/FR, and slot3=MIC4/NA. The ES7210 enables connected
+ * MIC1, MIC2, and MIC3 inputs; the unconnected MIC4 input remains disabled.
  *
  * @note This configures the physical bus only and does not imply AEC or a reference channel.
  * @note esp_codec_dev_sample_info_t.channel is the physical TDM slot count, not the number of
  *       selected PCM channels. Keep channel=BSP_AUDIO_TDM_SLOT_COUNT.
  * @note For FL-only capture, use channel_mask=BSP_AUDIO_TDM_SLOT_MASK_FL. For FL+FR capture, use
- *       channel_mask=BSP_AUDIO_TDM_SLOT_MASK_FL_FR. Other slot combinations remain caller-selected.
+ *       channel_mask=BSP_AUDIO_TDM_SLOT_MASK_FL_FR. These resolve to slot0 and slot0|slot2.
  * @note Input gain uses the physical MIC namespace instead: FL is BSP_AUDIO_ES7210_MIC1_FL_MASK and
  *       FL+FR is BSP_AUDIO_ES7210_MIC_MASK_FL_FR. Physical MIC masks and TDM slot masks must not be
  *       interchanged even when an individual bit value happens to match.
