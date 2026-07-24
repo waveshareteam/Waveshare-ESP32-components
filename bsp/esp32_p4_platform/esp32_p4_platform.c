@@ -452,7 +452,30 @@ esp_codec_dev_handle_t bsp_audio_codec_microphone_init(void)
 
 esp_err_t bsp_display_brightness_init(void)
 {
-    bsp_i2c_init();
+#if BSP_LCD_BACKLIGHT != -1
+    const ledc_channel_config_t lcd_backlight_channel = {
+        .gpio_num = BSP_LCD_BACKLIGHT,
+        .speed_mode = LEDC_LOW_SPEED_MODE,
+        .channel = LCD_LEDC_CH,
+        .intr_type = LEDC_INTR_DISABLE,
+        .timer_sel = LEDC_TIMER_1,
+        .duty = 0,
+        .hpoint = 0,
+    };
+    const ledc_timer_config_t lcd_backlight_timer = {
+        .speed_mode = LEDC_LOW_SPEED_MODE,
+        .duty_resolution = LEDC_TIMER_10_BIT,
+        .timer_num = LEDC_TIMER_1,
+        .freq_hz = 5000,
+        .clk_cfg = LEDC_AUTO_CLK,
+    };
+
+    BSP_ERROR_CHECK_RETURN_ERR(ledc_timer_config(&lcd_backlight_timer));
+    BSP_ERROR_CHECK_RETURN_ERR(ledc_channel_config(&lcd_backlight_channel));
+#else
+    BSP_ERROR_CHECK_RETURN_ERR(bsp_i2c_init());
+#endif
+
     return ESP_OK;
 }
 
@@ -467,6 +490,11 @@ esp_err_t bsp_display_brightness_set(int brightness_percent)
         brightness_percent = 0;
     }
 
+#if BSP_LCD_BACKLIGHT != -1
+    uint32_t duty_cycle = (1023 * brightness_percent) / 100;
+    BSP_ERROR_CHECK_RETURN_ERR(ledc_set_duty(LEDC_LOW_SPEED_MODE, LCD_LEDC_CH, duty_cycle));
+    BSP_ERROR_CHECK_RETURN_ERR(ledc_update_duty(LEDC_LOW_SPEED_MODE, LCD_LEDC_CH));
+#else
     uint8_t data = (uint8_t)(255 * brightness_percent * 0.01);
     uint8_t chip_addr = 0x45;
     uint8_t data_addr = 0x96;
@@ -491,6 +519,7 @@ esp_err_t bsp_display_brightness_set(int brightness_percent)
     }
 
     i2c_master_bus_rm_device(dev_handle);
+#endif
 
     return ESP_OK;
 }

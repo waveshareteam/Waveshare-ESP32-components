@@ -77,6 +77,27 @@ menu "Board Support Package(ESP32-P4)"
     endmenu
 
     menu "Display"
+        config BSP_LCD_BACKLIGHT
+            int "LCD backlight GPIO"
+            default -1
+            help
+                GPIO number used to control the LCD backlight.
+                Set to -1 when the signal is not connected.
+
+        config BSP_LCD_RST
+            int "LCD reset GPIO"
+            default -1
+            help
+                GPIO number used to reset the LCD.
+                Set to -1 when the signal is not connected.
+
+        config BSP_LCD_TOUCH_RST
+            int "LCD touch reset GPIO"
+            default -1
+            help
+                GPIO number used to reset the LCD touch controller.
+                Set to -1 when the signal is not connected.
+
         config BSP_LCD_DPI_BUFFER_NUMS
             int "Set number of frame buffers"
             default 3
