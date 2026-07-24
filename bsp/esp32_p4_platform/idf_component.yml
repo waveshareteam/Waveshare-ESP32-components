@@ -13,18 +13,86 @@ dependencies:
     public: true
     rules:
       - if: "idf_version >=6.0"
-  waveshare/esp_lcd_jd9365: "^2.0.0"
-  waveshare/esp_lcd_ili9881c: "^2.0.0"
-  waveshare/esp_lcd_dsi: "^2.0.0"
-  waveshare/esp_lcd_hx8394: "^2.0.0"
-  waveshare/esp_lcd_hi8561: "^2.0.1"
-  waveshare/esp_lcd_axs15260d: "^2.0.1"
-  espressif/esp_lcd_st7701: '*'
-  waveshare/esp_lcd_ota7290b: "^2.0.0"
-  waveshare/esp_lcd_sd5207: "^2.0.1"
-  waveshare/esp_lcd_touch_axs15260d: "^1.0.1"
-  waveshare/esp_lcd_touch_cst3530: "^1.0.1"
-  waveshare/esp_lcd_touch_hi8561: "^1.0.1"
+  waveshare/esp_lcd_jd9365:
+    matches:
+      - if: "$CONFIG{BSP_LCD_TYPE_800_800_3_4_INCH} == True"
+      - if: "$CONFIG{BSP_LCD_TYPE_720_720_4_INCH} == True"
+      - if: "$CONFIG{BSP_LCD_TYPE_800_1280_8_INCH_A} == True"
+      - if: "$CONFIG{BSP_LCD_TYPE_720_1280_9_INCH_B} == True"
+      - if: "$CONFIG{BSP_LCD_TYPE_800_1280_10_1_INCH_A} == True"
+      - if: "$CONFIG{BSP_LCD_TYPE_720_1280_10_1_INCH_B} == True"
+    require: public
+    version: "^2.0.0"
+  waveshare/esp_lcd_ili9881c:
+    matches:
+      - if: "$CONFIG{BSP_LCD_TYPE_720_1280_7_INCH_A} == True"
+    require: public
+    version: "^2.0.0"
+  waveshare/esp_lcd_dsi:
+    matches:
+      - if: "$CONFIG{BSP_LCD_TYPE_800_800_3_4_INCH} == True"
+      - if: "$CONFIG{BSP_LCD_TYPE_720_720_4_INCH} == True"
+      - if: "$CONFIG{BSP_LCD_TYPE_480_800_4_INCH_A} == True"
+      - if: "$CONFIG{BSP_LCD_TYPE_480_800_4_3_INCH_A} == True"
+      - if: "$CONFIG{BSP_LCD_TYPE_540_1168_4_05_INCH} == True"
+      - if: "$CONFIG{BSP_LCD_TYPE_568_1210_4_45_INCH} == True"
+      - if: "$CONFIG{BSP_LCD_TYPE_720_1280_5_INCH_A} == True"
+      - if: "$CONFIG{BSP_LCD_TYPE_452_1280_6_2_INCH} == True"
+      - if: "$CONFIG{BSP_LCD_TYPE_720_1280_7_INCH_A} == True"
+      - if: "$CONFIG{BSP_LCD_TYPE_1024_600_7_INCH_C} == True"
+      - if: "$CONFIG{BSP_LCD_TYPE_800_1280_8_INCH_A} == True"
+      - if: "$CONFIG{BSP_LCD_TYPE_480_1920_8_8_INCH_A} == True"
+      - if: "$CONFIG{BSP_LCD_TYPE_720_1280_9_INCH_B} == True"
+      - if: "$CONFIG{BSP_LCD_TYPE_800_1280_10_1_INCH_A} == True"
+      - if: "$CONFIG{BSP_LCD_TYPE_720_1280_10_1_INCH_B} == True"
+    require: public
+    version: "^2.0.0"
+  waveshare/esp_lcd_hx8394:
+    matches:
+      - if: "$CONFIG{BSP_LCD_TYPE_720_1280_5_INCH_A} == True"
+    require: public
+    version: "^2.0.0"
+  waveshare/esp_lcd_hi8561:
+    matches:
+      - if: "$CONFIG{BSP_LCD_TYPE_540_1168_4_05_INCH} == True"
+    require: public
+    version: "^2.0.1"
+  waveshare/esp_lcd_axs15260d:
+    matches:
+      - if: "$CONFIG{BSP_LCD_TYPE_452_1280_6_2_INCH} == True"
+    require: public
+    version: "^2.0.1"
+  espressif/esp_lcd_st7701:
+    matches:
+      - if: "$CONFIG{BSP_LCD_TYPE_480_800_4_INCH_A} == True"
+      - if: "$CONFIG{BSP_LCD_TYPE_480_800_4_3_INCH_A} == True"
+    require: public
+    version: '*'
+  waveshare/esp_lcd_ota7290b:
+    matches:
+      - if: "$CONFIG{BSP_LCD_TYPE_480_1920_8_8_INCH_A} == True"
+    require: public
+    version: "^2.0.0"
+  waveshare/esp_lcd_sd5207:
+    matches:
+      - if: "$CONFIG{BSP_LCD_TYPE_568_1210_4_45_INCH} == True"
+    require: public
+    version: "^2.0.1"
+  waveshare/esp_lcd_touch_axs15260d:
+    matches:
+      - if: "$CONFIG{BSP_LCD_TYPE_452_1280_6_2_INCH} == True"
+    require: public
+    version: "^1.0.1"
+  waveshare/esp_lcd_touch_cst3530:
+    matches:
+      - if: "$CONFIG{BSP_LCD_TYPE_568_1210_4_45_INCH} == True"
+    require: public
+    version: "^1.0.1"
+  waveshare/esp_lcd_touch_hi8561:
+    matches:
+      - if: "$CONFIG{BSP_LCD_TYPE_540_1168_4_05_INCH} == True"
+    require: public
+    version: "^1.0.1"
   esp_lcd_ek79007: "^2.0.2~1"
 description: a small size and highly integrated development board designed by waveshare
   electronics based on ESP32-P4 chip
@@ -34,4 +102,4 @@ tags:
 targets:
 - esp32p4
 url: https://github.com/waveshareteam/Waveshare-ESP32-components
-version: 2.0.2
+version: 2.0.3
