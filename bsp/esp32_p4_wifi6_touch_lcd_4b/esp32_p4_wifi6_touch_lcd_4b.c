@@ -31,12 +31,29 @@ static TaskHandle_t usb_host_task;  // USB Host Library task
 #if (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 0))
 static i2c_master_bus_handle_t i2c_handle = NULL;  // I2C Handle
 #endif
+typedef enum {
+    BSP_AUDIO_MODE_NONE,
+    BSP_AUDIO_MODE_STD_STD,
+    BSP_AUDIO_MODE_TX_STD_RX_TDM,
+} bsp_audio_mode_t;
+
+static bsp_audio_mode_t audio_mode = BSP_AUDIO_MODE_NONE;
 static i2s_chan_handle_t i2s_tx_chan = NULL;
 static i2s_chan_handle_t i2s_rx_chan = NULL;
 static const audio_codec_data_if_t *i2s_data_if = NULL;  /* Codec data interface */
+
+static esp_codec_dev_handle_t speaker_codec_dev = NULL;
+static const audio_codec_gpio_if_t *speaker_gpio_if = NULL;
+static const audio_codec_ctrl_if_t *speaker_ctrl_if = NULL;
+static const audio_codec_if_t *speaker_codec_if = NULL;
+
+static esp_codec_dev_handle_t microphone_codec_dev = NULL;
+static const audio_codec_ctrl_if_t *microphone_ctrl_if = NULL;
+static const audio_codec_if_t *microphone_codec_if = NULL;
+
 #define BSP_ES7210_CODEC_ADDR  ES7210_CODEC_DEFAULT_ADDR
 
-/* Can be used for `i2s_std_gpio_config_t` and/or `i2s_std_config_t` initialization */
+/* Can be used for I2S STD and TDM GPIO configuration */
 #define BSP_I2S_GPIO_CFG       \
     {                          \
         .mclk = BSP_I2S_MCLK,  \
@@ -51,7 +68,7 @@ static const audio_codec_data_if_t *i2s_data_if = NULL;  /* Codec data interface
         },                     \
     }
 
-/* This configuration is used by default in `bsp_extra_audio_init()` */
+/* This configuration is used by default in bsp_audio_init() */
 #define BSP_I2S_DUPLEX_MONO_CFG(_sample_rate)                                                         \
     {                                                                                                 \
         .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(_sample_rate),                                          \
@@ -180,34 +197,151 @@ esp_err_t bsp_spiffs_unmount(void)
  * I2S Audio Function
  *
  **************************************************************************************************/
-esp_err_t bsp_audio_init(const i2s_std_config_t *i2s_config)
+static void bsp_audio_update_result(esp_err_t *result, esp_err_t error)
 {
-    esp_err_t ret = ESP_FAIL;
-    if (i2s_tx_chan && i2s_rx_chan) {
-        /* Audio was initialized before */
+    if ((*result == ESP_OK) && (error != ESP_OK)) {
+        *result = error;
+    }
+}
+
+static void bsp_audio_update_codec_result(esp_err_t *result, int codec_error)
+{
+    if ((*result == ESP_OK) && (codec_error != ESP_CODEC_DEV_OK)) {
+        *result = ESP_FAIL;
+    }
+}
+
+static bool bsp_audio_has_resources(void)
+{
+    return (audio_mode != BSP_AUDIO_MODE_NONE) ||
+           (i2s_tx_chan != NULL) ||
+           (i2s_rx_chan != NULL) ||
+           (i2s_data_if != NULL) ||
+           (speaker_codec_dev != NULL) ||
+           (speaker_gpio_if != NULL) ||
+           (speaker_ctrl_if != NULL) ||
+           (speaker_codec_if != NULL) ||
+           (microphone_codec_dev != NULL) ||
+           (microphone_ctrl_if != NULL) ||
+           (microphone_codec_if != NULL);
+}
+
+static esp_err_t bsp_audio_delete_speaker_codec(void)
+{
+    esp_err_t ret = ESP_OK;
+
+    if (speaker_codec_dev != NULL) {
+        bsp_audio_update_codec_result(&ret, esp_codec_dev_close(speaker_codec_dev));
+        esp_codec_dev_delete(speaker_codec_dev);
+        speaker_codec_dev = NULL;
+    }
+    if (speaker_codec_if != NULL) {
+        bsp_audio_update_codec_result(&ret, audio_codec_delete_codec_if(speaker_codec_if));
+        speaker_codec_if = NULL;
+    }
+    if (speaker_ctrl_if != NULL) {
+        bsp_audio_update_codec_result(&ret, audio_codec_delete_ctrl_if(speaker_ctrl_if));
+        speaker_ctrl_if = NULL;
+    }
+    if (speaker_gpio_if != NULL) {
+        bsp_audio_update_codec_result(&ret, audio_codec_delete_gpio_if(speaker_gpio_if));
+        speaker_gpio_if = NULL;
+    }
+
+    return ret;
+}
+
+static esp_err_t bsp_audio_delete_microphone_codec(void)
+{
+    esp_err_t ret = ESP_OK;
+
+    if (microphone_codec_dev != NULL) {
+        bsp_audio_update_codec_result(&ret, esp_codec_dev_close(microphone_codec_dev));
+        esp_codec_dev_delete(microphone_codec_dev);
+        microphone_codec_dev = NULL;
+    }
+    if (microphone_codec_if != NULL) {
+        bsp_audio_update_codec_result(&ret, audio_codec_delete_codec_if(microphone_codec_if));
+        microphone_codec_if = NULL;
+    }
+    if (microphone_ctrl_if != NULL) {
+        bsp_audio_update_codec_result(&ret, audio_codec_delete_ctrl_if(microphone_ctrl_if));
+        microphone_ctrl_if = NULL;
+    }
+
+    return ret;
+}
+
+static esp_err_t bsp_audio_delete_i2s_channel(i2s_chan_handle_t *channel)
+{
+    esp_err_t ret = ESP_OK;
+    esp_err_t err;
+
+    if (*channel == NULL) {
         return ESP_OK;
     }
 
-    /* Setup I2S peripheral */
+    err = i2s_channel_disable(*channel);
+    if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
+        ret = err;
+    }
+
+    err = i2s_del_channel(*channel);
+    bsp_audio_update_result(&ret, err);
+    *channel = NULL;
+
+    return ret;
+}
+
+esp_err_t bsp_audio_deinit(void)
+{
+    esp_err_t ret = ESP_OK;
+
+    bsp_audio_update_result(&ret, bsp_audio_delete_microphone_codec());
+    bsp_audio_update_result(&ret, bsp_audio_delete_speaker_codec());
+
+    if (i2s_data_if != NULL) {
+        bsp_audio_update_codec_result(&ret, audio_codec_delete_data_if(i2s_data_if));
+        i2s_data_if = NULL;
+    }
+
+    bsp_audio_update_result(&ret, bsp_audio_delete_i2s_channel(&i2s_rx_chan));
+    bsp_audio_update_result(&ret, bsp_audio_delete_i2s_channel(&i2s_tx_chan));
+    audio_mode = BSP_AUDIO_MODE_NONE;
+
+    return ret;
+}
+
+static esp_err_t bsp_audio_init_channels(const i2s_std_config_t *tx_config,
+                                         const i2s_std_config_t *rx_std_config,
+                                         const i2s_tdm_config_t *rx_tdm_config,
+                                         bsp_audio_mode_t mode)
+{
+    esp_err_t ret = ESP_OK;
+    esp_err_t cleanup_ret;
+
+    if (bsp_audio_has_resources()) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(CONFIG_BSP_I2S_NUM, I2S_ROLE_MASTER);
-    chan_cfg.auto_clear = true; // Auto clear the legacy data in the DMA buffer
-    BSP_ERROR_CHECK_RETURN_ERR(i2s_new_channel(&chan_cfg, &i2s_tx_chan, &i2s_rx_chan));
+    chan_cfg.auto_clear = true;
 
-    /* Setup I2S channels */
-    const i2s_std_config_t std_cfg_default = BSP_I2S_DUPLEX_MONO_CFG(22050);
-    const i2s_std_config_t *p_i2s_cfg = &std_cfg_default;
-    if (i2s_config != NULL) {
-        p_i2s_cfg = i2s_config;
+    ESP_GOTO_ON_ERROR(i2s_new_channel(&chan_cfg, &i2s_tx_chan, &i2s_rx_chan),
+                      err, TAG, "I2S channel creation failed");
+    ESP_GOTO_ON_ERROR(i2s_channel_init_std_mode(i2s_tx_chan, tx_config),
+                      err, TAG, "I2S TX STD initialization failed");
+
+    if (rx_tdm_config != NULL) {
+        ESP_GOTO_ON_ERROR(i2s_channel_init_tdm_mode(i2s_rx_chan, rx_tdm_config),
+                          err, TAG, "I2S RX TDM initialization failed");
+    } else {
+        ESP_GOTO_ON_ERROR(i2s_channel_init_std_mode(i2s_rx_chan, rx_std_config),
+                          err, TAG, "I2S RX STD initialization failed");
     }
 
-    if (i2s_tx_chan != NULL) {
-        ESP_GOTO_ON_ERROR(i2s_channel_init_std_mode(i2s_tx_chan, p_i2s_cfg), err, TAG, "I2S channel initialization failed");
-        ESP_GOTO_ON_ERROR(i2s_channel_enable(i2s_tx_chan), err, TAG, "I2S enabling failed");
-    }
-    if (i2s_rx_chan != NULL) {
-        ESP_GOTO_ON_ERROR(i2s_channel_init_std_mode(i2s_rx_chan, p_i2s_cfg), err, TAG, "I2S channel initialization failed");
-        ESP_GOTO_ON_ERROR(i2s_channel_enable(i2s_rx_chan), err, TAG, "I2S enabling failed");
-    }
+    ESP_GOTO_ON_ERROR(i2s_channel_enable(i2s_tx_chan), err, TAG, "I2S TX enabling failed");
+    ESP_GOTO_ON_ERROR(i2s_channel_enable(i2s_rx_chan), err, TAG, "I2S RX enabling failed");
 
     audio_codec_i2s_cfg_t i2s_cfg = {
         .port = CONFIG_BSP_I2S_NUM,
@@ -215,49 +349,111 @@ esp_err_t bsp_audio_init(const i2s_std_config_t *i2s_config)
         .tx_handle = i2s_tx_chan,
     };
     i2s_data_if = audio_codec_new_i2s_data(&i2s_cfg);
-    BSP_NULL_CHECK_GOTO(i2s_data_if, err);
+    if (i2s_data_if == NULL) {
+        ret = ESP_ERR_NO_MEM;
+        goto err;
+    }
 
+    audio_mode = mode;
     return ESP_OK;
 
 err:
-    if (i2s_tx_chan) {
-        i2s_del_channel(i2s_tx_chan);
+    cleanup_ret = bsp_audio_deinit();
+    if (cleanup_ret != ESP_OK) {
+        ESP_LOGE(TAG, "Audio cleanup failed: %s", esp_err_to_name(cleanup_ret));
     }
-    if (i2s_rx_chan) {
-        i2s_del_channel(i2s_rx_chan);
+    return ret;
+}
+
+esp_err_t bsp_audio_init(const i2s_std_config_t *i2s_config)
+{
+    if ((audio_mode == BSP_AUDIO_MODE_STD_STD) &&
+            (i2s_tx_chan != NULL) && (i2s_rx_chan != NULL) && (i2s_data_if != NULL)) {
+        return ESP_OK;
+    }
+    if (bsp_audio_has_resources()) {
+        return ESP_ERR_INVALID_STATE;
     }
 
-    return ret;
+    const i2s_std_config_t std_cfg_default = BSP_I2S_DUPLEX_MONO_CFG(22050);
+    const i2s_std_config_t *std_config = (i2s_config != NULL) ? i2s_config : &std_cfg_default;
+
+    return bsp_audio_init_channels(std_config, std_config, NULL, BSP_AUDIO_MODE_STD_STD);
+}
+
+esp_err_t bsp_audio_init_tx_std_rx_tdm(const i2s_std_config_t *tx_config,
+                                       const i2s_tdm_config_t *rx_config)
+{
+    if (bsp_audio_has_resources()) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    if (tx_config == NULL || rx_config == NULL ||
+            tx_config->clk_cfg.sample_rate_hz != rx_config->clk_cfg.sample_rate_hz) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    return bsp_audio_init_channels(tx_config, NULL, rx_config, BSP_AUDIO_MODE_TX_STD_RX_TDM);
+}
+
+esp_err_t bsp_audio_init_voice_24k(void)
+{
+    i2s_std_config_t tx_config = {
+        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(24000),
+        .slot_cfg = I2S_STD_PHILIP_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
+        .gpio_cfg = BSP_I2S_GPIO_CFG,
+    };
+    i2s_tdm_config_t rx_config = {
+        .clk_cfg = I2S_TDM_CLK_DEFAULT_CONFIG(24000),
+        .slot_cfg = I2S_TDM_PHILIP_SLOT_DEFAULT_CONFIG(
+            I2S_DATA_BIT_WIDTH_16BIT,
+            I2S_SLOT_MODE_STEREO,
+            I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3),
+        .gpio_cfg = BSP_I2S_GPIO_CFG,
+    };
+
+    tx_config.clk_cfg.mclk_multiple = I2S_MCLK_MULTIPLE_256;
+    tx_config.gpio_cfg.din = I2S_GPIO_UNUSED;
+    rx_config.clk_cfg.mclk_multiple = I2S_MCLK_MULTIPLE_256;
+    rx_config.clk_cfg.bclk_div = 8;
+    rx_config.slot_cfg.total_slot = BSP_AUDIO_TDM_SLOT_COUNT;
+    rx_config.gpio_cfg.dout = I2S_GPIO_UNUSED;
+
+    return bsp_audio_init_tx_std_rx_tdm(&tx_config, &rx_config);
 }
 
 esp_codec_dev_handle_t bsp_audio_codec_speaker_init(void)
 {
+    if (speaker_codec_dev != NULL) {
+        return speaker_codec_dev;
+    }
+
+    BSP_ERROR_CHECK_RETURN_NULL(bsp_i2c_init());
     if (i2s_data_if == NULL) {
-        /* Initilize I2C */
-        BSP_ERROR_CHECK_RETURN_NULL(bsp_i2c_init());
-        /* Configure I2S peripheral and Power Amplifier */
         BSP_ERROR_CHECK_RETURN_NULL(bsp_audio_init(NULL));
     }
-    assert(i2s_data_if);
 
-    const audio_codec_gpio_if_t *gpio_if = audio_codec_new_gpio();
+    speaker_gpio_if = audio_codec_new_gpio();
+    if (speaker_gpio_if == NULL) {
+        goto err;
+    }
 
     audio_codec_i2c_cfg_t i2c_cfg = {
         .port = BSP_I2C_NUM,
         .addr = ES8311_CODEC_DEFAULT_ADDR,
         .bus_handle = i2c_handle,
     };
-    const audio_codec_ctrl_if_t *i2c_ctrl_if = audio_codec_new_i2c_ctrl(&i2c_cfg);
-    BSP_NULL_CHECK(i2c_ctrl_if, NULL);
+    speaker_ctrl_if = audio_codec_new_i2c_ctrl(&i2c_cfg);
+    if (speaker_ctrl_if == NULL) {
+        goto err;
+    }
 
     esp_codec_dev_hw_gain_t gain = {
         .pa_voltage = 5.0,
         .codec_dac_voltage = 3.3,
     };
-
     es8311_codec_cfg_t es8311_cfg = {
-        .ctrl_if = i2c_ctrl_if,
-        .gpio_if = gpio_if,
+        .ctrl_if = speaker_ctrl_if,
+        .gpio_if = speaker_gpio_if,
         .codec_mode = ESP_CODEC_DEV_WORK_MODE_DAC,
         .pa_pin = BSP_POWER_AMP_IO,
         .pa_reverted = false,
@@ -268,47 +464,74 @@ esp_codec_dev_handle_t bsp_audio_codec_speaker_init(void)
         .invert_sclk = false,
         .hw_gain = gain,
     };
-    const audio_codec_if_t *es8311_dev = es8311_codec_new(&es8311_cfg);
-    BSP_NULL_CHECK(es8311_dev, NULL);
+    speaker_codec_if = es8311_codec_new(&es8311_cfg);
+    if (speaker_codec_if == NULL) {
+        goto err;
+    }
 
     esp_codec_dev_cfg_t codec_dev_cfg = {
         .dev_type = ESP_CODEC_DEV_TYPE_OUT,
-        .codec_if = es8311_dev,
+        .codec_if = speaker_codec_if,
         .data_if = i2s_data_if,
     };
-    return esp_codec_dev_new(&codec_dev_cfg);
+    speaker_codec_dev = esp_codec_dev_new(&codec_dev_cfg);
+    if (speaker_codec_dev == NULL) {
+        goto err;
+    }
+
+    return speaker_codec_dev;
+
+err:
+    bsp_audio_delete_speaker_codec();
+    return NULL;
 }
 
 esp_codec_dev_handle_t bsp_audio_codec_microphone_init(void)
 {
+    if (microphone_codec_dev != NULL) {
+        return microphone_codec_dev;
+    }
+
+    BSP_ERROR_CHECK_RETURN_NULL(bsp_i2c_init());
     if (i2s_data_if == NULL) {
-        /* Initilize I2C */
-        BSP_ERROR_CHECK_RETURN_NULL(bsp_i2c_init());
-        /* Configure I2S peripheral and Power Amplifier */
         BSP_ERROR_CHECK_RETURN_NULL(bsp_audio_init(NULL));
     }
-    assert(i2s_data_if);
 
     audio_codec_i2c_cfg_t i2c_cfg = {
         .port = BSP_I2C_NUM,
         .addr = BSP_ES7210_CODEC_ADDR,
         .bus_handle = i2c_handle,
     };
-    const audio_codec_ctrl_if_t *i2c_ctrl_if = audio_codec_new_i2c_ctrl(&i2c_cfg);
-    BSP_NULL_CHECK(i2c_ctrl_if, NULL);
+    microphone_ctrl_if = audio_codec_new_i2c_ctrl(&i2c_cfg);
+    if (microphone_ctrl_if == NULL) {
+        goto err;
+    }
 
     es7210_codec_cfg_t es7210_cfg = {
-        .ctrl_if = i2c_ctrl_if,
+        .ctrl_if = microphone_ctrl_if,
+        .mic_selected = (audio_mode == BSP_AUDIO_MODE_TX_STD_RX_TDM) ?
+                        BSP_AUDIO_ES7210_CONNECTED_MIC_MASK : 0,
     };
-    const audio_codec_if_t *es7210_dev = es7210_codec_new(&es7210_cfg);
-    BSP_NULL_CHECK(es7210_dev, NULL);
+    microphone_codec_if = es7210_codec_new(&es7210_cfg);
+    if (microphone_codec_if == NULL) {
+        goto err;
+    }
 
-    esp_codec_dev_cfg_t codec_es7210_dev_cfg = {
+    esp_codec_dev_cfg_t codec_dev_cfg = {
         .dev_type = ESP_CODEC_DEV_TYPE_IN,
-        .codec_if = es7210_dev,
+        .codec_if = microphone_codec_if,
         .data_if = i2s_data_if,
     };
-    return esp_codec_dev_new(&codec_es7210_dev_cfg);
+    microphone_codec_dev = esp_codec_dev_new(&codec_dev_cfg);
+    if (microphone_codec_dev == NULL) {
+        goto err;
+    }
+
+    return microphone_codec_dev;
+
+err:
+    bsp_audio_delete_microphone_codec();
+    return NULL;
 }
 
 // Bit number used to represent command and parameter
@@ -480,6 +703,17 @@ err:
 
 esp_err_t bsp_touch_new(const bsp_touch_config_t *config, esp_lcd_touch_handle_t *ret_touch)
 {
+    const bsp_touch_config_t default_config = {
+        .flags = {
+            .swap_xy = 0,
+            .mirror_x = 0,
+            .mirror_y = 0,
+        },
+    };
+    if (config == NULL) {
+        config = &default_config;
+    }
+
     /* Initilize I2C */
     BSP_ERROR_CHECK_RETURN_ERR(bsp_i2c_init());
 
@@ -499,9 +733,9 @@ esp_err_t bsp_touch_new(const bsp_touch_config_t *config, esp_lcd_touch_handle_t
             .interrupt = 0,
         },
         .flags = {
-            .swap_xy = 0,
-            .mirror_x = 0,
-            .mirror_y = 0,
+            .swap_xy = config->flags.swap_xy,
+            .mirror_x = config->flags.mirror_x,
+            .mirror_y = config->flags.mirror_y,
         },
     };
     esp_lcd_panel_io_handle_t tp_io_handle = NULL;
@@ -520,106 +754,74 @@ static lv_display_t *bsp_display_lcd_init(const bsp_display_cfg_t *cfg)
 
     /* Add LCD screen */
     ESP_LOGD(TAG, "Add LCD screen");
-    const lvgl_port_display_cfg_t disp_cfg = {
-        .io_handle = lcd_panels.io,
-        .panel_handle = lcd_panels.panel,
-        .control_handle = lcd_panels.control,
-        .buffer_size = cfg->buffer_size,
-        .double_buffer = cfg->double_buffer,
-        .hres = BSP_LCD_H_RES,
-        .vres = BSP_LCD_V_RES,
-        .monochrome = false,
-        /* Rotation values must be same as used in esp_lcd for initial settings of the screen */
-        .rotation = {
-            .swap_xy = false,
-            .mirror_x = false,
-            .mirror_y = false,
+    const esp_lv_adapter_display_config_t disp_cfg = {
+        .panel = lcd_panels.panel,
+        .panel_io = lcd_panels.io,
+        .profile = {
+            .interface = ESP_LV_ADAPTER_PANEL_IF_MIPI_DSI,
+            .rotation = cfg->rotation,
+            .hor_res = BSP_LCD_H_RES,
+            .ver_res = BSP_LCD_V_RES,
+            .buffer_height = 50,
+            .use_psram = false,
+            .enable_ppa_accel = false,
+            .require_double_buffer = false,
         },
-#if LVGL_VERSION_MAJOR >= 9
-#if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
-        .color_format = LV_COLOR_FORMAT_RGB888,
-#else
-        .color_format = LV_COLOR_FORMAT_RGB565,
-#endif
-#endif
-        .flags = {
-            .buff_dma = cfg->flags.buff_dma,
-            .buff_spiram = cfg->flags.buff_spiram,
-#if LVGL_VERSION_MAJOR >= 9
-            .swap_bytes = (BSP_LCD_BIGENDIAN ? true : false),
-#endif
-#if CONFIG_BSP_DISPLAY_LVGL_AVOID_TEAR
-            .sw_rotate = false,                /* Avoid tearing is not supported for SW rotation */
-#else
-            .sw_rotate = cfg->flags.sw_rotate, /* Only SW rotation is supported for 90° and 270° */
-#endif
-#if CONFIG_BSP_DISPLAY_LVGL_FULL_REFRESH
-            .full_refresh = true,
-#elif CONFIG_BSP_DISPLAY_LVGL_DIRECT_MODE
-            .direct_mode = true,
-#endif
-        }
+        .tear_avoid_mode = cfg->tear_avoid_mode,
     };
 
-    const lvgl_port_display_dsi_cfg_t dpi_cfg = {
-        .flags = {
-#if CONFIG_BSP_DISPLAY_LVGL_AVOID_TEAR
-            .avoid_tearing = true,
-#else
-            .avoid_tearing = false,
-#endif
-        }
-    };
-
-    return lvgl_port_add_disp_dsi(&disp_cfg, &dpi_cfg);
+    return esp_lv_adapter_register_display(&disp_cfg);
 }
 
-static lv_indev_t *bsp_display_indev_init(lv_display_t *disp)
+static lv_indev_t *bsp_display_indev_init(const bsp_display_cfg_t *cfg, lv_display_t *disp)
 {
+    assert(cfg != NULL);
     esp_lcd_touch_handle_t tp;
-    BSP_ERROR_CHECK_RETURN_NULL(bsp_touch_new(NULL, &tp));
+    const bsp_touch_config_t touch_config = {
+        .flags = {
+            .swap_xy = cfg->touch_flags.swap_xy,
+            .mirror_x = cfg->touch_flags.mirror_x,
+            .mirror_y = cfg->touch_flags.mirror_y,
+        },
+    };
+    BSP_ERROR_CHECK_RETURN_NULL(bsp_touch_new(&touch_config, &tp));
     assert(tp);
 
     /* Add touch input (for selected screen) */
-    const lvgl_port_touch_cfg_t touch_cfg = {
-        .disp = disp,
-        .handle = tp,
-    };
+    const esp_lv_adapter_touch_config_t touch_cfg = ESP_LV_ADAPTER_TOUCH_DEFAULT_CONFIG(disp, tp);
 
-    return lvgl_port_add_touch(&touch_cfg);
+    return esp_lv_adapter_register_touch(&touch_cfg);
 }
 
 lv_display_t *bsp_display_start(void)
 {
     bsp_display_cfg_t cfg = {
-        .lvgl_port_cfg = ESP_LVGL_PORT_INIT_CONFIG(),
-        .buffer_size = BSP_LCD_DRAW_BUFF_SIZE,
-        .double_buffer = BSP_LCD_DRAW_BUFF_DOUBLE,
-        .flags = {
-#if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
-            .buff_dma = false,
-#else
-            .buff_dma = true,
-#endif
-            .buff_spiram = false,
-            .sw_rotate = true,
-        }
+        .lv_adapter_cfg = ESP_LV_ADAPTER_DEFAULT_CONFIG(),
+        .rotation = ESP_LV_ADAPTER_ROTATE_0,
+        .tear_avoid_mode = ESP_LV_ADAPTER_TEAR_AVOID_MODE_TRIPLE_PARTIAL,
+        .touch_flags = {
+            .swap_xy = 0,
+            .mirror_x = 0,
+            .mirror_y = 0,
+        },
     };
     return bsp_display_start_with_config(&cfg);
 }
 
-lv_display_t *bsp_display_start_with_config(const bsp_display_cfg_t *cfg)
+lv_display_t *bsp_display_start_with_config(bsp_display_cfg_t *cfg)
 {
     lv_display_t *disp;
 
     assert(cfg != NULL);
-    BSP_ERROR_CHECK_RETURN_NULL(lvgl_port_init(&cfg->lvgl_port_cfg));
+    BSP_ERROR_CHECK_RETURN_NULL(esp_lv_adapter_init(&cfg->lv_adapter_cfg));
 
     BSP_ERROR_CHECK_RETURN_NULL(bsp_display_brightness_init());
 
     BSP_NULL_CHECK(disp = bsp_display_lcd_init(cfg), NULL);
 
-    BSP_NULL_CHECK(disp_indev = bsp_display_indev_init(disp), NULL);
+    BSP_NULL_CHECK(disp_indev = bsp_display_indev_init(cfg, disp), NULL);
+
+    ESP_ERROR_CHECK(esp_lv_adapter_start());
 
     return disp;
 }
@@ -634,14 +836,14 @@ void bsp_display_rotate(lv_display_t *disp, lv_disp_rotation_t rotation)
     lv_disp_set_rotation(disp, rotation);
 }
 
-bool bsp_display_lock(uint32_t timeout_ms)
+bool bsp_display_lock(int32_t timeout_ms)
 {
-    return lvgl_port_lock(timeout_ms);
+    return esp_lv_adapter_lock(timeout_ms) == ESP_OK;
 }
 
 void bsp_display_unlock(void)
 {
-    lvgl_port_unlock();
+    esp_lv_adapter_unlock();
 }
 
 #endif // (BSP_CONFIG_NO_GRAPHIC_LIB == 0)

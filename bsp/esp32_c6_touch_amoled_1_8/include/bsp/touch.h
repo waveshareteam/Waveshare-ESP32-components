@@ -10,15 +10,15 @@ extern "C" {
  *
  */
 typedef struct {
-    struct {
-        unsigned int swap_xy: 1;   /*!< Swap X and Y after reading coordinates */
-        unsigned int mirror_x: 1;  /*!< Mirror X after reading coordinates */
-        unsigned int mirror_y: 1;  /*!< Mirror Y after reading coordinates */
-    } flags;
+    void *dummy;    /*!< Prepared for future use. */
 } bsp_touch_config_t;
 
 /**
  * @brief Create new touchscreen
+ *
+ * This function automatically probes the board and creates the compatible
+ * CST816S driver for the V2 CST820 touch controller, or the FT5x06 driver
+ * for V1.
  *
  * If you want to free resources allocated by this function, you can use esp_lcd_touch API, ie.:
  *

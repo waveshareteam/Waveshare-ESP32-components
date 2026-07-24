@@ -42,8 +42,8 @@ jobs:
       matrix:
         component: ${{ fromJson(needs.manifest-check.outputs.components) }}
         idf_version:
-          - release-v5.5
-          - release-v6.0
+          - v5.5.5
+          - v6.0.2
     steps:
       - uses: actions/checkout@v4
         with:
