@@ -22,7 +22,7 @@ Selection color format `Board Support Package(ESP32-P4) --> Display --> Select L
 |  Capability |     Available    |                                                 Component                                                |Version|
 |-------------|------------------|----------------------------------------------------------------------------------------------------------|-------|
 |   DISPLAY   |:heavy_check_mark:|    [espressif/esp_lcd_ek79007](https://components.espressif.com/components/espressif/esp_lcd_ek79007)    |  1.*  |
-|  LVGL_PORT  |:heavy_check_mark:|      [espressif/esp_lvgl_port](https://components.espressif.com/components/espressif/esp_lvgl_port)      |   ^2  |
+| LVGL_ADAPTER|:heavy_check_mark:| [espressif/esp_lvgl_adapter](https://components.espressif.com/components/espressif/esp_lvgl_adapter)    | ~0.6  |
 |    TOUCH    |:heavy_check_mark:|[espressif/esp_lcd_touch_gt911](https://components.espressif.com/components/espressif/esp_lcd_touch_gt911)|   ^1  |
 |   BUTTONS   |        :x:       |                                                                                                          |       |
 |    AUDIO    |:heavy_check_mark:|      [espressif/esp_codec_dev](https://components.espressif.com/components/espressif/esp_codec_dev)      | 1.2.* |

@@ -111,7 +111,7 @@ bsp_display_brightness_set(100);
 |   DISPLAY   |:heavy_check_mark:| [waveshare/esp_lcd_ili9881c](https://components.espressif.com/components/waveshare/esp_lcd_ili9881c)     | 1.0.1   |
 |   DISPLAY   |:heavy_check_mark:| [waveshare/esp_lcd_hx8394](https://components.espressif.com/components/waveshare/esp_lcd_hx8394)       | 1.0.2   |
 |   DISPLAY   |:heavy_check_mark:| [waveshare/esp_lcd_dsi](https://components.espressif.com/components/waveshare/esp_lcd_dsi)               | 1.0.3   |
-|  LVGL_PORT  |:heavy_check_mark:| [espressif/esp_lvgl_port](https://components.espressif.com/components/espressif/esp_lvgl_port)           | ^2      |
+| LVGL_ADAPTER|:heavy_check_mark:| [espressif/esp_lvgl_adapter](https://components.espressif.com/components/espressif/esp_lvgl_adapter)     | ~0.6    |
 |    TOUCH    |:heavy_check_mark:| [espressif/esp_lcd_touch_gt911](https://components.espressif.com/components/espressif/esp_lcd_touch_gt911) | ^1      |
 |   BUTTONS   |        :x:       |                                                                                                          |         |
 |    AUDIO    |:heavy_check_mark:| [espressif/esp_codec_dev](https://components.espressif.com/components/espressif/esp_codec_dev)           | 1.2.*   |

@@ -1,4 +1,4 @@
-version: 2.0.0
+version: 2.0.1
 description: Board Support Package (BSP) for Waveshare ESP32-S3-CAM-OVxxxx
 url: https://www.waveshare.com/esp32-s3-cam-ovxxxx.htm
 
@@ -17,7 +17,7 @@ dependencies:
   idf: ">=5.3"
   lvgl/lvgl: ">=8,<10"
   espressif/esp_lvgl_adapter:
-    version: "^0.1.*"
+    version: "~0.6"
     public: true
   espressif/esp_lcd_touch_cst816s: ^1.1.0
   esp_codec_dev:

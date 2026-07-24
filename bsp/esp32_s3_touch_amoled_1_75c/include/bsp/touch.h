@@ -10,11 +10,7 @@ extern "C" {
  *
  */
 typedef struct {
-    struct {
-        unsigned int swap_xy: 1;   /*!< Swap X and Y after reading coordinates */
-        unsigned int mirror_x: 1;  /*!< Mirror X after reading coordinates */
-        unsigned int mirror_y: 1;  /*!< Mirror Y after reading coordinates */
-    } flags;
+    void *dummy;    /*!< Prepared for future use. */
 } bsp_touch_config_t;
 
 /**
@@ -32,7 +28,7 @@ typedef struct {
  *      - ESP_OK         On success
  *      - Else           esp_lcd_touch failure
  */
-esp_err_t bsp_touch_new(const bsp_touch_config_t *config, esp_lcd_touch_handle_t *ret_touch);
+esp_err_t bsp_touch_new(const bsp_display_cfg_t *cfg, esp_lcd_touch_handle_t *ret_touch);
 
 #ifdef __cplusplus
 }
