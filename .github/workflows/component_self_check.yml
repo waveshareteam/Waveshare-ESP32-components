@@ -56,3 +56,24 @@ jobs:
         run: |
           . "$IDF_PATH/export.sh"
           python .github/scripts/build_changed_component.py
+
+  ci-gate:
+    needs:
+      - manifest-check
+      - build-components
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify all CI jobs passed
+        env:
+          MANIFEST_RESULT: ${{ needs.manifest-check.result }}
+          BUILD_RESULT: ${{ needs.build-components.result }}
+          BUILD_COUNT: ${{ needs.manifest-check.outputs.count }}
+        shell: bash
+        run: |
+          test "$MANIFEST_RESULT" = "success"
+          if [ "$BUILD_COUNT" = "0" ]; then
+            test "$BUILD_RESULT" = "skipped"
+          else
+            test "$BUILD_RESULT" = "success"
+          fi
