@@ -1,0 +1,16 @@
+menu "AXS15260D LCD"
+
+    choice ESP_LCD_AXS15260D_SCAN_DIR
+        prompt "AXS15260D scan direction"
+        default ESP_LCD_AXS15260D_SCAN_FORWARD
+        help
+            Select the vendor initialization table for panel scan direction.
+
+        config ESP_LCD_AXS15260D_SCAN_REVERSE
+            bool "Reverse scan"
+
+        config ESP_LCD_AXS15260D_SCAN_FORWARD
+            bool "Forward scan"
+    endchoice
+
+endmenu

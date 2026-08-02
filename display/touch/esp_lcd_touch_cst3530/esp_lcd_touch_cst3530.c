@@ -97,14 +97,12 @@ esp_err_t esp_lcd_touch_new_i2c_cst3530(const esp_lcd_panel_io_handle_t io, cons
 {
     esp_err_t ret = ESP_OK;
 
-    ESP_RETURN_ON_FALSE(io != NULL, ESP_ERR_INVALID_ARG, TAG, "invalid io");
     ESP_RETURN_ON_FALSE(config != NULL, ESP_ERR_INVALID_ARG, TAG, "invalid config");
     ESP_RETURN_ON_FALSE(out_touch != NULL, ESP_ERR_INVALID_ARG, TAG, "invalid out_touch");
 
     esp_lcd_touch_handle_t tp = heap_caps_calloc(1, sizeof(esp_lcd_touch_t), MALLOC_CAP_DEFAULT);
     ESP_GOTO_ON_FALSE(tp, ESP_ERR_NO_MEM, err, TAG, "no mem");
 
-    tp->io = io;
     tp->read_data = esp_lcd_touch_cst3530_read_data;
     tp->get_xy = esp_lcd_touch_cst3530_get_xy;
     tp->get_track_id = esp_lcd_touch_cst3530_get_track_id;

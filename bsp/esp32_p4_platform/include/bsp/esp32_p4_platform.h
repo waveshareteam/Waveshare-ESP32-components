@@ -43,9 +43,9 @@
 #define BSP_I2S_DSIN          (GPIO_NUM_11)
 #define BSP_POWER_AMP_IO      (GPIO_NUM_53)
 
-#define BSP_LCD_BACKLIGHT     (GPIO_NUM_NC)
-#define BSP_LCD_RST           (GPIO_NUM_NC)
-#define BSP_LCD_TOUCH_RST     (GPIO_NUM_NC)
+#define BSP_LCD_BACKLIGHT     CONFIG_BSP_LCD_BACKLIGHT
+#define BSP_LCD_RST           CONFIG_BSP_LCD_RST
+#define BSP_LCD_TOUCH_RST     CONFIG_BSP_LCD_TOUCH_RST
 #define BSP_LCD_TOUCH_INT     (GPIO_NUM_NC)
 
 /* uSD card */

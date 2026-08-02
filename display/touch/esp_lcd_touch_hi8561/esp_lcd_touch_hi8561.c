@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include "driver/i2c.h"
 #include "driver/i2c_master.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -36,6 +37,10 @@ static const char *TAG = "HI8561";
 #define SINGLE_TOUCH_POINT_DATA_SIZE        5
 #define MAX_TOUCH_FINGER_COUNT              10
 
+typedef struct {
+    i2c_master_dev_handle_t dev_handle;
+} hi8561_i2c_ctx_t;
+
 /*******************************************************************************
 * Function definitions
 *******************************************************************************/
@@ -45,8 +50,8 @@ static bool esp_lcd_touch_hi8561_get_xy(esp_lcd_touch_handle_t tp, uint16_t *x, 
 static esp_err_t esp_lcd_touch_hi8561_del(esp_lcd_touch_handle_t tp);
 
 /* I2C read/write */
-static esp_err_t touch_hi8561_i2c_read(esp_lcd_touch_handle_t tp, uint8_t *sbuff, uint8_t sbuff_len, uint8_t *data, uint8_t len);
-static esp_err_t touch_hi8561_i2c_write(esp_lcd_touch_handle_t tp, uint8_t *buff, uint8_t buff_len);
+static esp_err_t touch_hi8561_i2c_read(esp_lcd_touch_handle_t tp, uint8_t *cmd, uint8_t cmd_len, uint8_t *data, uint8_t data_len);
+static esp_err_t touch_hi8561_i2c_write_cmd(esp_lcd_touch_handle_t tp, uint8_t *buff, uint8_t buff_len);
 
 /* HI8561 reset */
 static esp_err_t touch_hi8561_reset(esp_lcd_touch_handle_t tp);
@@ -64,7 +69,6 @@ esp_err_t esp_lcd_touch_new_i2c_hi8561(const esp_lcd_panel_io_handle_t io, const
 {
     esp_err_t ret = ESP_OK;
 
-    ESP_RETURN_ON_FALSE(io != NULL, ESP_ERR_INVALID_ARG, TAG, "Touch controller io handle can't be NULL");
     ESP_RETURN_ON_FALSE(config != NULL, ESP_ERR_INVALID_ARG, TAG,
                         "Pointer to the touch controller configuration can't be NULL");
     ESP_RETURN_ON_FALSE(out_touch != NULL, ESP_ERR_INVALID_ARG, TAG,
@@ -75,7 +79,6 @@ esp_err_t esp_lcd_touch_new_i2c_hi8561(const esp_lcd_panel_io_handle_t io, const
     ESP_GOTO_ON_FALSE(esp_lcd_touch_hi8561, ESP_ERR_NO_MEM, err, TAG, "no mem for HI8561 controller");
 
     /* Communication interface */
-    esp_lcd_touch_hi8561->io = io;
 
     /* Only supported callbacks are set */
     esp_lcd_touch_hi8561->read_data = esp_lcd_touch_hi8561_read_data;
@@ -87,8 +90,26 @@ esp_err_t esp_lcd_touch_new_i2c_hi8561(const esp_lcd_panel_io_handle_t io, const
 
     /* Save config */
     memcpy(&esp_lcd_touch_hi8561->config, config, sizeof(esp_lcd_touch_config_t));
-    esp_lcd_touch_io_hi8561_config_t *hi8561_config = (esp_lcd_touch_io_hi8561_config_t *)
-            esp_lcd_touch_hi8561->config.driver_data;
+
+    /* ---- Setup direct I2C (bypass panel IO) ---- */
+    i2c_master_bus_handle_t bus = (i2c_master_bus_handle_t)esp_lcd_touch_hi8561->config.driver_data;
+    if (bus != NULL) {
+        hi8561_i2c_ctx_t *ctx = (hi8561_i2c_ctx_t *)heap_caps_calloc(1, sizeof(hi8561_i2c_ctx_t), MALLOC_CAP_DEFAULT);
+        ESP_GOTO_ON_FALSE(ctx, ESP_ERR_NO_MEM, err, TAG, "no mem for I2C ctx");
+
+        i2c_device_config_t dev_cfg = {
+            .dev_addr_length = I2C_ADDR_BIT_LEN_7,
+            .device_address = ESP_LCD_TOUCH_IO_I2C_HI8561_ADDRESS,
+            .scl_speed_hz = 100000,
+        };
+        ESP_GOTO_ON_ERROR(i2c_master_bus_add_device(bus, &dev_cfg, &ctx->dev_handle), err, TAG, "add I2C dev failed");
+        esp_lcd_touch_hi8561->config.driver_data = (void *)ctx;
+        ESP_LOGD(TAG, "I2C direct (addr=0x%02X)", ESP_LCD_TOUCH_IO_I2C_HI8561_ADDRESS);
+    } else {
+        ESP_LOGE(TAG, "No I2C bus handle in driver_data");
+        ret = ESP_ERR_INVALID_ARG;
+        goto err;
+    }
 
     /* Prepare pin for touch controller reset */
     if (esp_lcd_touch_hi8561->config.rst_gpio_num != GPIO_NUM_NC) {
@@ -100,8 +121,9 @@ esp_err_t esp_lcd_touch_new_i2c_hi8561(const esp_lcd_panel_io_handle_t io, const
         ESP_GOTO_ON_ERROR(ret, err, TAG, "GPIO config failed");
     }
 
-    if (hi8561_config && esp_lcd_touch_hi8561->config.rst_gpio_num != GPIO_NUM_NC
-            && esp_lcd_touch_hi8561->config.int_gpio_num != GPIO_NUM_NC) {
+    if ((esp_lcd_touch_hi8561->config.rst_gpio_num != GPIO_NUM_NC) && 
+        (esp_lcd_touch_hi8561->config.int_gpio_num != GPIO_NUM_NC)) 
+    {
         /* Prepare pin for touch controller int */
         const gpio_config_t int_gpio_config = {
             .mode = GPIO_MODE_OUTPUT,
@@ -123,7 +145,9 @@ esp_err_t esp_lcd_touch_new_i2c_hi8561(const esp_lcd_panel_io_handle_t io, const
         vTaskDelay(pdMS_TO_TICKS(10));
 
         vTaskDelay(pdMS_TO_TICKS(50));
-    } else {
+    } 
+    else 
+    {
         ESP_LOGI(TAG, "I2C address initialization procedure skipped - using default GT9xx setup");
         /* Reset controller */
         ret = touch_hi8561_reset(esp_lcd_touch_hi8561);
@@ -298,6 +322,15 @@ static esp_err_t esp_lcd_touch_hi8561_del(esp_lcd_touch_handle_t tp)
 {
     ESP_RETURN_ON_FALSE(tp != NULL, ESP_ERR_INVALID_ARG, TAG, "Touch controller handle can't be NULL");
 
+    hi8561_i2c_ctx_t *ctx = (hi8561_i2c_ctx_t *)tp->config.driver_data;
+    if (ctx) {
+        if (ctx->dev_handle) {
+            i2c_master_bus_rm_device(ctx->dev_handle);
+        }
+        tp->config.driver_data = NULL;
+        free(ctx);
+    }
+
     /* Reset GPIO pin settings */
     if (tp->config.int_gpio_num != GPIO_NUM_NC) {
         gpio_reset_pin(tp->config.int_gpio_num);
@@ -362,22 +395,25 @@ static esp_err_t touch_hi8561_read_info_start_address(esp_lcd_touch_handle_t tp)
     return ESP_OK;
 }
 
-static esp_err_t touch_hi8561_i2c_read(esp_lcd_touch_handle_t tp, uint8_t *sbuff, uint8_t sbuff_len, uint8_t *data, uint8_t len)
+static esp_err_t touch_hi8561_i2c_read(esp_lcd_touch_handle_t tp, uint8_t *cmd, uint8_t cmd_len, uint8_t *data, uint8_t data_len)
 {
-    ESP_RETURN_ON_FALSE(tp != NULL, ESP_ERR_INVALID_ARG, TAG, "Touch controller handle can't be NULL");
-    ESP_RETURN_ON_FALSE(data != NULL, ESP_ERR_INVALID_ARG, TAG, "Pointer to the data array can't be NULL");
+    ESP_RETURN_ON_FALSE(tp && data, ESP_ERR_INVALID_ARG, TAG, "bad args");
 
-    i2c_master_dev_handle_t iic_dev = (i2c_master_dev_handle_t)tp->config.user_data;
-    return i2c_master_transmit_receive(iic_dev, sbuff, sbuff_len, data, len, pdMS_TO_TICKS(1000));
+    hi8561_i2c_ctx_t *ctx = (hi8561_i2c_ctx_t *)tp->config.driver_data;
+    ESP_RETURN_ON_FALSE(ctx && ctx->dev_handle, ESP_ERR_INVALID_STATE, TAG, "I2C ctx not ready");
+
+    return i2c_master_transmit_receive(ctx->dev_handle, cmd, cmd_len, data, data_len, 100);
 }
 
-static esp_err_t touch_hi8561_i2c_write(esp_lcd_touch_handle_t tp, uint8_t *buff, uint8_t buff_len)
+static __unused esp_err_t touch_hi8561_i2c_write_cmd(esp_lcd_touch_handle_t tp, uint8_t *buff, uint8_t buff_len)
 {
     ESP_RETURN_ON_FALSE(tp != NULL, ESP_ERR_INVALID_ARG, TAG, "Touch controller handle can't be NULL");
 
     // *INDENT-OFF*
     /* Write data */
-    i2c_master_dev_handle_t iic_dev = (i2c_master_dev_handle_t)tp->config.user_data;
-    return i2c_master_transmit(iic_dev, buff, buff_len, pdMS_TO_TICKS(1000));
+    hi8561_i2c_ctx_t *ctx = (hi8561_i2c_ctx_t *)tp->config.driver_data;
+    ESP_RETURN_ON_FALSE(ctx && ctx->dev_handle, ESP_ERR_INVALID_STATE, TAG, "I2C ctx not ready");
+
+    return i2c_master_transmit(ctx->dev_handle, buff, buff_len, 100);
     // *INDENT-ON*
 }

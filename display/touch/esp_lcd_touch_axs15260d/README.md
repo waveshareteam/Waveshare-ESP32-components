@@ -41,7 +41,7 @@ Initialization of the touch component.
             .mirror_x = 0,
             .mirror_y = 0,
         },
-        .driver_data = &tp_axs15260d_config,
+        .driver_data = i2c_bus_handle,
     };
 
     esp_lcd_touch_handle_t tp;
