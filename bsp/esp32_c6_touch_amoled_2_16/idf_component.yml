@@ -1,0 +1,22 @@
+dependencies:
+  esp_codec_dev:
+    version: "~1.5"
+    public: true
+  waveshare/esp_lcd_sh8601: "^2.0.0"
+  waveshare/esp_lcd_touch_cst9217: "^2.0.0"
+  espressif/esp_lcd_touch:
+    version: "^1.2.0"
+    public: true
+  espressif/esp_lvgl_adapter:
+    version: "~0.6"
+    public: true
+  idf: ">=5.5"
+  lvgl/lvgl: ">=8,<10"
+
+description: Board Support Package (BSP) for Waveshare ESP32-C6-Touch-AMOLED-2.16
+tags:
+- bsp
+targets:
+- esp32c6
+url: https://www.waveshare.com/esp32-c6-touch-amoled-2.16.htm
+version: 1.0.0
