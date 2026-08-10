@@ -142,6 +142,13 @@ typedef struct {
 lv_display_t *bsp_display_start(void);
 lv_display_t *bsp_display_start_with_config(bsp_display_cfg_t *cfg);
 lv_indev_t *bsp_display_get_input_dev(void);
+
+/**
+ * @brief Take the LVGL adapter mutex.
+ *
+ * @param timeout_ms Timeout in milliseconds. Use 0 to wait indefinitely.
+ * @return true when the mutex was acquired, otherwise false.
+ */
 bool bsp_display_lock(uint32_t timeout_ms);
 void bsp_display_unlock(void);
 #endif

@@ -751,7 +751,9 @@ lv_indev_t *bsp_display_get_input_dev(void)
 
 bool bsp_display_lock(uint32_t timeout_ms)
 {
-    return esp_lv_adapter_lock(timeout_ms);
+    const int32_t adapter_timeout_ms = timeout_ms == 0 ? -1 :
+                                       timeout_ms > INT32_MAX ? INT32_MAX : (int32_t)timeout_ms;
+    return esp_lv_adapter_lock(adapter_timeout_ms) == ESP_OK;
 }
 
 void bsp_display_unlock(void)
