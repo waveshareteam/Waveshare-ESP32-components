@@ -1,0 +1,28 @@
+dependencies:
+  espressif/usb:
+    version: "^1.4.1"
+    rules:
+      - if: "idf_version >= 6.0"
+  esp_codec_dev:
+    public: true
+    version: "~1.5"
+  esp_lcd_touch_gt911: ^1
+  espressif/esp_lvgl_adapter:
+    public: true
+    version: "~0.6"
+    pre_release: true
+  idf: '>=5.4'
+  lvgl/lvgl:
+    public: true
+    version: '9.5.0'
+  # v2.1.0 adds an opt-out for the driver's board-specific I2C sequence.
+  # This BSP owns the corresponding board-level I2C and power behavior.
+  waveshare/esp_lcd_hx8394: '^2.1.0'
+description: Based on ESP32-P4 chip, waveshare electronics designed a 5-inch screen, highly integrated development board
+repository: https://github.com/waveshareteam/Waveshare-ESP32-components.git
+tags:
+- bsp
+targets:
+- esp32p4
+url: https://www.waveshare.com/esp32-p4-wifi6-touch-lcd-5.htm
+version: 1.0.1
