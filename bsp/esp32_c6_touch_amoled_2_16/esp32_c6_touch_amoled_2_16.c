@@ -578,7 +578,7 @@ esp_err_t bsp_display_new(const bsp_display_config_t *config,
                                  &panel_io_handle),
         TAG, "Failed to create SH8601 panel IO");
 
-    const sh8601_vendor_config_t vendor_config = {
+    sh8601_vendor_config_t vendor_config = {
         .init_cmds = lcd_init_cmds,
         .init_cmds_size = sizeof(lcd_init_cmds) / sizeof(lcd_init_cmds[0]),
         .flags.use_qspi_interface = 1,
