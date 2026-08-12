@@ -215,12 +215,13 @@ def check_lcd5_hx8394_contract(upload_dirs):
     codec_version = codec_dep.get("version") if isinstance(codec_dep, dict) else codec_dep
     if codec_version != "~1.5":
         errors.append(f"{LCD5_BSP_DIR}/idf_component.yml: expected esp_codec_dev ~1.5")
-    hx_dependency = str(dependencies.get("waveshare/esp_lcd_hx8394", ""))
-    hx_dependency_match = re.fullmatch(r"\^(\d+\.\d+\.\d+)", hx_dependency)
-    if not hx_dependency_match:
-        errors.append(f"{LCD5_BSP_DIR}/idf_component.yml: expected a caret waveshare/esp_lcd_hx8394 SemVer dependency")
-    elif semver_tuple(hx_dependency_match.group(1), f"{LCD5_BSP_DIR}/idf_component.yml") < (2, 1, 0):
-        errors.append(f"{LCD5_BSP_DIR}/idf_component.yml: expected waveshare/esp_lcd_hx8394 minimum >= 2.1.0")
+    hx_dependency = dependencies.get("waveshare/esp_lcd_hx8394")
+    if hx_dependency != {
+        "git": "https://github.com/waveshareteam/Waveshare-ESP32-components.git",
+        "path": "display/lcd/esp_lcd_hx8394",
+        "version": "fc6e6d2d63aa314cdcec2e8912614aacff2fbd6d",
+    }:
+        errors.append(f"{LCD5_BSP_DIR}/idf_component.yml: expected immutable HX8394 PR/HIL validation pin")
     if bsp_manifest.get("repository") != "https://github.com/waveshareteam/Waveshare-ESP32-components.git":
         errors.append(f"{LCD5_BSP_DIR}/idf_component.yml: expected canonical repository URL")
     bridge = re.compile(
