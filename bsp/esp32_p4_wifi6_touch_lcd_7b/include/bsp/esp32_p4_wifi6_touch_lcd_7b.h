@@ -324,7 +324,12 @@ void bsp_display_unlock(void);
  * @param[in] disp Pointer to LVGL display
  * @param[in] rotation Angle of the display rotation
  */
+#if LVGL_VERSION_MAJOR >= 9
 void bsp_display_rotate(lv_display_t *disp, lv_disp_rotation_t rotation);
+#else
+void bsp_display_rotate(lv_display_t *disp, lv_disp_rot_t rotation);
+#endif
+
 #endif // BSP_CONFIG_NO_GRAPHIC_LIB == 0
 
 /**************************************************************************************************
