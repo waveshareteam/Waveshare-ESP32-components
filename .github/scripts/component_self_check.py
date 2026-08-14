@@ -369,6 +369,24 @@ def check_bsp_codec_dependency(components):
     return errors
 
 
+def check_p4_lcd_x_panel_dependencies(components):
+    component_dir = "bsp/esp32_p4_wifi6_touch_lcd_x"
+    if component_dir not in components:
+        return []
+
+    manifest_path = REPO / component_dir / "idf_component.yml"
+    dependencies = load_manifest_file(manifest_path).get("dependencies") or {}
+    expected = {
+        "esp_lcd_jd9365": "^2.0.0",
+        "waveshare/esp_lcd_ili9881c": "^2.0.0",
+    }
+    errors = []
+    for dependency, version in expected.items():
+        if str(dependencies.get(dependency)) != version:
+            errors.append(f"{manifest_path.relative_to(REPO)}: {dependency} version must be {version!r}")
+    return errors
+
+
 def write_outputs(components):
     output_path = os.environ.get("GITHUB_OUTPUT")
     if not output_path:
@@ -396,6 +414,7 @@ def main():
 
     errors.extend(check_version_bumps(base_ref, components))
     errors.extend(check_bsp_codec_dependency(output_components))
+    errors.extend(check_p4_lcd_x_panel_dependencies(output_components))
     write_outputs(output_components)
 
     print(f"Base ref: {base_ref}")
