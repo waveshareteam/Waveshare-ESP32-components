@@ -957,7 +957,8 @@ esp_err_t bsp_touch_new(const bsp_display_cfg_t *cfg, esp_lcd_touch_handle_t *re
     const esp_lcd_touch_config_t tp_cfg = {
         .x_max = BSP_LCD_H_RES,
         .y_max = BSP_LCD_V_RES,
-        .rst_gpio_num = BSP_LCD_TOUCH_RST, // Shared with LCD reset
+        .rst_gpio_num = BSP_LCD_TOUCH_RST,
+        // TP_INT is not routed to the MCU, so GT911 is polled.
         .int_gpio_num = BSP_LCD_TOUCH_INT,
         .levels = {
             .reset = 0,
