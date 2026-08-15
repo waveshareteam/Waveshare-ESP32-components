@@ -1,0 +1,12 @@
+menu "ESP LCD HX8394 configuration"
+
+    config ESP_LCD_HX8394_SKIP_I2C_INIT
+        bool "Skip board-specific I2C initialization"
+        default n
+        help
+            Skip the board-specific I2C bus setup and register sequence in the
+            HX8394 panel constructor. Leave this disabled for backward-compatible
+            standalone driver behavior. Enable it when the board BSP owns the
+            required board-level I2C and power initialization.
+
+endmenu

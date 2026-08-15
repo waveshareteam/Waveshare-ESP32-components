@@ -24,6 +24,7 @@ accelerate your project setup.
 | [ESP32-P4-86-Panel-ETH-2RO ](https://www.waveshare.com/esp32-p4-wifi6-touch-lcd-4b.htm)<br/><img style="width: 150px; height: auto; display: block; margin: 0 auto;" src="https://www.waveshare.com/media/catalog/product/cache/1/image/800x800/9df78eab33525d08d6e5fb8d27136e95/e/s/esp32-p4-86-panel-eth-2ro-7.jpg">         | ✅        |
 | [ESP32-P4-WIFI6-Touch-LCD-XC ](https://www.waveshare.com/esp32-p4-wifi6-touch-lcd-3.4c.htm)<br/><img style="width: 150px; height: auto; display: block; margin: 0 auto;" src="https://www.waveshare.com/media/catalog/product/cache/1/image/800x800/9df78eab33525d08d6e5fb8d27136e95/e/s/esp32-p4-wifi6-touch-lcd-3.4c-1.jpg"> | ✅        |
 | [ESP32-P4-WIFI6-Touch-LCD-3.5](https://www.waveshare.com/esp32-p4-wifi6-touch-lcd-3.5.htm)                                                                                                                                                                                                                                    | ✅        |
+| [ESP32-P4-WIFI6-Touch-LCD-5](https://www.waveshare.com/esp32-p4-wifi6-touch-lcd-5.htm)                                                                                                                                                                                                                                      | ✅        |
 
 ### 2. **Display Drivers**
 

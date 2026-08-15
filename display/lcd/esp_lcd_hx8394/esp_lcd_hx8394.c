@@ -14,6 +14,12 @@
 #include "esp_lcd_hx8394.h"
 #include "esp_idf_version.h"
 #include "i2c_bus.h"
+#include "sdkconfig.h"
+
+/* Keep the default when this source is built without a generated Kconfig header. */
+#ifndef CONFIG_ESP_LCD_HX8394_SKIP_I2C_INIT
+#define CONFIG_ESP_LCD_HX8394_SKIP_I2C_INIT 0
+#endif
 
 #define HX8394_CMD_DSI_INT0 (0xBA)
 #define HX8394_DSI_1_LANE (0x60)
@@ -106,6 +112,8 @@ esp_err_t esp_lcd_new_panel_hx8394(const esp_lcd_panel_io_handle_t io, const esp
     hx8394->reset_gpio_num = panel_dev_config->reset_gpio_num;
     hx8394->flags.reset_level = panel_dev_config->flags.reset_active_high;
 
+    /* Standalone compatibility: preserve the existing board-specific sequence unless opted out. */
+#if !CONFIG_ESP_LCD_HX8394_SKIP_I2C_INIT
     i2c_config_t conf = {
         .mode = I2C_MODE_MASTER,
         .sda_io_num = 7,
@@ -132,6 +140,7 @@ esp_err_t esp_lcd_new_panel_hx8394(const esp_lcd_panel_io_handle_t io, const esp
     // i2c_bus_delete(&i2c0_bus);
 
     vTaskDelay(pdMS_TO_TICKS(1000));
+#endif // !CONFIG_ESP_LCD_HX8394_SKIP_I2C_INIT
 
     // Create MIPI DPI panel
     esp_lcd_panel_handle_t panel_handle = NULL;
