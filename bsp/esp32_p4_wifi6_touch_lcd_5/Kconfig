@@ -112,6 +112,15 @@ menu "Board Support Package(ESP32-P4)"
             config BSP_LCD_COLOR_FORMAT_RGB888
                 bool "RGB888"
         endchoice
+
+        config BSP_DISPLAY_LVGL_USE_PSRAM
+            bool "Use PSRAM for the LVGL draw buffers"
+            default y
+            help
+                Allocate the LVGL draw buffers from external PSRAM instead of
+                internal SRAM. Recommended for high resolution panels such as
+                the 720x1280 display of this board. Disable to keep the
+                buffers in internal SRAM.
     endmenu
 
 endmenu

@@ -568,7 +568,7 @@ static lv_display_t *bsp_display_lcd_init(const bsp_display_cfg_t *cfg)
             .hor_res = BSP_LCD_H_RES,
             .ver_res = BSP_LCD_V_RES,
             .buffer_height = 50,
-            .use_psram = false,
+            .use_psram = CONFIG_BSP_DISPLAY_LVGL_USE_PSRAM,
             .enable_ppa_accel = false,
             .require_double_buffer = false,
         },

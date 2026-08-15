@@ -27,4 +27,4 @@ tags:
 targets:
 - esp32p4
 url: https://www.waveshare.com/esp32-p4-wifi6-touch-lcd-5.htm
-version: 1.0.1
+version: 1.0.2
