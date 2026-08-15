@@ -216,12 +216,19 @@ def check_lcd5_hx8394_contract(upload_dirs):
     if codec_version != "~1.5":
         errors.append(f"{LCD5_BSP_DIR}/idf_component.yml: expected esp_codec_dev ~1.5")
     hx_dependency = dependencies.get("waveshare/esp_lcd_hx8394")
+    # Accept either the immutable git pin (PR/HIL validation phase) or the
+    # published registry release. The registry rejects components whose
+    # dependencies are git-pinned, so released BSP versions must resolve
+    # esp_lcd_hx8394 from the registry.
     if hx_dependency != {
         "git": "https://github.com/waveshareteam/Waveshare-ESP32-components.git",
         "path": "display/lcd/esp_lcd_hx8394",
         "version": "fc6e6d2d63aa314cdcec2e8912614aacff2fbd6d",
-    }:
-        errors.append(f"{LCD5_BSP_DIR}/idf_component.yml: expected immutable HX8394 PR/HIL validation pin")
+    } and hx_dependency != "^2.1.0":
+        errors.append(
+            f"{LCD5_BSP_DIR}/idf_component.yml: expected waveshare/esp_lcd_hx8394"
+            " ^2.1.0 registry dependency (or the immutable HX8394 PR/HIL git pin)"
+        )
     if bsp_manifest.get("repository") != "https://github.com/waveshareteam/Waveshare-ESP32-components.git":
         errors.append(f"{LCD5_BSP_DIR}/idf_component.yml: expected canonical repository URL")
     bridge = re.compile(
