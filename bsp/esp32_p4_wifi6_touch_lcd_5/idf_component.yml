@@ -15,11 +15,7 @@ dependencies:
   lvgl/lvgl:
     public: true
     version: '9.5.0'
-  # Temporary immutable PR/HIL validation pin until 2.1.0 is published to the registry.
-  waveshare/esp_lcd_hx8394:
-    git: https://github.com/waveshareteam/Waveshare-ESP32-components.git
-    path: display/lcd/esp_lcd_hx8394
-    version: fc6e6d2d63aa314cdcec2e8912614aacff2fbd6d
+  waveshare/esp_lcd_hx8394: "^2.1.0"
 description: Based on ESP32-P4 chip, waveshare electronics designed a 5-inch screen, highly integrated development board
 repository: https://github.com/waveshareteam/Waveshare-ESP32-components.git
 tags:
@@ -27,4 +23,4 @@ tags:
 targets:
 - esp32p4
 url: https://www.waveshare.com/esp32-p4-wifi6-touch-lcd-5.htm
-version: 1.0.2
+version: 1.0.3
