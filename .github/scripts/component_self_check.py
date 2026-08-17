@@ -4,7 +4,7 @@ import os
 import re
 import subprocess
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 
 REPO = Path.cwd()
@@ -81,7 +81,7 @@ def parse_manifest_text(text, source):
             while i < len(lines):
                 dep_line = lines[i]
                 dep_stripped = dep_line.strip()
-                if not dep_stripped:
+                if not dep_stripped or dep_stripped.startswith("#"):
                     i += 1
                     continue
                 if not dep_line.startswith((" ", "\t")):
@@ -98,7 +98,7 @@ def parse_manifest_text(text, source):
                         while i < len(lines):
                             nested_line = lines[i]
                             nested_stripped = nested_line.strip()
-                            if not nested_stripped:
+                            if not nested_stripped or nested_stripped.startswith("#"):
                                 i += 1
                                 continue
                             if not nested_line.startswith("    "):
@@ -271,8 +271,61 @@ def resolve_base_ref():
 
 
 def changed_files(base_ref):
-    output = run_git("diff", "--name-only", "--diff-filter=ACMRT", f"{base_ref}..HEAD")
+    # Three-dot range: diff from the merge base so only the PR's own changes
+    # are considered. A two-dot range also reports files the base branch
+    # gained since the PR last merged it, which wrongly looks like the PR
+    # touched CI/global files and forces a full build.
+    output = run_git("diff", "--name-only", "--diff-filter=ACMRT", f"{base_ref}...HEAD")
     return [line.strip() for line in output.splitlines() if line.strip()]
+
+
+BUILD_AFFECTING_GLOBALS = (
+    ".github/scripts/",
+    ".github/workflows/component_self_check.yml",
+    ".gitmodules",
+)
+
+
+def is_build_affecting_global(path_text):
+    """Global files that can change how components are built or checked.
+
+    Changes to the upload list (upload_component.yml) only affect publishing,
+    not builds, so they do not force a full build.
+    """
+    return any(marker in path_text for marker in BUILD_AFFECTING_GLOBALS)
+
+
+def dependency_closure(changed, component_dirs):
+    """Expand the changed set with in-repo components that depend on it.
+
+    Matches both registry-style dependencies (waveshare/<name>) and git
+    dependencies pinned by repository path. Iterates so a change to a shared
+    driver also rebuilds the BSPs that (transitively) use it.
+    """
+    result = set(changed)
+    pending = list(changed)
+    while pending:
+        current = pending.pop(0)
+        base_name = PurePosixPath(current).name
+        for directory in component_dirs:
+            if directory in result:
+                continue
+            manifest_path = REPO / directory / "idf_component.yml"
+            try:
+                manifest = load_manifest_file(manifest_path)
+            except RuntimeError:
+                continue
+            for dep_name, dep_value in (manifest.get("dependencies") or {}).items():
+                depends = False
+                if dep_name == f"waveshare/{base_name}":
+                    depends = True
+                elif isinstance(dep_value, dict) and str(dep_value.get("path", "")).strip() == current:
+                    depends = True
+                if depends:
+                    result.add(directory)
+                    pending.append(directory)
+                    break
+    return sorted(result)
 
 
 def split_changed_files(files, component_dirs):
@@ -293,10 +346,17 @@ def build_components(changed, component_dirs, global_files):
     scope = os.environ.get("BUILD_COMPONENT_SCOPE", "auto").strip().lower()
     if scope in ("all", "full"):
         return sorted(component_dirs)
-    if scope == "auto":
-        return sorted(component_dirs) if global_files else list(changed)
+    closed = dependency_closure(changed, component_dirs)
     if scope in ("changed", ""):
-        return list(changed)
+        return closed
+    if scope == "auto":
+        # Global changes that do not affect builds (docs, licenses, the
+        # upload list) keep the scoped build. Changes to CI scripts or the
+        # build workflow still validate every component once, as they may
+        # alter how components are built or checked.
+        if not global_files or not any(is_build_affecting_global(f) for f in global_files):
+            return closed
+        return sorted(component_dirs)
     raise RuntimeError(f"BUILD_COMPONENT_SCOPE must be 'auto', 'changed', or 'all', got {scope!r}")
 
 
