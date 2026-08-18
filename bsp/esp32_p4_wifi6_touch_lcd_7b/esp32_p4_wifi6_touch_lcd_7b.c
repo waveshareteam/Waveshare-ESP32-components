@@ -638,12 +638,10 @@ lv_indev_t *bsp_display_get_input_dev(void)
     return disp_indev;
 }
 
-#if LVGL_VERSION_MAJOR >= 9
 void bsp_display_rotate(lv_display_t *disp, lv_disp_rotation_t rotation)
 {
     lv_disp_set_rotation(disp, rotation);
 }
-#endif // LVGL_VERSION_MAJOR >= 9
 
 bool bsp_display_lock(int32_t timeout_ms)
 {
