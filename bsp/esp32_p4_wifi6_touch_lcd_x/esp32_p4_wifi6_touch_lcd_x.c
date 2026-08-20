@@ -26,6 +26,18 @@
 #include "bsp_err_check.h"
 #include "esp_codec_dev_defaults.h"
 
+#if CONFIG_BSP_LCD_TYPE_800_1280_10_1_INCH || CONFIG_BSP_LCD_TYPE_800_1280_8_INCH
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(6, 0, 0)
+#if defined(JD9365_800_1280_PANEL_60HZ_DPI_CONFIG_CF)
+#define BSP_JD9365_800_1280_PANEL_DPI_CONFIG(_color_format) JD9365_800_1280_PANEL_60HZ_DPI_CONFIG_CF(_color_format)
+#else
+#define BSP_JD9365_800_1280_PANEL_DPI_CONFIG(_color_format) JD9365_800_1280_PANEL_60HZ_DPI_CONFIG(_color_format)
+#endif
+#else
+#define BSP_JD9365_800_1280_PANEL_DPI_CONFIG(_color_format) JD9365_800_1280_PANEL_60HZ_DPI_CONFIG(_color_format)
+#endif
+#endif
+
 static const char *TAG = "esp32_p4_wifi6_touch_lcd_x";
 #if CONFIG_BSP_LCD_TYPE_800_1280_10_1_INCH || CONFIG_BSP_LCD_TYPE_800_1280_8_INCH
 static const jd9365_lcd_init_cmd_t jd9365_vendor_specific_init_default[] = {
@@ -1093,9 +1105,17 @@ esp_err_t bsp_display_new_with_handles(const bsp_display_config_t *config, bsp_l
 #if CONFIG_BSP_LCD_TYPE_800_1280_10_1_INCH || CONFIG_BSP_LCD_TYPE_800_1280_8_INCH
     ESP_LOGI(TAG, "Install Waveshare LCD control panel");
 #if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
-    esp_lcd_dpi_panel_config_t dpi_config = JD9365_800_1280_PANEL_60HZ_DPI_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB888);
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(6, 0, 0)
+    esp_lcd_dpi_panel_config_t dpi_config = BSP_JD9365_800_1280_PANEL_DPI_CONFIG(LCD_COLOR_FMT_RGB888);
 #else
-    esp_lcd_dpi_panel_config_t dpi_config = JD9365_800_1280_PANEL_60HZ_DPI_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
+    esp_lcd_dpi_panel_config_t dpi_config = BSP_JD9365_800_1280_PANEL_DPI_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB888);
+#endif
+#else
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(6, 0, 0)
+    esp_lcd_dpi_panel_config_t dpi_config = BSP_JD9365_800_1280_PANEL_DPI_CONFIG(LCD_COLOR_FMT_RGB565);
+#else
+    esp_lcd_dpi_panel_config_t dpi_config = BSP_JD9365_800_1280_PANEL_DPI_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
+#endif
 #endif
     dpi_config.num_fbs = CONFIG_BSP_LCD_DPI_BUFFER_NUMS;
 
