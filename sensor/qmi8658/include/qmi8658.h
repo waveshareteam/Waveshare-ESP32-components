@@ -125,6 +125,7 @@ typedef struct {
     bool gyro_unit_rads;
     int display_precision;
     uint32_t timestamp;
+    uint32_t last_raw_timestamp;
 } qmi8658_dev_t;
 
 esp_err_t qmi8658_init(qmi8658_dev_t *dev, i2c_master_bus_handle_t bus_handle, uint8_t i2c_addr);
