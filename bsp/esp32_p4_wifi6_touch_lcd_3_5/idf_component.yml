@@ -7,7 +7,7 @@ dependencies:
   espressif/esp_lvgl_adapter:
     public: true
     version: "~0.6"
-  idf: '>=5.4'
+  idf: '>=5.5'
   lvgl/lvgl: '>=8,<10'
   usb:
     version: "^1.0.0"
@@ -15,7 +15,7 @@ dependencies:
     rules:
       - if: "idf_version >=6.0"
 description: BSP for the Waveshare ESP32-P4-WIFI6-Touch-LCD-3.5 development board.
-repository: git://github.com/WaveshareCloud/Waveshare-ESP32-components.git
+repository: https://github.com/waveshareteam/Waveshare-ESP32-components.git
 tags:
 - bsp
 targets:
