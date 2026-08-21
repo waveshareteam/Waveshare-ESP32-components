@@ -8,7 +8,7 @@ dependencies:
     public: true
     version: "~0.6"
   idf: '>=5.5'
-  lvgl/lvgl: '>=8,<10'
+  lvgl/lvgl: '~9.5.0'
   usb:
     version: "^1.0.0"
     public: true
@@ -21,4 +21,4 @@ tags:
 targets:
 - esp32p4
 url: https://www.waveshare.com/esp32-p4-wifi6-touch-lcd-7b.htm
-version: 3.0.0
+version: 3.0.1
