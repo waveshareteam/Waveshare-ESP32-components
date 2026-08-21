@@ -10,7 +10,7 @@ Board support package for the [Waveshare ESP32-P4-WIFI6-Touch-LCD-4.3](https://w
 | --- | --- |
 | Target | `esp32p4` |
 | Display | 480 × 800 MIPI-DSI panel; reset GPIO27; backlight GPIO26 |
-| Touch | GT911 on I2C (SCL GPIO8, SDA GPIO7); reset GPIO23; interrupt is intentionally `GPIO_NUM_NC` |
+| Touch | GT911 on I2C (SCL GPIO8, SDA GPIO7); reset and interrupt are intentionally `GPIO_NUM_NC` |
 | Audio | I2S: SCLK GPIO12, MCLK GPIO13, LRCK GPIO10, DOUT GPIO9, DIN GPIO11; power amplifier GPIO53 |
 | microSD | SDMMC: D0–D3 GPIO39–GPIO42, CMD GPIO44, CLK GPIO43 |
 
@@ -20,10 +20,18 @@ Board support package for the [Waveshare ESP32-P4-WIFI6-Touch-LCD-4.3](https://w
 | --- | --- | --- |
 | Display and LVGL | `bsp_display_start()`, `bsp_display_start_with_config()` | Supported |
 | Backlight | `bsp_display_brightness_init()`, `bsp_display_brightness_set()` | Supported |
-| Touch | `bsp_touch_new()` | Supported without a TP interrupt GPIO |
+| Touch | `bsp_touch_new()` | Polling; probes `0x5D` then `0x14` without driving INT/RST |
 | I2C | `bsp_i2c_init()`, `bsp_i2c_get_handle()` | Supported |
 | Audio, microSD, USB host | Board BSP APIs | Supported |
 | Buttons | — | Not provided (`BSP_CAPS_BUTTONS == 0`) |
+
+## Hardware revision profiles
+
+The display keeps a 30 MHz DPI pixel clock and a two-lane 500 Mbps MIPI DSI
+link on both supported silicon profiles. The BSP leaves the DSI PHY reference
+clock source unset so ESP-IDF selects the source matching the configured
+ESP32-P4 minimum revision: PLL_F20M for pre-v3 silicon and XTAL for rev3.x or
+newer silicon.
 
 ## Backlight
 ```c
