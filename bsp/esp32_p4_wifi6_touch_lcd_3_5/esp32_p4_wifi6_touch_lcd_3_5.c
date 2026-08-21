@@ -604,7 +604,11 @@ lv_indev_t *bsp_display_get_input_dev(void)
     return disp_indev;
 }
 
+#if LVGL_VERSION_MAJOR >= 9
 void bsp_display_rotate(lv_display_t *disp, lv_disp_rotation_t rotation)
+#else
+void bsp_display_rotate(lv_display_t *disp, lv_disp_rot_t rotation)
+#endif
 {
     lv_disp_set_rotation(disp, rotation);
 }

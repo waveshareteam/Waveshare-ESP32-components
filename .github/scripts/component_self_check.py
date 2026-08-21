@@ -444,7 +444,7 @@ def check_p4_lcd_x_panel_dependencies(components):
     manifest_path = REPO / component_dir / "idf_component.yml"
     dependencies = load_manifest_file(manifest_path).get("dependencies") or {}
     expected = {
-        "esp_lcd_jd9365": "^2.0.0",
+        "esp_lcd_jd9365": "^2.0.2",
         "waveshare/esp_lcd_ili9881c": "^2.0.0",
     }
     errors = []
@@ -452,6 +452,75 @@ def check_p4_lcd_x_panel_dependencies(components):
         if str(dependencies.get(dependency)) != version:
             errors.append(f"{manifest_path.relative_to(REPO)}: {dependency} version must be {version!r}")
     return errors
+
+
+JD9365_IDF6_CF = "JD9365_800_1280_PANEL_60HZ_DPI_CONFIG_CF"
+JD9365_LEGACY = "JD9365_800_1280_PANEL_60HZ_DPI_CONFIG"
+JD9365_ADAPTER = f"""#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(6, 0, 0)
+#if defined({JD9365_IDF6_CF})
+#define BSP_JD9365_800_1280_PANEL_DPI_CONFIG(_color_format) {JD9365_IDF6_CF}(_color_format)
+#else
+#define BSP_JD9365_800_1280_PANEL_DPI_CONFIG(_color_format) {JD9365_LEGACY}(_color_format)
+#endif
+#else
+#define BSP_JD9365_800_1280_PANEL_DPI_CONFIG(_color_format) {JD9365_LEGACY}(_color_format)
+#endif"""
+JD9365_IDF6_FALLBACK = f"""#else
+#define BSP_JD9365_800_1280_PANEL_DPI_CONFIG(_color_format) {JD9365_LEGACY}(_color_format)
+#endif"""
+JD9365_COLOR_SELECTION = """#if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(6, 0, 0)
+    esp_lcd_dpi_panel_config_t dpi_config = BSP_JD9365_800_1280_PANEL_DPI_CONFIG(LCD_COLOR_FMT_RGB888);
+#else
+    esp_lcd_dpi_panel_config_t dpi_config = BSP_JD9365_800_1280_PANEL_DPI_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB888);
+#endif
+#else
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(6, 0, 0)
+    esp_lcd_dpi_panel_config_t dpi_config = BSP_JD9365_800_1280_PANEL_DPI_CONFIG(LCD_COLOR_FMT_RGB565);
+#else
+    esp_lcd_dpi_panel_config_t dpi_config = BSP_JD9365_800_1280_PANEL_DPI_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
+#endif
+#endif"""
+ILI9881C_COLOR_SELECTION = """#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(6, 0, 0)
+#if CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
+        .in_color_format = LCD_COLOR_FMT_RGB888,
+#else
+        .in_color_format = LCD_COLOR_FMT_RGB565,
+#endif
+#elif CONFIG_BSP_LCD_COLOR_FORMAT_RGB888
+        .pixel_format = LCD_COLOR_PIXEL_FORMAT_RGB888,
+#else
+        .pixel_format = LCD_COLOR_PIXEL_FORMAT_RGB565,
+#endif"""
+
+
+def p4_lcd_x_display_source_errors(source):
+    errors = []
+    if JD9365_ADAPTER not in source:
+        errors.append("JD9365 must feature-detect the IDF 6 _CF API, fall back to the Waveshare API, and retain the IDF 5 legacy API")
+    if JD9365_COLOR_SELECTION not in source:
+        errors.append("JD9365 must pass LCD_COLOR_FMT_* on IDF 6 and LCD_COLOR_PIXEL_FORMAT_* on IDF 5")
+    if ILI9881C_COLOR_SELECTION not in source:
+        errors.append("ILI9881C must use IDF 6 in_color_format and IDF 5 pixel_format")
+    return errors
+
+
+def check_p4_lcd_x_display_source_compatibility(components):
+    component_dir = "bsp/esp32_p4_wifi6_touch_lcd_x"
+    if component_dir not in components:
+        return []
+
+    source_path = REPO / component_dir / "esp32_p4_wifi6_touch_lcd_x.c"
+    return [f"{source_path.relative_to(REPO)}: {error}" for error in p4_lcd_x_display_source_errors(source_path.read_text(encoding="utf-8"))]
+
+
+def run_synthetic_tests():
+    valid_source = "\n".join((JD9365_ADAPTER, JD9365_COLOR_SELECTION, ILI9881C_COLOR_SELECTION))
+    assert not p4_lcd_x_display_source_errors(valid_source), "synthetic JD9365/ILI9881C compatibility source must pass"
+    assert p4_lcd_x_display_source_errors(valid_source.replace(JD9365_IDF6_FALLBACK, "", 1)), "missing JD9365 IDF 6 fallback must fail"
+    assert p4_lcd_x_display_source_errors(valid_source.replace(f"{JD9365_IDF6_CF}(_color_format)", "missing_cf(_color_format)", 1)), "missing JD9365 _CF path must fail"
+    assert not check_p4_lcd_x_display_source_compatibility(set()), "non-target components must not be checked"
+    print("Synthetic compatibility checks passed")
 
 
 def write_outputs(components):
@@ -482,6 +551,7 @@ def main():
     errors.extend(check_version_bumps(base_ref, components))
     errors.extend(check_bsp_codec_dependency(output_components))
     errors.extend(check_p4_lcd_x_panel_dependencies(output_components))
+    errors.extend(check_p4_lcd_x_display_source_compatibility(components))
     write_outputs(output_components)
 
     print(f"Base ref: {base_ref}")
@@ -504,4 +574,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    if sys.argv[1:] == ["--synthetic-tests"]:
+        run_synthetic_tests()
+    else:
+        main()

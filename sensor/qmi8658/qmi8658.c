@@ -14,6 +14,7 @@ esp_err_t qmi8658_init(qmi8658_dev_t *dev, i2c_master_bus_handle_t bus_handle, u
     dev->gyro_unit_rads = false;
     dev->display_precision = 6;
     dev->timestamp = 0;
+    dev->last_raw_timestamp = 0;
     
     i2c_device_config_t dev_config = {
         .dev_addr_length = I2C_ADDR_BIT_LEN_7,
@@ -249,14 +250,12 @@ esp_err_t qmi8658_read_sensor_data(qmi8658_dev_t *dev, qmi8658_data_t *data) {
     uint8_t timestamp_buffer[3];
     esp_err_t ret = qmi8658_read_register(dev, QMI8658_TIMESTAMP_L, timestamp_buffer, 3);
     if (ret == ESP_OK) {
-        uint32_t timestamp = ((uint32_t)timestamp_buffer[2] << 16) | 
-                           ((uint32_t)timestamp_buffer[1] << 8) | 
+        uint32_t timestamp = ((uint32_t)timestamp_buffer[2] << 16) |
+                           ((uint32_t)timestamp_buffer[1] << 8) |
                            timestamp_buffer[0];
-        if (timestamp > dev->timestamp) {
-            dev->timestamp = timestamp;
-        } else {
-            dev->timestamp = (timestamp + 0x1000000 - dev->timestamp);
-        }
+        uint32_t delta = (timestamp - dev->last_raw_timestamp) & 0x00FFFFFF;
+        dev->last_raw_timestamp = timestamp;
+        dev->timestamp += delta;
         data->timestamp = dev->timestamp;
     }
     
