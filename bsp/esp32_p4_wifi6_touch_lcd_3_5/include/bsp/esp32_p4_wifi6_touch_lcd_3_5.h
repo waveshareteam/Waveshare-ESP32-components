@@ -1,5 +1,9 @@
 #pragma once
 
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "esp_err.h"
 #include "sdkconfig.h"
 #include "driver/gpio.h"
 #include "driver/i2c_master.h"
@@ -8,7 +12,6 @@
 #include "bsp/config.h"
 #include "bsp/display.h"
 #include "esp_codec_dev.h"
-#include "sdkconfig.h"
 
 #if (BSP_CONFIG_NO_GRAPHIC_LIB == 0)
 #include "lvgl.h"
@@ -322,7 +325,11 @@ esp_lcd_panel_handle_t bsp_display_get_panel_handle(void);
  * @param[in] disp Pointer to LVGL display
  * @param[in] rotation Angle of the display rotation
  */
+#if LVGL_VERSION_MAJOR >= 9
 void bsp_display_rotate(lv_display_t *disp, lv_disp_rotation_t rotation);
+#else
+void bsp_display_rotate(lv_display_t *disp, lv_disp_rot_t rotation);
+#endif
 #endif // BSP_CONFIG_NO_GRAPHIC_LIB == 0
 
 /**************************************************************************************************
