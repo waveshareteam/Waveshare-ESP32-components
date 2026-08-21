@@ -10,6 +10,14 @@ Implementation of the HX8394 LCD controller with esp_lcd component.
 
 **Note**: MIPI-DSI interface only supports ESP-IDF v5.3 and above versions.
 
+## Board-specific I2C initialization
+
+`ESP_LCD_HX8394_SKIP_I2C_INIT` defaults to `n`, so the driver preserves its
+existing board-specific I2C setup, register writes, delays, and device cleanup.
+Set it to `y` only when a board BSP owns that board-level I2C and power behavior.
+The ESP32-P4-WIFI6-Touch-LCD-5 BSP enables the opt-out; standalone users retain
+the backward-compatible default.
+
 ## Add to project
 
 Packages from this repository are uploaded to [Espressif's component service](https://components.espressif.com/).

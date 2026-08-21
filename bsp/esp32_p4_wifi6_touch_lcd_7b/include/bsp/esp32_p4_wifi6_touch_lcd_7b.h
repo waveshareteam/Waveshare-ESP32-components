@@ -242,8 +242,8 @@ esp_err_t bsp_sdcard_unmount(void);
  *
  * LCD interface
  *
- * ESP-BOX is shipped with 2.4inch ST7789 display controller.
- * It features 16-bit colors, 320x240 resolution and capacitive touch controller.
+ * The board uses a 7-inch EK79007 display controller.
+ * It features 16-bit or 24-bit color, 1024x600 resolution, and capacitive touch.
  *
  * LVGL is used as graphics library. LVGL is NOT thread safe, therefore the user must take LVGL mutex
  * by calling bsp_display_lock() before calling and LVGL API (lv_...) and then give the mutex with
@@ -251,7 +251,7 @@ esp_err_t bsp_sdcard_unmount(void);
  *
  * Display's backlight must be enabled explicitly by calling bsp_display_backlight_on()
  **************************************************************************************************/
-#define BSP_LCD_PIXEL_CLOCK_MHZ     (80)
+#define BSP_LCD_PIXEL_CLOCK_MHZ     (52)
 
 #if (BSP_CONFIG_NO_GRAPHIC_LIB == 0)
 
