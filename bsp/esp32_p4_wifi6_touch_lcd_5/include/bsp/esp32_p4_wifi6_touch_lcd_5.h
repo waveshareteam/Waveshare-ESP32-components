@@ -1,9 +1,5 @@
 #pragma once
 
-#include <stdbool.h>
-#include <stdint.h>
-
-#include "esp_err.h"
 #include "sdkconfig.h"
 #include "driver/gpio.h"
 #include "driver/i2c_master.h"
@@ -12,6 +8,7 @@
 #include "bsp/config.h"
 #include "bsp/display.h"
 #include "esp_codec_dev.h"
+#include "sdkconfig.h"
 
 #if (BSP_CONFIG_NO_GRAPHIC_LIB == 0)
 #include "lvgl.h"
@@ -32,7 +29,7 @@
 #define BSP_CAPS_IMU            0
 
 /**************************************************************************************************
- *  ESP32-P4-WIFI6-Touch-LCD-3.5 pinout
+ *  ESP-BOX pinout
  **************************************************************************************************/
 /* I2C */
 #define BSP_I2C_SCL           (GPIO_NUM_8)
@@ -46,15 +43,10 @@
 #define BSP_I2S_DSIN          (GPIO_NUM_11)
 #define BSP_POWER_AMP_IO      (GPIO_NUM_53)
 
-#define BSP_LCD_SPI_MOSI      (GPIO_NUM_20)
-#define BSP_LCD_SPI_CLK       (GPIO_NUM_21)
-#define BSP_LCD_SPI_CS        (GPIO_NUM_23)
-#define BSP_LCD_DC            (GPIO_NUM_26)
-
-#define BSP_LCD_BACKLIGHT     (GPIO_NUM_28)
+#define BSP_LCD_BACKLIGHT     (GPIO_NUM_26)
 #define BSP_LCD_RST           (GPIO_NUM_27)
-#define BSP_LCD_TOUCH_RST     (GPIO_NUM_29)
-#define BSP_LCD_TOUCH_INT     (GPIO_NUM_50)
+#define BSP_LCD_TOUCH_RST     (GPIO_NUM_NC)
+#define BSP_LCD_TOUCH_INT     (GPIO_NUM_NC)
 
 /* uSD card */
 #define BSP_SD_D0             (GPIO_NUM_39)
@@ -238,8 +230,8 @@ esp_err_t bsp_sdcard_unmount(void);
  *
  * LCD interface
  *
- * ESP32-P4-WIFI6-Touch-LCD-3.5 is shipped with a 3.5-inch ST7796 display controller.
- * It features 16-bit colors, 320x480 resolution and an FT5x06 capacitive touch controller.
+ * ESP-BOX is shipped with 2.4inch ST7789 display controller.
+ * It features 16-bit colors, 320x240 resolution and capacitive touch controller.
  *
  * LVGL is used as graphics library. LVGL is NOT thread safe, therefore the user must take LVGL mutex
  * by calling bsp_display_lock() before calling and LVGL API (lv_...) and then give the mutex with
@@ -259,13 +251,13 @@ esp_err_t bsp_sdcard_unmount(void);
  *
  */
 typedef struct {
-    esp_lv_adapter_config_t          lv_adapter_cfg;   /*!< LVGL adapter configuration */
-    esp_lv_adapter_rotation_t        rotation;         /*!< Display rotation */
-    esp_lv_adapter_tear_avoid_mode_t tear_avoid_mode;  /*!< Tearing avoidance mode */
+    esp_lv_adapter_config_t          lv_adapter_cfg;
+    esp_lv_adapter_rotation_t        rotation;
+    esp_lv_adapter_tear_avoid_mode_t tear_avoid_mode;
     struct {
-        unsigned int swap_xy: 1;   /*!< Swap X and Y after reading touch coordinates */
-        unsigned int mirror_x: 1;  /*!< Mirror X after reading touch coordinates */
-        unsigned int mirror_y: 1;  /*!< Mirror Y after reading touch coordinates */
+        unsigned int swap_xy;  /*!< Swap X and Y after read coordinates */
+        unsigned int mirror_x; /*!< Mirror X after read coordinates */
+        unsigned int mirror_y; /*!< Mirror Y after read coordinates */
     } touch_flags;
 } bsp_display_cfg_t;
 
@@ -275,7 +267,7 @@ typedef struct {
  * This function initializes SPI, display controller and starts LVGL handling task.
  * LCD backlight must be enabled separately by calling bsp_display_brightness_set()
  *
- * @return Pointer to LVGL display or NULL when error occurred
+ * @return Pointer to LVGL display or NULL when error occured
  */
 lv_display_t *bsp_display_start(void);
 
@@ -287,7 +279,7 @@ lv_display_t *bsp_display_start(void);
  *
  * @param cfg display configuration
  *
- * @return Pointer to LVGL display or NULL when error occurred
+ * @return Pointer to LVGL display or NULL when error occured
  */
 lv_display_t *bsp_display_start_with_config(bsp_display_cfg_t *cfg);
 
@@ -300,13 +292,6 @@ lv_display_t *bsp_display_start_with_config(bsp_display_cfg_t *cfg);
  */
 lv_indev_t *bsp_display_get_input_dev(void);
 
-/**
- * @brief Take LVGL mutex
- *
- * @param timeout_ms Timeout in [ms]. 0 will block indefinitely.
- * @return true  Mutex was taken
- * @return false Mutex was NOT taken
- */
 bool bsp_display_lock(uint32_t timeout_ms);
 
 /**
@@ -314,22 +299,8 @@ bool bsp_display_lock(uint32_t timeout_ms);
  *
  */
 void bsp_display_unlock(void);
-
 esp_lcd_panel_handle_t bsp_display_get_panel_handle(void);
 
-/**
- * @brief Rotate screen
- *
- * Display must be already initialized by calling bsp_display_start()
- *
- * @param[in] disp Pointer to LVGL display
- * @param[in] rotation Angle of the display rotation
- */
-#if LVGL_VERSION_MAJOR >= 9
-void bsp_display_rotate(lv_display_t *disp, lv_disp_rotation_t rotation);
-#else
-void bsp_display_rotate(lv_display_t *disp, lv_disp_rot_t rotation);
-#endif
 #endif // BSP_CONFIG_NO_GRAPHIC_LIB == 0
 
 /**************************************************************************************************
