@@ -160,6 +160,40 @@ def discover_component_dirs():
     return component_dirs
 
 
+def lcd5_dsi_bus_clock_errors(source):
+    """Require ESP-IDF's revision-aware MIPI DSI PHY clock fallback."""
+    source = re.sub(r"/\*.*?\*/|//[^\n]*", "", source, flags=re.DOTALL)
+    initializers = re.findall(
+        r"esp_lcd_dsi_bus_config_t\s+([A-Za-z_]\w*)\s*=\s*\{(.*?)\};",
+        source,
+        re.DOTALL,
+    )
+    call_names = re.findall(
+        r"esp_lcd_new_dsi_bus\s*\(\s*&([A-Za-z_]\w*)\s*,",
+        source,
+    )
+    if len(call_names) != 1:
+        return ["expected exactly one esp_lcd_new_dsi_bus call with a named bus config"]
+
+    config_name = call_names[0]
+    config_bodies = [body for name, body in initializers if name == config_name]
+    if len(config_bodies) != 1:
+        return [f"expected exactly one initializer for DSI bus config {config_name}"]
+
+    assignments = [
+        value.strip()
+        for value in re.findall(r"\.phy_clk_src\s*=\s*([^,\n}]+)", config_bodies[0])
+    ]
+    if assignments != ["0"]:
+        return [
+            "DSI bus phy_clk_src must be exactly 0 so ESP-IDF selects the "
+            "correct PLL reference clock for each ESP32-P4 revision"
+        ]
+    if re.search(rf"\b{re.escape(config_name)}\s*\.\s*phy_clk_src\s*=", source):
+        return [f"DSI bus config {config_name}.phy_clk_src must not be overwritten after initialization"]
+    return []
+
+
 def check_lcd5_hx8394_contract(upload_dirs):
     """Keep the LCD-5 BSP and HX8394 driver integration explicit and reviewable."""
     errors = []
@@ -169,6 +203,8 @@ def check_lcd5_hx8394_contract(upload_dirs):
     bsp_manifest = load_manifest_file(bsp_dir / "idf_component.yml")
     hx_kconfig = (hx_dir / "Kconfig").read_text(encoding="utf-8")
     bsp_kconfig = (bsp_dir / "Kconfig").read_text(encoding="utf-8")
+    bsp_source_path = bsp_dir / "esp32_p4_wifi6_touch_lcd_5.c"
+    bsp_source = bsp_source_path.read_text(encoding="utf-8")
     hx_source = (hx_dir / "esp_lcd_hx8394.c").read_text(encoding="utf-8")
     hx_readme = (hx_dir / "README.md").read_text(encoding="utf-8")
     bsp_readme = (bsp_dir / "README.md").read_text(encoding="utf-8")
@@ -237,6 +273,10 @@ def check_lcd5_hx8394_contract(upload_dirs):
     )
     if not bridge.search(bsp_kconfig):
         errors.append(f"{LCD5_BSP_DIR}/Kconfig: missing default-y HX8394 opt-out bridge")
+    errors.extend(
+        f"{bsp_source_path.relative_to(REPO)}: {error}"
+        for error in lcd5_dsi_bus_clock_errors(bsp_source)
+    )
 
     actual_files = {
         path.relative_to(bsp_dir).as_posix()
@@ -520,6 +560,26 @@ def run_synthetic_tests():
     assert p4_lcd_x_display_source_errors(valid_source.replace(JD9365_IDF6_FALLBACK, "", 1)), "missing JD9365 IDF 6 fallback must fail"
     assert p4_lcd_x_display_source_errors(valid_source.replace(f"{JD9365_IDF6_CF}(_color_format)", "missing_cf(_color_format)", 1)), "missing JD9365 _CF path must fail"
     assert not check_p4_lcd_x_display_source_compatibility(set()), "non-target components must not be checked"
+    valid_lcd5_bus = """esp_lcd_dsi_bus_config_t bus_config = {
+        .bus_id = 0,
+        .phy_clk_src = 0,
+    };
+    esp_lcd_new_dsi_bus(&bus_config, &mipi_dsi_bus);"""
+    assert not lcd5_dsi_bus_clock_errors(valid_lcd5_bus), "revision-aware LCD-5 DSI clock source must pass"
+    assert lcd5_dsi_bus_clock_errors(
+        valid_lcd5_bus.replace(".phy_clk_src = 0", ".phy_clk_src = MIPI_DSI_PHY_CLK_SRC_DEFAULT")
+    ), "legacy LCD-5 DSI clock source must fail"
+    assert lcd5_dsi_bus_clock_errors(
+        valid_lcd5_bus.replace("        .phy_clk_src = 0,\n", "")
+    ), "missing LCD-5 DSI clock source must fail"
+    assert lcd5_dsi_bus_clock_errors(
+        valid_lcd5_bus + "\nbus_config.phy_clk_src = MIPI_DSI_PHY_CLK_SRC_DEFAULT;"
+    ), "overwritten LCD-5 DSI clock source must fail"
+    assert lcd5_dsi_bus_clock_errors(
+        "/* " + valid_lcd5_bus + " */\n" + valid_lcd5_bus.replace(
+            ".phy_clk_src = 0", ".phy_clk_src = MIPI_DSI_PHY_CLK_SRC_DEFAULT"
+        )
+    ), "commented-out LCD-5 DSI config must not mask the active clock source"
     print("Synthetic compatibility checks passed")
 
 
@@ -533,6 +593,7 @@ def write_outputs(components):
 
 
 def main():
+    run_synthetic_tests()
     upload_dirs = parse_upload_dirs()
     component_dirs = discover_component_dirs()
     base_ref = resolve_base_ref()
