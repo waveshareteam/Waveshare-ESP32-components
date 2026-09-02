@@ -217,8 +217,8 @@ esp_err_t  pcf85063a_write_register(pcf85063a_dev_t *dev, uint8_t *pdata, uint8_
 
 esp_err_t pcf85063a_read_register(pcf85063a_dev_t *dev, uint8_t reg, uint8_t *buffer, uint8_t length);
 
-#endif // PCF85063A_H
-
 #ifdef __cplusplus
 }
 #endif
+
+#endif // PCF85063A_H
