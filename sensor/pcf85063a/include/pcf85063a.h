@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-#define PCF85063A_LIBRARY_VERSION "1.0.0"
+#define PCF85063A_LIBRARY_VERSION "2.1.0"
 
 #define PCF85063A_ADDRESS  0x51
 
@@ -71,7 +71,11 @@ extern "C" {
 #define PCF85063A_RTC_CTRL_2_HMI      (0X10) // Half Minute Interrupt 
 #define PCF85063A_RTC_CTRL_2_TF       (0X08) // Timer Flag 
 
-#define PCF85063A_RTC_OFFSET_MODE     (0X80) // Offset Mode 
+#define PCF85063A_RTC_OFFSET_MODE       (0X80) // Offset Mode
+#define PCF85063A_RTC_OFFSET_VALUE_MASK (0x7F)
+#define PCF85063A_RTC_OFFSET_MIN        (-64)
+#define PCF85063A_RTC_OFFSET_MAX        (63)
+#define PCF85063A_DEFAULT_OFFSET        (-13)
 
 #define PCF85063A_RTC_TIMER_MODE_TE   (0X04) // Timer Enable 0-Disable, 1-Enable 
 #define PCF85063A_RTC_TIMER_MODE_TIE  (0X02) // Timer Interrupt Enable 0-Disable, 1-Enable 
@@ -111,6 +115,24 @@ typedef struct {
     uint8_t min;      // Minute 
     uint8_t sec;      // Second 
 } pcf85063a_datetime_t;
+/**
+ * PCF85063A offset correction cadence.
+ */
+typedef enum {
+    PCF85063A_OFFSET_MODE_TWO_HOURS = 0,   /*!< 4.34 ppm/step, correction every two hours. */
+    PCF85063A_OFFSET_MODE_FOUR_MINUTES = 1 /*!< 4.069 ppm/step, correction every four minutes. */
+} pcf85063a_offset_mode_t;
+
+#define PCF85063A_DEFAULT_OFFSET_MODE PCF85063A_OFFSET_MODE_TWO_HOURS
+
+/**
+ * PCF85063A oscillator load capacitance selection.
+ */
+typedef enum {
+    PCF85063A_LOAD_CAPACITANCE_7_PF = 0,
+    PCF85063A_LOAD_CAPACITANCE_12_5_PF = 1
+} pcf85063a_load_capacitance_t;
+
 
 typedef struct {
     i2c_master_bus_handle_t bus_handle;
@@ -147,6 +169,60 @@ esp_err_t pcf85063a_set_time_date(pcf85063a_dev_t *dev, pcf85063a_datetime_t tim
  * Read current RTC time and date 
  **/
 esp_err_t pcf85063a_get_time_date(pcf85063a_dev_t *dev, pcf85063a_datetime_t *time);
+/**
+ * Set the oscillator offset calibration.
+ *
+ * The offset is a signed count of Offset register steps, not a value in ppm.
+ * Valid values are -64 through 63. Each step is 4.34 ppm in two-hour mode
+ * (about +/-2.17 ppm quantization) or 4.069 ppm in four-minute mode (about
+ * +/-2.0345 ppm quantization). A positive value lengthens the oscillator
+ * period and therefore slows a fast clock.
+ *
+ * @param[in] dev Device handle initialized by pcf85063a_init().
+ * @param[in] offset Signed Offset register step count in the range -64..63.
+ * @param[in] mode Offset correction cadence.
+ * @return ESP_OK on success, ESP_ERR_INVALID_ARG for invalid arguments, or an
+ *         error returned by the I2C driver.
+ */
+esp_err_t pcf85063a_set_offset(pcf85063a_dev_t *dev, int8_t offset, pcf85063a_offset_mode_t mode);
+
+/**
+ * Read the oscillator offset calibration.
+ *
+ * @param[in] dev Device handle initialized by pcf85063a_init().
+ * @param[out] offset Signed Offset register step count in the range -64..63.
+ * @param[out] mode Offset correction cadence.
+ * @return ESP_OK on success, ESP_ERR_INVALID_ARG for NULL arguments, or an
+ *         error returned by the I2C driver.
+ */
+esp_err_t pcf85063a_get_offset(pcf85063a_dev_t *dev, int8_t *offset, pcf85063a_offset_mode_t *mode);
+
+/**
+ * Select the oscillator load capacitance.
+ *
+ * This function uses read-modify-write to preserve all other Control_1 bits.
+ * The operation is not atomic with other Control_1 accesses, so callers must
+ * serialize concurrent register updates. For backward compatibility,
+ * pcf85063a_init() and pcf85063a_reset() select 12.5 pF; call this function
+ * afterwards when the connected crystal requires 7 pF.
+ *
+ * @param[in] dev Device handle initialized by pcf85063a_init().
+ * @param[in] capacitance Load capacitance selection.
+ * @return ESP_OK on success, ESP_ERR_INVALID_ARG for invalid arguments, or an
+ *         error returned by the I2C driver.
+ */
+esp_err_t pcf85063a_set_load_capacitance(pcf85063a_dev_t *dev, pcf85063a_load_capacitance_t capacitance);
+
+/**
+ * Read the oscillator load capacitance selection.
+ *
+ * @param[in] dev Device handle initialized by pcf85063a_init().
+ * @param[out] capacitance Current load capacitance selection.
+ * @return ESP_OK on success, ESP_ERR_INVALID_ARG for NULL arguments, or an
+ *         error returned by the I2C driver.
+ */
+esp_err_t pcf85063a_get_load_capacitance(pcf85063a_dev_t *dev, pcf85063a_load_capacitance_t *capacitance);
+
 
 /**
  * Enable Alarm and Clear Alarm flag 

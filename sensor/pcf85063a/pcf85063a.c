@@ -28,8 +28,15 @@ esp_err_t pcf85063a_init(pcf85063a_dev_t *dev, i2c_master_bus_handle_t bus_handl
     
     uint8_t buf[2] = {PCF85063A_RTC_CTRL_1_ADDR, PCF85063A_RTC_CTRL_1_DEFAULT | PCF85063A_RTC_CTRL_1_CAP_SEL};
     ret = pcf85063a_write_register(dev, buf, 2);
+    if (ret != ESP_OK) {
+        return ret;
+    }
 
-    ESP_LOGI(TAG, "PCF85063A initialized successfully");
+    ret = pcf85063a_set_offset(dev, PCF85063A_DEFAULT_OFFSET, PCF85063A_DEFAULT_OFFSET_MODE);
+
+    if (ret == ESP_OK) {
+        ESP_LOGI(TAG, "PCF85063A initialized successfully");
+    }
     return ret;
 }
 
@@ -40,7 +47,12 @@ esp_err_t pcf85063a_reset(pcf85063a_dev_t *dev) {
                         PCF85063A_RTC_CTRL_1_DEFAULT | \
                         PCF85063A_RTC_CTRL_1_CAP_SEL | \
                         PCF85063A_RTC_CTRL_1_SR};
-    return pcf85063a_write_register(dev, buf, 2);
+    esp_err_t ret = pcf85063a_write_register(dev, buf, 2);
+    if (ret != ESP_OK) {
+        return ret;
+    }
+
+    return pcf85063a_set_offset(dev, PCF85063A_DEFAULT_OFFSET, PCF85063A_DEFAULT_OFFSET_MODE);
 }
 
 esp_err_t pcf85063a_set_time(pcf85063a_dev_t *dev, pcf85063a_datetime_t time) {
@@ -94,6 +106,91 @@ esp_err_t pcf85063a_get_time_date(pcf85063a_dev_t *dev, pcf85063a_datetime_t *ti
 	time->year = bcdToDec(bufss[6]) + YEAR_OFFSET;
 
 	return ret;
+}
+
+esp_err_t pcf85063a_set_offset(pcf85063a_dev_t *dev, int8_t offset, pcf85063a_offset_mode_t mode)
+{
+    if (!dev ||
+        (mode != PCF85063A_OFFSET_MODE_TWO_HOURS &&
+         mode != PCF85063A_OFFSET_MODE_FOUR_MINUTES) ||
+        offset < PCF85063A_RTC_OFFSET_MIN ||
+        offset > PCF85063A_RTC_OFFSET_MAX) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    uint8_t value = (uint8_t)offset & PCF85063A_RTC_OFFSET_VALUE_MASK;
+    if (mode == PCF85063A_OFFSET_MODE_FOUR_MINUTES) {
+        value |= PCF85063A_RTC_OFFSET_MODE;
+    }
+
+    uint8_t buf[2] = {PCF85063A_RTC_OFFSET_ADDR, value};
+    return pcf85063a_write_register(dev, buf, 2);
+}
+
+esp_err_t pcf85063a_get_offset(pcf85063a_dev_t *dev, int8_t *offset, pcf85063a_offset_mode_t *mode)
+{
+    if (!dev || !offset || !mode) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    uint8_t raw;
+    esp_err_t ret = pcf85063a_read_register(dev, PCF85063A_RTC_OFFSET_ADDR, &raw, 1);
+    if (ret != ESP_OK) {
+        return ret;
+    }
+
+    uint8_t raw_offset = raw & PCF85063A_RTC_OFFSET_VALUE_MASK;
+    int8_t decoded_offset = (raw_offset & 0x40U) != 0
+                                ? (int8_t)((int16_t)raw_offset - 0x80)
+                                : (int8_t)raw_offset;
+    pcf85063a_offset_mode_t decoded_mode = (raw & PCF85063A_RTC_OFFSET_MODE) != 0
+                                               ? PCF85063A_OFFSET_MODE_FOUR_MINUTES
+                                               : PCF85063A_OFFSET_MODE_TWO_HOURS;
+
+    *offset = decoded_offset;
+    *mode = decoded_mode;
+    return ESP_OK;
+}
+
+esp_err_t pcf85063a_set_load_capacitance(pcf85063a_dev_t *dev, pcf85063a_load_capacitance_t capacitance)
+{
+    if (!dev ||
+        (capacitance != PCF85063A_LOAD_CAPACITANCE_7_PF &&
+         capacitance != PCF85063A_LOAD_CAPACITANCE_12_5_PF)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    uint8_t ctrl1;
+    esp_err_t ret = pcf85063a_read_register(dev, PCF85063A_RTC_CTRL_1_ADDR, &ctrl1, 1);
+    if (ret != ESP_OK) {
+        return ret;
+    }
+
+    ctrl1 &= (uint8_t)~PCF85063A_RTC_CTRL_1_CAP_SEL;
+    if (capacitance == PCF85063A_LOAD_CAPACITANCE_12_5_PF) {
+        ctrl1 |= PCF85063A_RTC_CTRL_1_CAP_SEL;
+    }
+
+    uint8_t buf[2] = {PCF85063A_RTC_CTRL_1_ADDR, ctrl1};
+    return pcf85063a_write_register(dev, buf, 2);
+}
+
+esp_err_t pcf85063a_get_load_capacitance(pcf85063a_dev_t *dev, pcf85063a_load_capacitance_t *capacitance)
+{
+    if (!dev || !capacitance) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    uint8_t ctrl1;
+    esp_err_t ret = pcf85063a_read_register(dev, PCF85063A_RTC_CTRL_1_ADDR, &ctrl1, 1);
+    if (ret != ESP_OK) {
+        return ret;
+    }
+
+    *capacitance = (ctrl1 & PCF85063A_RTC_CTRL_1_CAP_SEL) != 0
+                       ? PCF85063A_LOAD_CAPACITANCE_12_5_PF
+                       : PCF85063A_LOAD_CAPACITANCE_7_PF;
+    return ESP_OK;
 }
 
 esp_err_t pcf85063a_enable_alarm(pcf85063a_dev_t *dev)
