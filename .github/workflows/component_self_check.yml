@@ -49,6 +49,15 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Run PCF85063A host tests
+        if: matrix.component == 'sensor/pcf85063a' && matrix.idf_version == 'v5.5.5'
+        shell: bash
+        run: |
+          . "$IDF_PATH/export.sh"
+          cmake -S sensor/pcf85063a/test_host -B .component_self_check_build/pcf85063a-host -G Ninja
+          cmake --build .component_self_check_build/pcf85063a-host
+          ctest --test-dir .component_self_check_build/pcf85063a-host --output-on-failure
+
       - name: Build component with ESP-IDF ${{ matrix.idf_version }}
         env:
           COMPONENT_DIR: ${{ matrix.component }}

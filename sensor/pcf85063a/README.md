@@ -6,14 +6,14 @@ PCF85063A sensor driver,PCF85063A is RTC.
 
 | Sensor controller | Communication interface | Component name | Link to datasheet |
 | :--------------: | :---------------------: | :------------: | :---------------: |
-| PCF85063A            | I2C                     | qmi8658 | [WIKI](https://files.waveshare.com/wiki/common/PCF85063A.pdf) |
+| PCF85063A | I2C | pcf85063a | [NXP data sheet](https://www.nxp.com/docs/en/data-sheet/PCF85063A.pdf) |
 
 ## Add to project
 
 Packages from this repository are uploaded to [Espressif's component service](https://components.espressif.com/).
-You can add them to your project via `idf.py add-dependancy`, e.g.
+You can add them to your project via `idf.py add-dependency`, e.g.
 ```
-    idf.py add-dependency waveshare/pcf85063a==1.1.0
+    idf.py add-dependency waveshare/pcf85063a==2.1.0
 ```
 
 Alternatively, you can create `idf_component.yml`. More is in [Espressif's documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/tools/idf-component-manager.html).
@@ -34,7 +34,7 @@ static esp_err_t i2c_master_init(i2c_master_bus_handle_t *bus_handle) {
 ```
 ### Sensor initialization and configuration
 ```c
-    esp_err_t ret = qmi8658_init(&dev, bus_handle, PCF85063A_ADDRESS);
+    esp_err_t ret = pcf85063a_init(&dev, bus_handle, PCF85063A_ADDRESS);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize PCF85063A (error: %d)", ret);
         vTaskDelete(NULL);
@@ -75,6 +75,51 @@ static esp_err_t i2c_master_init(i2c_master_bus_handle_t *bus_handle) {
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 ```
+
+### Oscillator calibration
+
+The Offset register uses a signed 7-bit two's-complement step count from -64
+through 63. `PCF85063A_OFFSET_MODE_TWO_HOURS` applies corrections every two
+hours at 4.34 ppm per step (about +/-2.17 ppm quantization), while
+`PCF85063A_OFFSET_MODE_FOUR_MINUTES` applies corrections every four
+minutes at 4.069 ppm per step (about +/-2.0345 ppm quantization). Positive
+values lengthen the oscillator period and therefore slow a fast clock. See the
+[NXP PCF85063A data sheet](https://www.nxp.com/docs/en/data-sheet/PCF85063A.pdf).
+
+`pcf85063a_init()` and `pcf85063a_reset()` apply a default offset of `-13` in
+two-hour mode. Applications can override it with `pcf85063a_set_offset()`.
+
+```c
+int8_t offset;
+pcf85063a_offset_mode_t mode;
+
+esp_err_t ret = pcf85063a_set_offset(
+    &dev, -15, PCF85063A_OFFSET_MODE_TWO_HOURS);
+if (ret == ESP_OK) {
+    ret = pcf85063a_get_offset(&dev, &offset, &mode);
+}
+if (ret != ESP_OK) {
+    ESP_LOGE(TAG, "RTC calibration failed: %s", esp_err_to_name(ret));
+}
+```
+
+The load capacitance selection is independent from the Offset register. The
+setter preserves every other Control_1 bit with read-modify-write:
+
+```c
+pcf85063a_load_capacitance_t capacitance;
+
+ret = pcf85063a_set_load_capacitance(
+    &dev, PCF85063A_LOAD_CAPACITANCE_7_PF);
+if (ret == ESP_OK) {
+    ret = pcf85063a_get_load_capacitance(&dev, &capacitance);
+}
+```
+
+For backward compatibility, `pcf85063a_init()` and `pcf85063a_reset()` select
+12.5 pF. Call the load capacitance setter after either function when the
+connected crystal requires 7 pF. Serialize concurrent operations that modify
+Control_1 because the read-modify-write sequence is not component-level atomic.
 
 ### Timer functionality
 
