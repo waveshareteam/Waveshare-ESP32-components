@@ -1,0 +1,44 @@
+dependencies:
+  esp_codec_dev:
+    public: true
+    version: ~1.5
+  espressif/esp_lcd_touch_gt911:
+    public: true
+    version: "1.2.0~3"
+  waveshare/esp_lcd_ili9881c:
+    matches:
+      - if: $CONFIG{BSP_LCD_TYPE_720_1280_7_INCH_A} == True
+    require: public
+    version: '*'
+  waveshare/esp_lcd_hx8394:
+    matches:
+      - if: $CONFIG{BSP_LCD_TYPE_720_1280_5_INCH_A} == True
+    require: public
+    version: '*'
+  waveshare/esp_lcd_jd9365:
+    matches:
+      - if: $CONFIG{BSP_LCD_TYPE_800_1280_8_INCH_A} == True
+      - if: $CONFIG{BSP_LCD_TYPE_800_1280_10_1_INCH_A} == True
+    require: public
+    version: '*'
+  esp_video:
+    public: true
+    version: ^2.3.0
+  espressif/esp_lvgl_adapter:
+    public: true
+    version: ^0.6.2
+  idf: '>=5.5'
+  lvgl/lvgl:
+    public: true
+    version: '>=9,<10'
+  usb:
+    public: true
+    rules:
+    - if: idf_version >=6.0
+    version: ^1.0.0
+description: Board Support Package for ESP32-P4-WIFI6-DB
+tags:
+- bsp
+targets:
+- esp32p4
+version: 0.0.1
