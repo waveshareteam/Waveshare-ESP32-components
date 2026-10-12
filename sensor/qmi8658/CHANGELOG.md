@@ -1,5 +1,11 @@
 # ChangeLog
 
+## v2.0.2 - 2026-10-12
+
+### bugfix:
+
+* Corrected the gyroscope full-scale ranges and sensitivity values according to the datasheet.
+
 ## v2.0.1 - 2026-08-18
 
 ### bugfix:

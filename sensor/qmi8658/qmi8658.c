@@ -104,6 +104,9 @@ esp_err_t qmi8658_set_gyro_range(qmi8658_dev_t *dev, qmi8658_gyro_range_t range)
     if (!dev) return ESP_ERR_INVALID_ARG;
     
     switch (range) {
+        case QMI8658_GYRO_RANGE_16DPS:
+            dev->gyro_lsb_div = 2048;
+            break;
         case QMI8658_GYRO_RANGE_32DPS:
             dev->gyro_lsb_div = 1024;
             break;
@@ -124,9 +127,6 @@ esp_err_t qmi8658_set_gyro_range(qmi8658_dev_t *dev, qmi8658_gyro_range_t range)
             break;
         case QMI8658_GYRO_RANGE_2048DPS:
             dev->gyro_lsb_div = 16;
-            break;
-        case QMI8658_GYRO_RANGE_4096DPS:
-            dev->gyro_lsb_div = 8;
             break;
         default:
             return ESP_ERR_INVALID_ARG;
