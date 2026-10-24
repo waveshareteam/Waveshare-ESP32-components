@@ -49,6 +49,12 @@ static const audio_codec_data_if_t *i2s_data_if = NULL; /* Codec data interface 
         },                     \
     }
 
+#ifdef CONFIG_BSP_DISPLAY_START_DARK
+#define BSP_LCD_INIT_BRIGHTNESS 0
+#else
+#define BSP_LCD_INIT_BRIGHTNESS 100
+#endif
+
 static const co5300_lcd_init_cmd_t lcd_init_cmds[] = {
     {0xFE, (uint8_t[]){0x20}, 1, 0},
     {0x19, (uint8_t[]){0x10}, 1, 0},
@@ -59,7 +65,7 @@ static const co5300_lcd_init_cmd_t lcd_init_cmds[] = {
     {0x3A, (uint8_t[]){0x55}, 1, 0},
     {0x35, (uint8_t[]){0x00}, 1, 0},
     {0x53, (uint8_t[]){0x20}, 1, 0},
-    {0x51, (uint8_t[]){0xFF}, 1, 0},
+    {0x51, (uint8_t[]){BSP_LCD_INIT_BRIGHTNESS * 255 / 100}, 1, 0},
     {0x63, (uint8_t[]){0xFF}, 1, 0},
     {0x2A, (uint8_t[]){0x00, 0x06, 0x01, 0xD7}, 4, 0},
     {0x2B, (uint8_t[]){0x00, 0x00, 0x01, 0xD1}, 4, 600},
@@ -293,7 +299,7 @@ esp_codec_dev_handle_t bsp_audio_codec_microphone_init(void)
 
 esp_err_t bsp_display_brightness_init(void)
 {
-    bsp_display_brightness_set(100);
+    bsp_display_brightness_set(BSP_LCD_INIT_BRIGHTNESS);
     return ESP_OK;
 }
 
