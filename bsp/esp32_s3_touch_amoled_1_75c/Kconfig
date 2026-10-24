@@ -52,6 +52,14 @@ menu "Board Support Package"
                 Supported max files for SPIFFS in the Virtual File System.
     endmenu
     menu "Display"
+        config BSP_DISPLAY_START_DARK
+            bool "Start the display dark (brightness 0)"
+            default n
+            help
+                Initialize the panel with brightness 0 instead of 100%, so nothing is visible until the
+                application calls bsp_display_brightness_set(). Avoids a flash of the controller memory at boot.
+                The application must raise the brightness itself, otherwise the screen stays black.
+
         config BSP_LCD_TRANS_QUEUE_DEPTH
             int "Set The depth of the SPI transmission task queue for the SPI screen"
             default 10
