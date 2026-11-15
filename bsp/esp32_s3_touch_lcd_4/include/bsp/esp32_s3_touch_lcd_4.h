@@ -71,6 +71,7 @@
 #define BSP_SD_D0            (GPIO_NUM_4)
 #define BSP_SD_CMD           (GPIO_NUM_1)
 #define BSP_SD_CLK           (GPIO_NUM_2)
+#define BSP_SD_CS            (IO_EXPANDER_PIN_NUM_4)
 
 #define BSP_IO_EXPANDER_I2C_ADDRESS     (CUSTOM_IO_EXPANDER_I2C_CH32V003_ADDRESS)
 #define LVGL_BUFFER_HEIGHT          (CONFIG_BSP_DISPLAY_LVGL_BUF_HEIGHT)
