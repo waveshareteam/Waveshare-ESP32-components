@@ -2,66 +2,61 @@
 
 [![Component Registry](https://components.espressif.com/components/waveshare/esp_lcd_touch_hi8561/badge.svg)](https://components.espressif.com/components/waveshare/esp_lcd_touch_hi8561)
 
-Implementation of the HI8561 touch controller with esp_lcd_touch component.
-
-| Touch controller | Communication interface |    Component name     |                            Link to datasheet                             |
-| :--------------: | :---------------------: | :-------------------: | :----------------------------------------------------------------------: |
-|     HI8561       |          I2C            | esp_lcd_touch_hi8561  |                        []()                                              |
+I²C driver for the HI8561 touch controller using the `esp_lcd_touch` interface.
 
 ## Add to project
 
-Packages from this repository are uploaded to [Espressif's component service](https://components.espressif.com/).
-You can add them to your project via `idf.py add-dependancy`, e.g.
-```
-    idf.py add-dependency esp_lcd_touch_hi8561==0.0.1
-```
+This checkout requires ESP-IDF 5.5.5 or later and `espressif/esp_lcd_touch` matching `^1.2.1`.
 
-Alternatively, you can create `idf_component.yml`. More is in [Espressif's documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/tools/idf-component-manager.html).
+To use this checkout, add the component directory to your project's `EXTRA_COMPONENT_DIRS` before including `project.cmake` in the top-level `CMakeLists.txt`. For published versions, see the [ESP Component Registry](https://components.espressif.com/components/waveshare/esp_lcd_touch_hi8561).
 
 ## Example use
 
-Initialization of the touch component.
+Initialize an I²C master bus with `i2c_new_master_bus()` using your board's SDA and SCL pins. Pass the resulting `i2c_bus` handle through `driver_data`. The driver adds its own device to that bus, so the panel I/O argument can be `NULL`.
 
-```
-    esp_lcd_touch_io_hi8561_config_t tp_hi8561_config = {
+```c
+#include "esp_lcd_touch_hi8561.h"
+
+static esp_lcd_touch_io_hi8561_config_t hi8561_config;
+
+static esp_err_t init_touch(i2c_master_bus_handle_t i2c_bus, uint16_t width,
+                           uint16_t height, esp_lcd_touch_handle_t *touch)
+{
+    hi8561_config = (esp_lcd_touch_io_hi8561_config_t) {
+        .i2c_bus = i2c_bus,
         .dev_addr = ESP_LCD_TOUCH_IO_I2C_HI8561_ADDRESS,
-        .touch_info_start_address = 0x20011008,
+        .scl_speed_hz = 200000,
     };
 
-    esp_lcd_touch_config_t tp_cfg = {
-        .x_max = CONFIG_LCD_HRES,
-        .y_max = CONFIG_LCD_VRES,
-        .rst_gpio_num = -1,
-        .int_gpio_num = -1,
-        .levels = {
-            .reset = 0,
-            .interrupt = 0,
-        },
-        .flags = {
-            .swap_xy = 0,
-            .mirror_x = 0,
-            .mirror_y = 0,
-        },
-        .driver_data = &tp_hi8561_config,
+    const esp_lcd_touch_config_t touch_config = {
+        .x_max = width,
+        .y_max = height,
+        .rst_gpio_num = GPIO_NUM_NC,
+        .int_gpio_num = GPIO_NUM_NC,
+        .driver_data = &hi8561_config,
     };
 
-    esp_lcd_touch_handle_t tp;
-    esp_lcd_touch_new_i2c_hi8561(io_handle, &tp_cfg, &tp);
+    return esp_lcd_touch_new_i2c_hi8561(NULL, &touch_config, touch);
+}
 ```
 
-Read data from the touch controller and store it in RAM memory. It should be called regularly in poll.
+The example polls for touch and leaves the reset and interrupt pins unassigned. For boards with those pins connected, set the GPIO numbers and the corresponding levels for your hardware. A zero `dev_addr` selects the default 7-bit address (`0x68`). A zero `scl_speed_hz` selects 200 kHz.
 
-```
-    esp_lcd_touch_read_data(tp);
+After initialization succeeds, call `esp_lcd_touch_read_data()` periodically and retrieve the touch points after a successful read.
+
+```c
+esp_lcd_touch_point_data_t points[1];
+uint8_t point_count = 0;
+
+if (esp_lcd_touch_read_data(touch) == ESP_OK &&
+        esp_lcd_touch_get_data(touch, points, &point_count, 1) == ESP_OK &&
+        point_count > 0) {
+    // Use points[0].x, points[0].y, and points[0].strength.
+}
 ```
 
-Get one X and Y coordinates with strength of touch.
+Call `esp_lcd_touch_del(touch)` before deleting the I²C bus. The driver removes its device, and the caller owns the bus.
 
-```
-    uint16_t touch_x[1];
-    uint16_t touch_y[1];
-    uint16_t touch_strength[1];
-    uint8_t touch_cnt = 0;
+## Migrate from the previous driver
 
-    bool touchpad_pressed = esp_lcd_touch_get_coordinates(tp, touch_x, touch_y, touch_strength, &touch_cnt, 1);
-```
+Replace the I²C device handle previously passed through `user_data` with the I²C master bus handle in `esp_lcd_touch_io_hi8561_config_t.i2c_bus`. Remove `touch_info_start_address` from the configuration.
