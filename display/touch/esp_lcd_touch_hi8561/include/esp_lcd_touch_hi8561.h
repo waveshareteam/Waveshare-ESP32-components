@@ -11,6 +11,7 @@
 
 #pragma once
 
+#include "driver/i2c_master.h"
 #include "esp_lcd_touch.h"
 
 #ifdef __cplusplus
@@ -37,8 +38,9 @@ esp_err_t esp_lcd_touch_new_i2c_hi8561(const esp_lcd_panel_io_handle_t io, const
  *
  */
 typedef struct {
-    uint8_t dev_addr;  /*!< I2C device address */
-    uint32_t touch_info_start_address;
+    uint8_t dev_addr;                   /*!< I2C device address (defaults to 0x68 if 0) */
+    uint32_t scl_speed_hz;              /*!< I2C SCL clock frequency in Hz (defaults to 200000 if 0) */
+    i2c_master_bus_handle_t i2c_bus;    /*!< I2C master bus handle */
 } esp_lcd_touch_io_hi8561_config_t;
 
 #define ESP_LCD_TOUCH_IO_I2C_HI8561_ADDRESS             (0x68)

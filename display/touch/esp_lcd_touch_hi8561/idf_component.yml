@@ -1,8 +1,8 @@
-dependencies:
-  esp_lcd_touch:
-    public: true
-    version: "^1.1.0"
-  idf: '>=4.4.2'
+version: "2.0.0"
 description: "ESP LCD Touch HI8561 -The touch controller HI8561 is adapted by waveshare"
 url: "https://github.com/waveshareteam/Waveshare-ESP32-components/tree/master/display/touch/esp_lcd_touch_hi8561"
-version: 1.0.0
+dependencies:
+  idf: '>=5.5.5'
+  espressif/esp_lcd_touch:
+    version: "^1.2.1"
+    public: true
