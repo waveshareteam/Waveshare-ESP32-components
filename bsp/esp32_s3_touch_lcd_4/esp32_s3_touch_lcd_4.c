@@ -175,6 +175,13 @@ esp_io_expander_handle_t bsp_io_expander_init()
 
 esp_err_t bsp_sdcard_mount(void)
 {
+    // Rev4 routes SD DAT3/CS through CH32 EXIO4. It must be high when CMD0
+    // is sent so the card enters SDMMC mode instead of SPI mode.
+    esp_io_expander_handle_t expander = bsp_io_expander_init();
+    ESP_RETURN_ON_FALSE(expander != NULL, ESP_FAIL, TAG, "Failed to initialize SD CS control");
+    ESP_RETURN_ON_ERROR(esp_io_expander_set_dir(expander, BSP_SD_CS, IO_EXPANDER_OUTPUT), TAG, "Failed to set SD CS direction");
+    ESP_RETURN_ON_ERROR(esp_io_expander_set_level(expander, BSP_SD_CS, 1), TAG, "Failed to release SD CS");
+
     const esp_vfs_fat_sdmmc_mount_config_t mount_config = {
 #ifdef CONFIG_BSP_SD_FORMAT_ON_MOUNT_FAIL
         .format_if_mount_failed = true,
