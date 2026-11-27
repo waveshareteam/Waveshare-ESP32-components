@@ -1,0 +1,58 @@
+menu "Board Support Package"
+
+    config BSP_ERROR_CHECK
+        bool "Enable error check in BSP"
+        default y
+        help
+            Assert on BSP errors instead of returning the error code.
+
+    menu "I2C"
+        config BSP_I2C_FAST_MODE
+            bool "Enable I2C fast mode"
+            default y
+            help
+                I2C has normal (100 kHz) and fast (400 kHz) modes.
+
+        config BSP_I2C_CLK_SPEED_HZ
+            int
+            default 400000 if BSP_I2C_FAST_MODE
+            default 100000
+    endmenu
+
+    menu "SPIFFS - Virtual File System"
+        config BSP_SPIFFS_FORMAT_ON_MOUNT_FAIL
+            bool "Format SPIFFS if mounting fails"
+            default n
+
+        config BSP_SPIFFS_MOUNT_POINT
+            string "SPIFFS mount point"
+            default "/spiffs"
+
+        config BSP_SPIFFS_PARTITION_LABEL
+            string "SPIFFS partition label"
+            default "storage"
+
+        config BSP_SPIFFS_MAX_FILES
+            int "Maximum simultaneously open files"
+            default 2
+    endmenu
+
+    menu "uSD card - Virtual File System"
+        config BSP_SD_FORMAT_ON_MOUNT_FAIL
+            bool "Format uSD card if mounting fails"
+            default n
+
+        config BSP_SD_MOUNT_POINT
+            string "uSD card mount point"
+            default "/sdcard"
+    endmenu
+
+    menu "Display"
+        config BSP_DISPLAY_LVGL_BUF_HEIGHT
+            int "LVGL buffer height"
+            range 20 480
+            default 100
+            help
+                Buffer width is the full 480-pixel display width.
+    endmenu
+endmenu
